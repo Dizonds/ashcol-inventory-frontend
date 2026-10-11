@@ -218,16 +218,30 @@ export default function App() {
     <ConfigProvider
       theme={{
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-        token: { colorPrimary: "#059669", borderRadius: 8 },
+        token: {
+          colorPrimary: "#059669",
+          borderRadius: 10,
+          fontFamily: "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          colorBgContainer: isDark ? "#152018" : "#ffffff",
+          colorBgElevated:  isDark ? "#1a2a20" : "#ffffff",
+          colorBorder:      isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)",
+          colorText:        isDark ? "#e0ede7" : "#111b14",
+          colorTextSecondary: isDark ? "#8ab09a" : "#4a5e55",
+          colorTextPlaceholder: isDark ? "#4d7060" : "#8fa99c",
+        },
       }}
     >
-      <div className={isDark ? "inventory-app dark" : "inventory-app"}>
+      <div className={`inventory-app ${isDark ? "dark" : ""}`}>
+
+        {/* ── CHECKING SESSION ── */}
         {checking ? (
           <div className="login-wrap">
             <Spin description="Checking session">
               <div style={{ padding: 40 }} />
             </Spin>
           </div>
+
+        /* ── LOGIN PAGE ── */
         ) : !user ? (
           <LoginPage
             initialError={error}
@@ -238,94 +252,119 @@ export default function App() {
               setPage("dashboard");
             }}
           />
+
+        /* ── MAIN APP ── */
         ) : (
           <>
-            <header className="app-header">
-              <Space>
-                <img
-                  src="/assets/ash-logo.jpg"
-                  alt="ASHCOL"
-                  width="44"
-                  height="44"
-                />
-                <div>
-                  <strong>ASHCOL Inventory</strong>
-                  <div>Branch stock & service materials</div>
-                </div>
-              </Space>
-              <Space wrap>
-                <span>
-                  {user.fullName} · {user.role}
-                </span>
-                <Button
-                  onClick={() => {
-                    setIsDark(!isDark);
-                    localStorage.setItem(
-                      "ashcol_theme",
-                      isDark ? "light" : "dark",
-                    );
-                  }}
-                >
-                  {isDark ? "Light" : "Dark"} theme
-                </Button>
-                <Button onClick={logout}>Log out</Button>
-              </Space>
-            </header>
-            <div className="app-body">
+            {/* SIDEBAR */}
+            <aside className="app-sidebar">
+              <div className="sidebar-logo">
+                <img src="/assets/ash-logo.jpg" alt="ASHCOL" />
+                <h2>ASHCOL</h2>
+              </div>
+
+              <div className="sidebar-section-title">NAVIGATION</div>
+
               <nav className="app-nav" aria-label="Inventory navigation">
                 {navigation.map((entry) => (
-                  <Button
+                  <button
                     key={entry.id}
-                    type={page === entry.id ? "primary" : "text"}
+                    className={`nav-btn ${page === entry.id ? "active" : ""}`}
                     onClick={() => setPage(entry.id)}
-                    icon={entry.icon}
-                    style={{ justifyContent: "flex-start", padding: "10px 16px", height: "auto" }}
+                    title={entry.label}
                   >
-                    {entry.label}
-                  </Button>
+                    {entry.icon}
+                    <span>{entry.label}</span>
+                  </button>
                 ))}
               </nav>
-              <main>
-                <div className="branch-toolbar">
-                  <Space wrap>
-                    <strong>Branch</strong>
-                    <Select
-                      aria-label="Current branch"
-                      value={branchId || undefined}
-                      style={{ minWidth: 240 }}
-                      disabled={user.role !== "ADMIN"}
-                      options={branches
-                        .filter((branch) => branch.branchType !== "SERVICE_VAN")
-                        .map((branch) => ({
-                          value: branch.id,
-                          label: (
-                            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <ShopBoldDuotoneIcon size={16} />
-                              {branch.name} ({branch.id})
-                            </span>
-                          ),
-                        }))}
-                      onChange={(value) => {
-                        setBranchId(value);
-                        setItems([]);
-                        setRequests([]);
-                        setTargetId("");
-                      }}
-                    />
-                  </Space>
-                  <Button
-                    loading={loading}
-                    onClick={() => setRefresh(refresh + 1)}
+
+              <div className="sidebar-bottom">
+                <div className="sidebar-section-title">USER ACCOUNT</div>
+                <div className="user-profile">
+                  <div className="user-avatar">{user.fullName.charAt(0)}</div>
+                  <div className="user-info">
+                    <strong>{user.fullName}</strong>
+                    <span>{user.role}</span>
+                  </div>
+                </div>
+                <div className="sidebar-actions">
+                  <button
+                    className="sidebar-action-btn"
+                    onClick={() => {
+                      setIsDark(!isDark);
+                      localStorage.setItem("ashcol_theme", !isDark ? "dark" : "light");
+                    }}
+                    title={isDark ? "Switch to Light mode" : "Switch to Dark mode"}
                   >
+                    <span className="action-icon" style={{ fontSize: 16 }}>{isDark ? "☀️" : "🌙"}</span>
+                    <span className="btn-label">{isDark ? "Light mode" : "Dark mode"}</span>
+                  </button>
+                  <button className="sidebar-action-btn" onClick={logout} title="Log out">
+                    <span className="action-icon" style={{ fontSize: 16 }}>↩</span>
+                    <span className="btn-label">Log out</span>
+                  </button>
+                </div>
+              </div>
+            </aside>
+
+            {/* MAIN CONTENT */}
+            <main className="app-main">
+              <header className="main-header">
+                <h1>{navigation.find((n) => n.id === page)?.label || "Dashboard"}</h1>
+                <div className="branch-toolbar">
+                  <strong>Branch</strong>
+                  <Select
+                    aria-label="Current branch"
+                    value={branchId || undefined}
+                    style={{ minWidth: 200 }}
+                    disabled={user.role !== "ADMIN"}
+                    options={branches
+                      .filter((branch) => branch.branchType !== "SERVICE_VAN")
+                      .map((branch) => ({
+                        value: branch.id,
+                        label: (
+                          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <ShopBoldDuotoneIcon size={16} />
+                            {branch.name}
+                          </span>
+                        ),
+                      }))}
+                    onChange={(value) => {
+                      setBranchId(value);
+                      setItems([]);
+                      setRequests([]);
+                      setTargetId("");
+                    }}
+                  />
+                  <Button loading={loading} onClick={() => setRefresh(refresh + 1)}>
                     Refresh
                   </Button>
                 </div>
+              </header>
+
+              <div className="main-content">
                 {error && (
                   <Alert
                     type="error"
                     showIcon
                     title="Inventory could not be loaded"
-                    description={error}
+                    description={
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 4 }}>
+                        <span>{error}</span>
+                        <Button
+                          size="small"
+                          danger
+                          loading={loading}
+                          onClick={() => {
+                            setError("");
+                            setRefresh((r) => r + 1);
+                          }}
+                        >
+                          Retry Connection
+                        </Button>
+                      </div>
+                    }
                     style={{ marginBottom: 16 }}
                   />
                 )}
@@ -339,111 +378,106 @@ export default function App() {
                     style={{ marginBottom: 16 }}
                   />
                 )}
+
                 <Spin spinning={loading}>
                   {!error && branchId && (
                     loading && !dataReady ? (
                       <InventoryLoadingState />
                     ) : (
-                    <div className="page-transition" key={`${page}-${branchId}`}>
-                      {page === "dashboard" && (
-                        <DashboardPage
-                          items={items}
-                          requests={requests}
-                          branchId={branchId}
-                          canManage={canManage}
-                          onRestockItem={(id) => {
-                            setTargetId(id);
-                            setPage("post_movement");
-                          }}
-                          onNavigateToInventoryWithFilter={(filter) => {
-                            setInventoryFilter(filter);
-                            setPage("inventory");
-                          }}
-                        />
-                      )}
-                      {page === "inventory" && (
-                        <InventorySection
-                          items={items}
-                          brands={brands}
-                          branches={branches}
-                          user={user}
-                          branchId={branchId}
-                          save={save}
-                          preselectedFilter={inventoryFilter}
-                          onNavigateToPostMovement={() => {
-                            setTargetId("");
-                            setPage("post_movement");
-                          }}
-                        />
-                      )}
-                      {(page === "service_vehicles" || page === "service_vans") && (
-                        <ServiceVansPage
-                          branches={branches}
-                          branchId={branchId}
-                          user={user}
-                          save={save}
-                          refresh={refresh}
-                        />
-                      )}
-                      {page === "compatibility" && (
-                        <CompatibilityLookupPage
-                          items={items}
-                          onNavigateToItem={(id) => {
-                            setPage("inventory");
-                          }}
-                        />
-                      )}
-                      {page === "suppliers" && (
-                        <SuppliersPage
-                          user={user}
-                          save={save}
-                          refresh={refresh}
-                        />
-                      )}
-                      {page === "requests" && (
-                        <RequestsPage
-                          items={items}
-                          requests={requests}
-                          user={user}
-                          branchId={branchId}
-                          save={save}
-                        />
-                      )}
-                      {page === "post_movement" && canManage && (
-                        <PostMovementPage
-                          items={items}
-                          branches={branches}
-                          branchId={branchId}
-                          user={user}
-                          save={save}
-                          preselectedItemId={targetId}
-                        />
-                      )}
-                      {page === "movements" && (
-                        <MovementsPage branchId={branchId} refresh={refresh} />
-                      )}
-                      {page === "branches" && user.role === "ADMIN" && (
-                        <SettingsPage
-                          section="branches"
-                          branches={branches}
-                          save={save}
-                          refresh={refresh}
-                        />
-                      )}
-                      {page === "user_management" && user.role === "ADMIN" && (
-                        <SettingsPage
-                          section="users"
-                          branches={branches}
-                          save={save}
-                          refresh={refresh}
-                        />
-                      )}
-                    </div>
+                      <div className="page-transition" key={`${page}-${branchId}`}>
+                        {page === "dashboard" && (
+                          <DashboardPage
+                            items={items}
+                            requests={requests}
+                            branchId={branchId}
+                            canManage={canManage}
+                            onRestockItem={(id) => {
+                              setTargetId(id);
+                              setPage("post_movement");
+                            }}
+                            onNavigateToInventoryWithFilter={(filter) => {
+                              setInventoryFilter(filter);
+                              setPage("inventory");
+                            }}
+                          />
+                        )}
+                        {page === "inventory" && (
+                          <InventorySection
+                            items={items}
+                            brands={brands}
+                            branches={branches}
+                            user={user}
+                            branchId={branchId}
+                            save={save}
+                            preselectedFilter={inventoryFilter}
+                            onNavigateToPostMovement={() => {
+                              setTargetId("");
+                              setPage("post_movement");
+                            }}
+                          />
+                        )}
+                        {(page === "service_vehicles" || page === "service_vans") && (
+                          <ServiceVansPage
+                            branches={branches}
+                            branchId={branchId}
+                            user={user}
+                            save={save}
+                            refresh={refresh}
+                          />
+                        )}
+                        {page === "compatibility" && (
+                          <CompatibilityLookupPage
+                            items={items}
+                            onNavigateToItem={() => setPage("inventory")}
+                          />
+                        )}
+                        {page === "suppliers" && (
+                          <SuppliersPage user={user} save={save} refresh={refresh} />
+                        )}
+                        {page === "requests" && (
+                          <RequestsPage
+                            items={items}
+                            requests={requests}
+                            user={user}
+                            branchId={branchId}
+                            save={save}
+                          />
+                        )}
+                        {page === "post_movement" && canManage && (
+                          <PostMovementPage
+                            items={items}
+                            branches={branches}
+                            branchId={branchId}
+                            user={user}
+                            save={save}
+                            preselectedItemId={targetId}
+                          />
+                        )}
+                        {page === "movements" && (
+                          <MovementsPage branchId={branchId} refresh={refresh} />
+                        )}
+                        {page === "branches" && user.role === "ADMIN" && (
+                          <SettingsPage
+                            section="branches"
+                            branches={branches}
+                            save={save}
+                            refresh={refresh}
+                          />
+                        )}
+                        {page === "user_management" && user.role === "ADMIN" && (
+                          <SettingsPage
+                            section="users"
+                            branches={branches}
+                            save={save}
+                            refresh={refresh}
+                          />
+                        )}
+                      </div>
                     )
                   )}
                 </Spin>
-              </main>
-            </div>
+              </div>
+            </main>
           </>
         )}
       </div>
