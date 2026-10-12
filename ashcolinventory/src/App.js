@@ -383,10 +383,17 @@ export default function App() {
                           <CompatibilityLookupPage
                             items={items}
                             onNavigateToItem={() => setPage("inventory")}
+                            isDark={isDark}
                           />
                         )}
                         {page === "suppliers" && (
-                          <SuppliersPage user={user} save={save} refresh={refresh} />
+                          <SuppliersPage
+                            user={user}
+                            save={save}
+                            refresh={refresh}
+                            items={items}
+                            isDark={isDark}
+                          />
                         )}
                         {page === "requests" && (
                           <RequestsPage

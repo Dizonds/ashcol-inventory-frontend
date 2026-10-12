@@ -1,0 +1,704 @@
+/* ==========================================================================
+   SUPPLIERS & VENDORS STYLES (FIGMA NODE 488:7791)
+   ========================================================================== */
+
+.suppliers-page-container {
+  width: 100%;
+  padding: 8px 12px 32px;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --- MAIN CARD --- */
+.suppliers-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.inventory-app.dark .suppliers-card {
+  background: #142018;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* --- CARD TOOLBAR / HEADER --- */
+.suppliers-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.suppliers-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.suppliers-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suppliers-title-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f0fbf0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #13c906;
+}
+
+.inventory-app.dark .suppliers-title-icon-badge {
+  background: rgba(19, 201, 6, 0.12);
+}
+
+.suppliers-card-title {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 28px;
+  color: #02081a;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .suppliers-card-title {
+  color: #f0f7f3;
+}
+
+/* Inset search bar (Node 457:15076) */
+.suppliers-search-box {
+  width: 360px;
+  max-width: 100%;
+  height: 48px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  box-shadow: inset 0px 0px 7.1px 0px rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .suppliers-search-box {
+  background: #1b2a21;
+  box-shadow: inset 0px 0px 7.1px 0px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.suppliers-search-box:focus-within {
+  border-color: #13c906;
+  box-shadow: inset 0px 0px 7.1px 0px rgba(19, 201, 6, 0.2), 0 0 0 2px rgba(19, 201, 6, 0.15);
+}
+
+.suppliers-search-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: #1e1e1e;
+  opacity: 0.44;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inventory-app.dark .suppliers-search-icon {
+  color: #c0d8cb;
+  opacity: 0.6;
+}
+
+.suppliers-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #02081a;
+}
+
+.inventory-app.dark .suppliers-search-input {
+  color: #e5f1ea;
+}
+
+.suppliers-search-input::placeholder {
+  color: #000000;
+  opacity: 0.44;
+}
+
+.inventory-app.dark .suppliers-search-input::placeholder {
+  color: #9cb8aa;
+  opacity: 0.55;
+}
+
+.suppliers-search-clear {
+  border: none;
+  background: transparent;
+  color: #888888;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.suppliers-search-clear:hover {
+  color: #333333;
+}
+
+/* Toolbar Right */
+.suppliers-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Filter Dropdown Button (Node 457:15080) */
+.suppliers-filter-btn {
+  height: 48px;
+  background: #f8f8f8;
+  border-radius: 16px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  user-select: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.inventory-app.dark .suppliers-filter-btn {
+  background: #1c2b22;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.suppliers-filter-btn:hover {
+  background: #ececec;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.inventory-app.dark .suppliers-filter-btn:hover {
+  background: #23352b;
+}
+
+.suppliers-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1e1e1e;
+}
+
+.inventory-app.dark .suppliers-filter-label {
+  color: #d8e8df;
+}
+
+.suppliers-filter-arrow {
+  color: #1e1e1e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.inventory-app.dark .suppliers-filter-arrow {
+  color: #b0ccbd;
+}
+
+/* Register Supplier Button (Node 457:15108) */
+.suppliers-register-btn {
+  height: 48px;
+  background: linear-gradient(180deg, #13c906 0%, #096303 100%);
+  border-radius: 12px;
+  padding: 0 20px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  cursor: pointer;
+  color: #f8f8f8;
+  font-family: 'Inter', sans-serif;
+  font-size: 15.5px;
+  font-weight: 500;
+  box-shadow: 0px 7px 12px rgba(19, 201, 6, 0.28), 0px 7px 8.5px rgba(0, 0, 0, 0.2);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.suppliers-register-btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0px 9px 16px rgba(19, 201, 6, 0.38), 0px 8px 10px rgba(0, 0, 0, 0.25);
+  filter: brightness(1.05);
+}
+
+.suppliers-register-btn:active {
+  transform: translateY(0);
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.suppliers-register-btn svg {
+  display: block;
+}
+
+/* --- TABLE CONTAINER & STYLES --- */
+.suppliers-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.suppliers-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.suppliers-table th {
+  padding: 16px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: rgba(0, 0, 0, 0.62);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.inventory-app.dark .suppliers-table th {
+  color: rgba(255, 255, 255, 0.6);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.suppliers-table th.text-center,
+.suppliers-table td.text-center {
+  text-align: center;
+}
+
+.suppliers-table td {
+  padding: 18px 14px;
+  height: 76px;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #1e1e1e;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  vertical-align: middle;
+  transition: background-color 0.18s ease;
+}
+
+.inventory-app.dark .suppliers-table td {
+  color: #dcece3;
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.suppliers-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.suppliers-table tbody tr:hover {
+  background-color: #f7faf7;
+}
+
+.inventory-app.dark .suppliers-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.supplier-name-cell {
+  font-weight: 500;
+  color: #02081a;
+  white-space: normal;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+.inventory-app.dark .supplier-name-cell {
+  color: #ffffff;
+}
+
+.supplier-contact-cell {
+  color: #1e1e1e;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .supplier-contact-cell {
+  color: #d2e4da;
+}
+
+.supplier-phone-cell {
+  color: #1e1e1e;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.inventory-app.dark .supplier-phone-cell {
+  color: #c2dcd0;
+}
+
+.supplier-email-cell {
+  color: #1e1e1e;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .supplier-email-cell {
+  color: #c2dcd0;
+}
+
+.supplier-terms-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #f1f7f2;
+  color: #006830;
+  font-weight: 600;
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .supplier-terms-badge {
+  background: rgba(19, 201, 6, 0.12);
+  color: #49e85c;
+}
+
+.supplier-address-cell {
+  color: #1e1e1e;
+  white-space: normal;
+  max-width: 240px;
+  line-height: 1.35;
+}
+
+.inventory-app.dark .supplier-address-cell {
+  color: #bed7cb;
+}
+
+/* --- ACTIONS BUTTONS (Node 457:15330) --- */
+.suppliers-action-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.suppliers-action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #7f807f;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.inventory-app.dark .suppliers-action-btn {
+  background: #19271e;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #9ab4a5;
+}
+
+.suppliers-action-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.suppliers-action-btn.view-btn:hover {
+  background: #f0fbf0;
+  color: #12a807;
+  border-color: #8be084;
+}
+
+.inventory-app.dark .suppliers-action-btn.view-btn:hover {
+  background: rgba(18, 168, 7, 0.18);
+  color: #49e85c;
+  border-color: #3cb84a;
+}
+
+.suppliers-action-btn.edit-btn:hover {
+  background: #f0fbf0;
+  color: #12a807;
+  border-color: #8be084;
+}
+
+.inventory-app.dark .suppliers-action-btn.edit-btn:hover {
+  background: rgba(18, 168, 7, 0.18);
+  color: #49e85c;
+  border-color: #3cb84a;
+}
+
+.suppliers-action-btn.delete-btn:hover {
+  background: #fff1f0;
+  color: #ff4d4f;
+  border-color: #ffa39e;
+}
+
+.inventory-app.dark .suppliers-action-btn.delete-btn:hover {
+  background: rgba(255, 77, 79, 0.18);
+  color: #ff7875;
+  border-color: #d32029;
+}
+
+/* --- PAGINATION (Node 457:15427) --- */
+.suppliers-pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding-top: 8px;
+}
+
+.suppliers-entries-info {
+  font-family: 'Lato', 'Inter', sans-serif;
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.5);
+  font-weight: 500;
+}
+
+.inventory-app.dark .suppliers-entries-info {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.suppliers-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suppliers-page-nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background: #f0f5f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #1e1e1e;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .suppliers-page-nav-btn {
+  background: #1c2b22;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #d6e8de;
+}
+
+.suppliers-page-nav-btn:hover:not(:disabled) {
+  border-color: #12a807;
+  color: #12a807;
+  background: #ffffff;
+}
+
+.inventory-app.dark .suppliers-page-nav-btn:hover:not(:disabled) {
+  background: #253a2e;
+}
+
+.suppliers-page-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.suppliers-page-num-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: 'Lato', 'Inter', sans-serif;
+  font-size: 15.5px;
+  font-weight: 500;
+  color: #000000;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .suppliers-page-num-btn {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #d6e8de;
+}
+
+.suppliers-page-num-btn:hover:not(.active) {
+  border-color: #12a807;
+  color: #12a807;
+}
+
+.suppliers-page-num-btn.active {
+  background: #12a807;
+  border-color: #12a807;
+  color: #fbfbfb;
+  font-weight: 600;
+}
+
+/* Empty state */
+.suppliers-empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.inventory-app.dark .suppliers-empty-state {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Modals */
+.suppliers-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.suppliers-modal-grid .full-width {
+  grid-column: span 2;
+}
+
+.suppliers-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #2e3e34;
+}
+
+.inventory-app.dark .suppliers-modal-field {
+  color: #bdd4c6;
+}
+
+.suppliers-modal-field input,
+.suppliers-modal-field select,
+.suppliers-modal-field textarea {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #d4ded7;
+  font-family: 'Inter', sans-serif;
+  font-size: 14.5px;
+  outline: none;
+  background: #ffffff;
+  color: #111b14;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inventory-app.dark .suppliers-modal-field input,
+.inventory-app.dark .suppliers-modal-field select,
+.inventory-app.dark .suppliers-modal-field textarea {
+  background: #1b2920;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e0ede7;
+}
+
+.suppliers-modal-field input:focus,
+.suppliers-modal-field select:focus,
+.suppliers-modal-field textarea:focus {
+  border-color: #12a807;
+  box-shadow: 0 0 0 3px rgba(18, 168, 7, 0.15);
+}
+
+.suppliers-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* View Modal Details Styling */
+.supplier-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.supplier-detail-header-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf2ed;
+}
+
+.inventory-app.dark .supplier-detail-header-block {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.supplier-detail-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #e9f8eb;
+  color: #12a807;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.supplier-detail-info-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px;
+  font-size: 14.5px;
+  align-items: baseline;
+}
+
+.supplier-detail-label {
+  font-weight: 600;
+  color: #6a7c72;
+}
+
+.inventory-app.dark .supplier-detail-label {
+  color: #8da396;
+}
+
+.supplier-detail-val {
+  color: #142018;
+  font-weight: 500;
+}
+
+.inventory-app.dark .supplier-detail-val {
+  color: #e2ede7;
+}
