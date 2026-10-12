@@ -1,0 +1,265 @@
+.ashcol-sidebar {
+  width: 280px;
+  min-width: 280px;
+  height: 100vh;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px 18px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+  border-right: 1px solid #edf2ed;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.inventory-app.dark .ashcol-sidebar {
+  background: #0e1813;
+  border-right-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* --- LOGO SECTION --- */
+.sidebar-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 10px 14px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.sidebar-brand-logo {
+  height: 53px;
+  width: 85px;
+  object-fit: contain;
+  filter: drop-shadow(0px 3px 4px rgba(0, 0, 0, 0.2));
+  flex-shrink: 0;
+}
+
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sidebar-brand-title {
+  font-family: 'Poppins', 'Urbanist', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 24px;
+  color: #006830;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.inventory-app.dark .sidebar-brand-title {
+  color: #38b849;
+}
+
+.sidebar-brand-sub {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  line-height: 16px;
+  color: #3ab44a;
+  letter-spacing: -0.1px;
+}
+
+.inventory-app.dark .sidebar-brand-sub {
+  color: #6ed37d;
+}
+
+/* --- DIVIDER --- */
+.sidebar-divider {
+  width: 100%;
+  height: 1px;
+  background: #edf2ed;
+  margin: 12px 0 10px;
+  flex-shrink: 0;
+}
+
+.inventory-app.dark .sidebar-divider {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* --- SCROLLABLE NAV BODY --- */
+.sidebar-nav-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+.sidebar-nav-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.inventory-app.dark .sidebar-nav-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-section-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #9a9a9a;
+  padding: 8px 12px 4px;
+  user-select: none;
+}
+
+.inventory-app.dark .sidebar-section-label {
+  color: #728277;
+}
+
+/* --- BUTTONS --- */
+.sidebar-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #497d49;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  text-decoration: none;
+  user-select: none;
+}
+
+.inventory-app.dark .sidebar-item-btn {
+  color: #8bb19b;
+}
+
+.sidebar-item-btn:hover {
+  background: #f4fbf4;
+  color: #12a807;
+}
+
+.inventory-app.dark .sidebar-item-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #42df64;
+}
+
+.sidebar-item-btn.active {
+  background: #e3ffe1;
+  color: #12a807;
+  font-weight: 600;
+}
+
+.inventory-app.dark .sidebar-item-btn.active {
+  background: #173e27;
+  color: #3ae058;
+}
+
+.sidebar-item-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.sidebar-item-icon svg {
+  display: block;
+}
+
+.sidebar-item-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- BOTTOM USER INFO --- */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  flex-shrink: 0;
+}
+
+.sidebar-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #f7faf7;
+  border: 1px solid #e8ede8;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.inventory-app.dark .sidebar-user-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.sidebar-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #3ab44a;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-user-meta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111b14;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inventory-app.dark .sidebar-user-name {
+  color: #e0ede7;
+}
+
+.sidebar-user-role {
+  font-size: 10px;
+  font-weight: 700;
+  color: #3ab44a;
+  letter-spacing: 0.5px;
+}

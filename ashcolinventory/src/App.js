@@ -21,6 +21,8 @@ import SettingsPage from "./components/SettingsPage";
 import CompatibilityLookupPage from "./components/CompatibilityLookupPage";
 import SuppliersPage from "./components/SuppliersPage";
 import ServiceVansPage from "./components/ServiceVansPage";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
 import {
   Widget5BoldDuotoneIcon,
   BoxBoldDuotoneIcon,
@@ -76,6 +78,7 @@ export default function App() {
   const [isDark, setIsDark] = useState(
     localStorage.getItem("ashcol_theme") === "dark",
   );
+  const [searchQuery, setSearchQuery] = useState("");
   const canManage = user && user.role !== "EMPLOYEE";
 
   useEffect(() => {
@@ -257,91 +260,37 @@ export default function App() {
         ) : (
           <>
             {/* SIDEBAR */}
-            <aside className="app-sidebar">
-              <div className="sidebar-logo">
-                <img src="/assets/ash-logo.jpg" alt="ASHCOL" />
-                <h2>ASHCOL</h2>
-              </div>
-
-              <div className="sidebar-section-title">NAVIGATION</div>
-
-              <nav className="app-nav" aria-label="Inventory navigation">
-                {navigation.map((entry) => (
-                  <button
-                    key={entry.id}
-                    className={`nav-btn ${page === entry.id ? "active" : ""}`}
-                    onClick={() => setPage(entry.id)}
-                    title={entry.label}
-                  >
-                    {entry.icon}
-                    <span>{entry.label}</span>
-                  </button>
-                ))}
-              </nav>
-
-              <div className="sidebar-bottom">
-                <div className="sidebar-section-title">USER ACCOUNT</div>
-                <div className="user-profile">
-                  <div className="user-avatar">{user.fullName.charAt(0)}</div>
-                  <div className="user-info">
-                    <strong>{user.fullName}</strong>
-                    <span>{user.role}</span>
-                  </div>
-                </div>
-                <div className="sidebar-actions">
-                  <button
-                    className="sidebar-action-btn"
-                    onClick={() => {
-                      setIsDark(!isDark);
-                      localStorage.setItem("ashcol_theme", !isDark ? "dark" : "light");
-                    }}
-                    title={isDark ? "Switch to Light mode" : "Switch to Dark mode"}
-                  >
-                    <span className="action-icon" style={{ fontSize: 16 }}>{isDark ? "☀️" : "🌙"}</span>
-                    <span className="btn-label">{isDark ? "Light mode" : "Dark mode"}</span>
-                  </button>
-                  <button className="sidebar-action-btn" onClick={logout} title="Log out">
-                    <span className="action-icon" style={{ fontSize: 16 }}>↩</span>
-                    <span className="btn-label">Log out</span>
-                  </button>
-                </div>
-              </div>
-            </aside>
+            <Sidebar
+              page={page}
+              setPage={setPage}
+              user={user}
+              canManage={canManage}
+              isDark={isDark}
+              setIsDark={setIsDark}
+              logout={logout}
+            />
 
             {/* MAIN CONTENT */}
             <main className="app-main">
-              <header className="main-header">
-                <h1>{navigation.find((n) => n.id === page)?.label || "Dashboard"}</h1>
-                <div className="branch-toolbar">
-                  <strong>Branch</strong>
-                  <Select
-                    aria-label="Current branch"
-                    value={branchId || undefined}
-                    style={{ minWidth: 200 }}
-                    disabled={user.role !== "ADMIN"}
-                    options={branches
-                      .filter((branch) => branch.branchType !== "SERVICE_VAN")
-                      .map((branch) => ({
-                        value: branch.id,
-                        label: (
-                          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <ShopBoldDuotoneIcon size={16} />
-                            {branch.name}
-                          </span>
-                        ),
-                      }))}
-                    onChange={(value) => {
-                      setBranchId(value);
-                      setItems([]);
-                      setRequests([]);
-                      setTargetId("");
-                    }}
-                  />
-                  <Button loading={loading} onClick={() => setRefresh(refresh + 1)}>
-                    Refresh
-                  </Button>
-                </div>
-              </header>
+              <Header
+                user={user}
+                branches={branches}
+                branchId={branchId}
+                setBranchId={(val) => {
+                  setBranchId(val);
+                  setItems([]);
+                  setRequests([]);
+                  setTargetId("");
+                }}
+                loading={loading}
+                setRefresh={setRefresh}
+                isDark={isDark}
+                setIsDark={setIsDark}
+                logout={logout}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                pendingCount={requests.filter((r) => r.status === "PENDING").length}
+              />
 
               <div className="main-content">
                 {error && (
@@ -403,7 +352,19 @@ export default function App() {
                         )}
                         {page === "inventory" && (
                           <InventorySection
-                            items={items}
+                            items={
+                              searchQuery
+                                ? items.filter(
+                                    (i) =>
+                                      (i.productName || i.name || "")
+                                        .toLowerCase()
+                                        .includes(searchQuery.toLowerCase()) ||
+                                      (i.sku || "")
+                                        .toLowerCase()
+                                        .includes(searchQuery.toLowerCase())
+                                  )
+                                : items
+                            }
                             brands={brands}
                             branches={branches}
                             user={user}
