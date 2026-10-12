@@ -102,13 +102,14 @@ const MOVEMENT_TYPES = [
   { value: "TRANSFER_OUT", label: "Transfer Out" },
   { value: "TRANSFER_IN", label: "Transfer In" },
   { value: "REQUEST_ISSUE", label: "Material Request Issue" },
+  { value: "JOB_CONSUMPTION", label: "Job Material Used" },
   { value: "OPENING", label: "Opening Balance" },
   { value: "DETAILS", label: "Details Update" },
   { value: "ARCHIVE", label: "Archive" },
   { value: "RESTORE", label: "Restore" },
 ];
 
-export default function MovementsPage({ branchId, refresh }) {
+export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -182,7 +183,13 @@ export default function MovementsPage({ branchId, refresh }) {
     if (t.includes("TRANSFER_OUT") || t === "TRANSFER OUT") {
       return <span className="movement-badge transfer-out">Transfer Out</span>;
     }
-    if (t.includes("STOCK_OUT") || t === "STOCK OUT" || t.includes("REQUEST") || t === "ARCHIVE") {
+    if (
+      t.includes("STOCK_OUT") ||
+      t === "STOCK OUT" ||
+      t.includes("REQUEST") ||
+      t.includes("CONSUMPTION") ||
+      t === "ARCHIVE"
+    ) {
       return <span className="movement-badge stock-out">Stock Out</span>;
     }
     if (t.includes("TRANSFER_IN") || t === "TRANSFER IN") {
@@ -190,6 +197,13 @@ export default function MovementsPage({ branchId, refresh }) {
     }
     const label = rawType ? rawType.replace(/_/g, " ") : "Movement";
     return <span className="movement-badge default">{label}</span>;
+  };
+
+  const locationLabel = (locationId) => {
+    if (locationId === "LOCAL-WAREHOUSE") return "Taguig Warehouse";
+    const van = serviceVans.find((item) => item.id === locationId);
+    if (!van) return locationId || "—";
+    return `${van.name}${van.plateNumber ? ` (${van.plateNumber})` : ""}`;
   };
 
   // Pagination calculation matching Figma
@@ -324,7 +338,8 @@ export default function MovementsPage({ branchId, refresh }) {
               <thead>
                 <tr>
                   <th style={{ width: "13%" }} data-node-id="458:15908">TIMESTAMP</th>
-                  <th style={{ width: "20%" }} data-node-id="458:15924">INVENTORY ITEM</th>
+                  <th style={{ width: "16%" }} data-node-id="458:15924">INVENTORY ITEM</th>
+                  <th style={{ width: "12%" }}>LOCATION</th>
                   <th style={{ width: "11%" }} data-node-id="458:15945">MOVEMENT TYPE</th>
                   <th style={{ width: "10%" }} data-node-id="458:15966">QUANTITY</th>
                   <th style={{ width: "11%" }} data-node-id="458:15987">STOCK BALANCE</th>
@@ -336,7 +351,7 @@ export default function MovementsPage({ branchId, refresh }) {
               <tbody>
                 {rows.length === 0 && !loading ? (
                   <tr>
-                    <td colSpan={8} className="stock-ledger-empty">
+                    <td colSpan={9} className="stock-ledger-empty">
                       No stock movement transactions found matching your criteria.
                     </td>
                   </tr>
@@ -366,6 +381,11 @@ export default function MovementsPage({ branchId, refresh }) {
                               </span>
                             )}
                           </div>
+                        </td>
+
+                        {/* LOCATION */}
+                        <td>
+                          {locationLabel(entry.branchId)}
                         </td>
 
                         {/* MOVEMENT TYPE */}

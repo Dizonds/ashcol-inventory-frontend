@@ -66,6 +66,8 @@ export default function App() {
   const [checking, setChecking] = useState(true);
   const [page, setPage] = useState("dashboard");
   const [serviceVans, setServiceVans] = useState([]);
+  // The main inventory view is the fixed Taguig warehouse for every role.
+  // Employee-specific van access is handled inside Service Vehicles.
   const branchId = TAGUIG_WAREHOUSE.id;
   const [items, setItems] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -194,6 +196,7 @@ export default function App() {
       .then(() => {
         sessionStorage.removeItem("ashcol_inventory_token");
         setUser(null);
+        setServiceVans([]);
         setItems([]);
         setRequests([]);
         setDataReady(false);
@@ -413,7 +416,11 @@ export default function App() {
                           />
                         )}
                         {page === "movements" && (
-                          <MovementsPage branchId={branchId} refresh={refresh} />
+                          <MovementsPage
+                            branchId={branchId}
+                            refresh={refresh}
+                            serviceVans={serviceVans}
+                          />
                         )}
                         {page === "user_management" && user.role === "ADMIN" && (
                           <SettingsPage

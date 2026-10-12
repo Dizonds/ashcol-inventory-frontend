@@ -8,6 +8,7 @@ import {
   Modal,
   Input,
   InputNumber,
+  Checkbox,
   Space,
   Typography,
   Alert,
@@ -33,6 +34,13 @@ export default function ServiceVansPage({
   const [unloadQty, setUnloadQty] = useState(1);
   const [unloadBusy, setUnloadBusy] = useState(false);
   const [unloadError, setUnloadError] = useState("");
+  const [unloadOverride, setUnloadOverride] = useState(false);
+  const [consumeItem, setConsumeItem] = useState(null);
+  const [consumeQty, setConsumeQty] = useState(1);
+  const [consumeWorkOrder, setConsumeWorkOrder] = useState("");
+  const [consumeNotes, setConsumeNotes] = useState("");
+  const [consumeBusy, setConsumeBusy] = useState(false);
+  const [consumeError, setConsumeError] = useState("");
   const [newVanModal, setNewVanModal] = useState(false);
   const [newVanId, setNewVanId] = useState("");
   const [newVanName, setNewVanName] = useState("");
@@ -47,11 +55,25 @@ export default function ServiceVansPage({
   const currentVan = localServiceVans.find((v) => v.id === selectedVanId);
 
   useEffect(() => {
+    // Preserve the user's current vehicle when the parent refreshes the list
+    // after a status/driver update. Previously the list refresh could fall
+    // back to the first vehicle (often Bravo) while the selected update was
+    // still being applied.
+    if (serviceVans.length === 0) return;
     setLocalServiceVans(serviceVans);
+    setSelectedVanId((currentId) =>
+      currentId && serviceVans.some((van) => van.id === currentId)
+        ? currentId
+        : serviceVans[0]?.id || "",
+    );
   }, [serviceVans]);
 
   useEffect(() => {
-    if (!localServiceVans.some((van) => van.id === selectedVanId)) {
+    if (
+      selectedVanId &&
+      localServiceVans.length > 0 &&
+      !localServiceVans.some((van) => van.id === selectedVanId)
+    ) {
       setSelectedVanId(localServiceVans[0]?.id || "");
     }
   }, [localServiceVans, selectedVanId]);
@@ -86,8 +108,6 @@ export default function ServiceVansPage({
     };
   }, [selectedVanId, refresh]);
 
-  const [assigningDriver, setAssigningDriver] = useState(false);
-  const [driverInput, setDriverInput] = useState("");
   const [usersList, setUsersList] = useState([]);
 
   useEffect(() => {
@@ -152,15 +172,21 @@ export default function ServiceVansPage({
       });
   }
 
-  function handleAssignDriver() {
+  function handleDriverChange(driverId) {
     save(
       "patch",
       `/service-vans/${selectedVanId}/driver`,
-      { driverId: driverInput },
+      { driverId: driverId || "" },
       "Assigned driver/technician updated.",
+      undefined,
+      { refresh: false },
     )
-      .then(() => setAssigningDriver(false))
-      .catch(() => {});
+      .then((updatedVan) => {
+        setLocalServiceVans((current) =>
+          current.map((van) => (van.id === updatedVan.id ? updatedVan : van)),
+        );
+      })
+      .catch((err) => setError(errorMessage(err)));
   }
 
   const columns = [
@@ -186,6 +212,7 @@ export default function ServiceVansPage({
                   setUnloadItem(item);
                   setUnloadQty(1);
                   setUnloadError("");
+                  setUnloadOverride(false);
                 }}
               >
                 📥 Return to Warehouse
@@ -193,7 +220,26 @@ export default function ServiceVansPage({
             ),
           },
         ]
-      : []),
+      : [
+          {
+            title: "Actions",
+            render: (_, item) => (
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => {
+                  setConsumeItem(item);
+                  setConsumeQty(1);
+                  setConsumeWorkOrder("");
+                  setConsumeNotes("");
+                  setConsumeError("");
+                }}
+              >
+                Record Material Used
+              </Button>
+            ),
+          },
+        ]),
   ];
 
   return (
@@ -201,8 +247,8 @@ export default function ServiceVansPage({
       title={<span style={{ display: "flex", alignItems: "center", gap: 8 }}><BusBoldDuotoneIcon size={22} /> Mobile Service Vehicles Inventory & Field Tracking</span>}
       extra={
         <Space wrap>
-          <strong>Select Vehicle:</strong>
-          <Select
+          {canManage && <strong>Select Vehicle:</strong>}
+          {canManage && <Select
             value={selectedVanId || undefined}
             onChange={setSelectedVanId}
             style={{ minWidth: 260 }}
@@ -215,7 +261,7 @@ export default function ServiceVansPage({
                 </span>
               ),
             }))}
-          />
+          />}
           {isAdmin && (
             <Button
               type="primary"
@@ -261,46 +307,32 @@ export default function ServiceVansPage({
             </div>
             <div>
               <Typography.Text type="secondary">Assigned Driver / Lead Tech: </Typography.Text>
-              {assigningDriver ? (
+              {canManage ? (
                 <Space style={{ marginTop: 4 }}>
                   <Select
                     showSearch
-                    placeholder="Choose technician"
-                    style={{ minWidth: 200 }}
-                    value={driverInput || undefined}
-                    onChange={setDriverInput}
+                    allowClear
+                    placeholder="No Driver Assigned"
+                    style={{ minWidth: 240 }}
+                    value={currentVan.driverId || undefined}
+                    onChange={handleDriverChange}
+                    disabled={["ON_FIELD", "ARRIVED"].includes(currentVan.status)}
                      options={availableDrivers.map((u) => ({
                        value: u.id || u._id,
                       label: `${u.fullName} (${u.role})`,
                     }))}
                   />
-                  <Button size="small" type="primary" onClick={handleAssignDriver}>
-                    Save
-                  </Button>
-                  <Button size="small" onClick={() => setAssigningDriver(false)}>
-                    Cancel
-                  </Button>
+                  {["ON_FIELD", "ARRIVED"].includes(currentVan.status) && (
+                    <Typography.Text type="secondary">
+                      Driver locked after dispatch/site arrival
+                    </Typography.Text>
+                  )}
                 </Space>
               ) : (
                 <Space>
                   <Tag color="geekblue">
                     👤 {currentVan.driverName || "No Driver Assigned"}
                   </Tag>
-                  {canManage && (
-                    <Button
-                      size="small"
-                      type="link"
-                      onClick={() => {
-                         const selectedDriver = usersList.find((candidate) =>
-                           currentDriverMatches(candidate),
-                         );
-                         setDriverInput(selectedDriver?.id || selectedDriver?._id || "");
-                        setAssigningDriver(true);
-                      }}
-                    >
-                      Change
-                    </Button>
-                  )}
                 </Space>
               )}
             </div>
@@ -339,6 +371,111 @@ export default function ServiceVansPage({
         />
       )}
 
+      {/* Record material used modal */}
+      <Modal
+        open={Boolean(consumeItem)}
+        title={consumeItem ? `Record Material Used: ${consumeItem.name}` : ""}
+        onCancel={() => setConsumeItem(null)}
+        footer={null}
+        destroyOnClose
+      >
+        {consumeItem && (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              setConsumeBusy(true);
+              setConsumeError("");
+              save(
+                "post",
+                `/service-vans/${selectedVanId}/consume`,
+                {
+                  productId: consumeItem.id,
+                  quantity: consumeQty,
+                  workOrderId: consumeWorkOrder,
+                  notes: consumeNotes,
+                },
+                "Material usage recorded successfully.",
+                undefined,
+                { refresh: false },
+              )
+                .then((updatedItem) => {
+                  setVanItems((current) =>
+                    current
+                      .map((item) =>
+                        item.id === updatedItem.id ? updatedItem : item,
+                      )
+                      .filter((item) => item.quantity > 0),
+                  );
+                  setConsumeItem(null);
+                })
+                .catch((err) => setConsumeError(errorMessage(err)))
+                .finally(() => setConsumeBusy(false));
+            }}
+          >
+            {consumeError && (
+              <Alert
+                type="error"
+                showIcon
+                message={consumeError}
+                style={{ marginBottom: 12 }}
+              />
+            )}
+            <Typography.Text type="secondary">
+              Available: {consumeItem.quantity} {consumeItem.unitOfMeasure}
+            </Typography.Text>
+            <label className="field" style={{ display: "block", marginTop: 12 }}>
+              Job / Work Order
+              <Input
+                required
+                value={consumeWorkOrder}
+                onChange={(event) => setConsumeWorkOrder(event.target.value)}
+                placeholder="e.g. JOB-2026-001"
+                style={{ marginTop: 4 }}
+              />
+            </label>
+            <label className="field" style={{ display: "block", marginTop: 12 }}>
+              Quantity Used ({consumeItem.unitOfMeasure})
+              <InputNumber
+                required
+                min={consumeItem.unitOfMeasure === "UNIT" ? 1 : 0.001}
+                max={consumeItem.quantity}
+                step={consumeItem.unitOfMeasure === "UNIT" ? 1 : 0.1}
+                precision={consumeItem.unitOfMeasure === "UNIT" ? 0 : 3}
+                value={consumeQty}
+                onChange={setConsumeQty}
+                style={{ width: "100%", marginTop: 4 }}
+              />
+            </label>
+            <label className="field" style={{ display: "block", marginTop: 12 }}>
+              Notes
+              <Input.TextArea
+                required
+                value={consumeNotes}
+                onChange={(event) => setConsumeNotes(event.target.value)}
+                placeholder="Describe where the material was used"
+                rows={3}
+                style={{ marginTop: 4 }}
+              />
+            </label>
+            <Space style={{ width: "100%", justifyContent: "flex-end", marginTop: 16 }}>
+              <Button onClick={() => setConsumeItem(null)}>Cancel</Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={consumeBusy}
+                disabled={
+                  consumeQty <= 0 ||
+                  !consumeWorkOrder.trim() ||
+                  !consumeNotes.trim()
+                }
+              >
+                Record Usage
+              </Button>
+            </Space>
+          </form>
+        )}
+      </Modal>
+
       {/* Unload modal */}
       <Modal
         open={Boolean(unloadItem)}
@@ -361,7 +498,10 @@ export default function ServiceVansPage({
                   destinationId: branchId,
                   productId: unloadItem.id,
                   quantity: unloadQty,
-                  reason: `Van Return to Taguig Warehouse ${branchId}`,
+                   reason: unloadOverride
+                     ? `Emergency: Van Return to Taguig Warehouse ${branchId}`
+                     : `Van Return to Taguig Warehouse ${branchId}`,
+                   overrideOnField: unloadOverride,
                 },
                 `Returned ${unloadQty} ${unloadItem.unitOfMeasure} of ${unloadItem.name} back to warehouse stock.`,
               )
@@ -394,6 +534,15 @@ export default function ServiceVansPage({
                 </strong>
               </Typography.Text>
             </div>
+            {currentVan?.status === "ON_FIELD" && (
+              <Checkbox
+                checked={unloadOverride}
+                onChange={(event) => setUnloadOverride(event.target.checked)}
+                style={{ marginBottom: 16 }}
+              >
+                Emergency override: unload while vehicle is on field
+              </Checkbox>
+            )}
             <label className="field" style={{ display: "block", marginBottom: 16 }}>
               Quantity to Return ({unloadItem.unitOfMeasure})
               <InputNumber
@@ -424,7 +573,10 @@ export default function ServiceVansPage({
                 type="primary"
                 htmlType="submit"
                 loading={unloadBusy}
-                disabled={unloadQty <= 0}
+                disabled={
+                  unloadQty <= 0 ||
+                  (currentVan?.status === "ON_FIELD" && !unloadOverride)
+                }
               >
                 Confirm Return to Warehouse
               </Button>

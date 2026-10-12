@@ -35,7 +35,12 @@ export default function LoginPage({ onLogin, initialError }) {
     setBusy(true);
     setError("");
     const cleanEmail = email.trim();
-    const cleanPassword = password.trim();
+    const cleanPassword = password;
+    if (/\s/.test(cleanPassword)) {
+      setError("Password cannot contain spaces.");
+      setBusy(false);
+      return;
+    }
     api("post", "/auth/login", { email: cleanEmail, password: cleanPassword })
       .then(({ data }) => {
         sessionStorage.setItem("ashcol_inventory_token", data.token);
