@@ -340,6 +340,7 @@ export default function App() {
                             requests={requests}
                             branchId={branchId}
                             canManage={canManage}
+                            user={user}
                             onRestockItem={(id) => {
                               setTargetId(id);
                               setPage("post_movement");
