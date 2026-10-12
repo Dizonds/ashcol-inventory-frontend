@@ -112,21 +112,7 @@ function ChevronDownIcon() {
   );
 }
 
-// 12 Months sales dot matrix config (matching Figma columns distribution)
-const MONTHS_DATA = [
-  { month: "Jan", dots: [10, 8, 4], amount: "$32,450" },
-  { month: "Feb", dots: [8, 3, 11], amount: "$28,120" },
-  { month: "Mar", dots: [13, 8, 11], amount: "$44,800" },
-  { month: "Apr", dots: [8, 13, 8], amount: "$39,200" },
-  { month: "May", dots: [5, 8, 11], amount: "$29,950" },
-  { month: "Jun", dots: [12, 13, 10], amount: "$49,150" },
-  { month: "Jul", dots: [8, 12, 12], amount: "$42,600" },
-  { month: "Aug", dots: [13, 8, 12], amount: "$46,300" },
-  { month: "Sept", dots: [11, 8, 11], amount: "$38,400" },
-  { month: "Oct", dots: [9, 11, 10], amount: "$37,250" },
-  { month: "Nov", dots: [8, 11, 9], amount: "$35,900" },
-  { month: "Dec", dots: [6, 6, 6], amount: "$24,500" },
-];
+
 
 export default function DashboardPage({
   items = [],
@@ -161,10 +147,6 @@ export default function DashboardPage({
     (item) => item.quantity > 0 && item.quantity <= item.reorderLevel
   );
   const out = items.filter((item) => item.quantity === 0);
-  const high = items.filter(
-    (item) =>
-      item.quantity > (item.reorderLevel > 0 ? item.reorderLevel * 4 : 20)
-  );
   const warnings = items.filter((item) => item.quantity <= item.reorderLevel);
   const cost = items.reduce(
     (sum, item) => sum + item.unitCost * item.quantity,

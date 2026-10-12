@@ -1,0 +1,603 @@
+/* ==========================================================================
+   FIGMA STOCK LEDGER STYLES (NODES: 488:4982, 458:15860, 458:15886)
+   ========================================================================== */
+
+.stock-ledger-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+}
+
+/* 1. Header Title & Subtitle (Node 458:15860) */
+.stock-ledger-header-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stock-ledger-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #02081a;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.inventory-app.dark .stock-ledger-title {
+  color: #e2ede7;
+}
+
+.stock-ledger-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 14.5px;
+  color: #02081a;
+  opacity: 0.55;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.inventory-app.dark .stock-ledger-subtitle {
+  color: #8bb09c;
+  opacity: 0.8;
+}
+
+/* 2. Main Card Container (Node 458:15886) */
+.stock-ledger-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.inventory-app.dark .stock-ledger-card {
+  background: #13221a;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 3. Toolbar (Node 458:15887) */
+.stock-ledger-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stock-ledger-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.stock-ledger-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stock-ledger-list-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e2ffe0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #12a807;
+}
+
+.inventory-app.dark .stock-ledger-list-icon-badge {
+  background: rgba(18, 168, 7, 0.16);
+  color: #3ae058;
+}
+
+.stock-ledger-section-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 22px;
+  color: #02081a;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .stock-ledger-section-title {
+  color: #e2ede7;
+}
+
+/* Search Box (Node 458:15893) */
+.stock-ledger-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0px 0px 7.1px rgba(0, 0, 0, 0.14);
+  border-radius: 16px;
+  padding: 10px 16px;
+  width: 380px;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .stock-ledger-search-wrap {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0px 0px 7.1px rgba(0, 0, 0, 0.3);
+}
+
+.stock-ledger-search-wrap:focus-within {
+  border-color: #12a807;
+  box-shadow: 0 0 0 3px rgba(18, 168, 7, 0.12);
+}
+
+.stock-ledger-search-icon {
+  color: #6b7280;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.inventory-app.dark .stock-ledger-search-icon {
+  color: #9ca3af;
+}
+
+.stock-ledger-search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 15px;
+  color: #02081a;
+  font-family: inherit;
+}
+
+.inventory-app.dark .stock-ledger-search-input {
+  color: #e2ede7;
+}
+
+.stock-ledger-search-input::placeholder {
+  color: rgba(0, 0, 0, 0.44);
+}
+
+.inventory-app.dark .stock-ledger-search-input::placeholder {
+  color: rgba(226, 237, 231, 0.44);
+}
+
+/* Filter Dropdown Pill (Node 458:15897) */
+.stock-ledger-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock-ledger-filter-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8f8f8;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 10px 16px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #02081a;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.inventory-app.dark .stock-ledger-filter-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #e2ede7;
+}
+
+.stock-ledger-filter-pill:hover {
+  background: #f0f0f0;
+  border-color: rgba(18, 168, 7, 0.3);
+}
+
+.inventory-app.dark .stock-ledger-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.stock-ledger-filter-icon {
+  display: flex;
+  align-items: center;
+  color: #4b5563;
+}
+
+.inventory-app.dark .stock-ledger-filter-icon {
+  color: #9ca3af;
+}
+
+.stock-ledger-filter-select {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #02081a;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 4px;
+}
+
+.inventory-app.dark .stock-ledger-filter-select {
+  color: #e2ede7;
+  background: #13221a;
+}
+
+.stock-ledger-filter-select option {
+  background: #ffffff;
+  color: #02081a;
+}
+
+.inventory-app.dark .stock-ledger-filter-select option {
+  background: #1a2c22;
+  color: #e2ede7;
+}
+
+/* 4. Table Styling (Node 458:15905) */
+.stock-ledger-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.stock-ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.stock-ledger-table thead tr th {
+  background: transparent;
+  color: rgba(0, 0, 0, 0.62);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 16px 14px;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .stock-ledger-table thead tr th {
+  color: rgba(226, 237, 231, 0.62);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.stock-ledger-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.stock-ledger-table tbody tr td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 16px 14px;
+  font-size: 14.5px;
+  color: #1e1e1e;
+  vertical-align: middle;
+}
+
+.inventory-app.dark .stock-ledger-table tbody tr td {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  color: #e2ede7;
+}
+
+.stock-ledger-table tbody tr:hover td {
+  background: rgba(18, 168, 7, 0.03);
+}
+
+.inventory-app.dark .stock-ledger-table tbody tr:hover td {
+  background: rgba(18, 168, 7, 0.08);
+}
+
+/* Cell specifics */
+.ledger-cell-timestamp {
+  font-weight: 500;
+  color: #1e1e1e;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .ledger-cell-timestamp {
+  color: #d1d5db;
+}
+
+.ledger-cell-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 220px;
+}
+
+.ledger-item-name {
+  font-weight: 600;
+  color: #1e1e1e;
+  line-height: 1.35;
+}
+
+.inventory-app.dark .ledger-item-name {
+  color: #f3f4f6;
+}
+
+.ledger-item-sku {
+  font-size: 12.5px;
+  color: #6b7280;
+  font-family: monospace;
+}
+
+.inventory-app.dark .ledger-item-sku {
+  color: #9ca3af;
+}
+
+/* Movement Type Badges (Figma Exact) */
+.movement-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.movement-badge.stock-in {
+  background: #e9ffe8;
+  color: #006830;
+  border: 1px solid #bbf7d0;
+}
+
+.inventory-app.dark .movement-badge.stock-in {
+  background: rgba(18, 168, 7, 0.16);
+  color: #3ae058;
+  border-color: rgba(18, 168, 7, 0.3);
+}
+
+.movement-badge.transfer-out {
+  background: #ffefdd;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.inventory-app.dark .movement-badge.transfer-out {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.movement-badge.stock-out {
+  background: #ffe5e5;
+  color: #66120a;
+  border: 1px solid #fecaca;
+}
+
+.inventory-app.dark .movement-badge.stock-out {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.movement-badge.transfer-in {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.inventory-app.dark .movement-badge.transfer-in {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.movement-badge.default {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.inventory-app.dark .movement-badge.default {
+  background: rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Quantity Cell */
+.ledger-cell-qty {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ledger-cell-qty.positive {
+  color: #006830;
+}
+
+.inventory-app.dark .ledger-cell-qty.positive {
+  color: #3ae058;
+}
+
+.ledger-cell-qty.negative {
+  color: #66120a;
+}
+
+.inventory-app.dark .ledger-cell-qty.negative {
+  color: #f87171;
+}
+
+/* Stock Balance Cell */
+.ledger-cell-balance {
+  font-weight: 500;
+  color: #1e1e1e;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .ledger-cell-balance {
+  color: #e2ede7;
+}
+
+/* Processed By Cell */
+.ledger-cell-actor {
+  color: #1e1e1e;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .ledger-cell-actor {
+  color: #e2ede7;
+}
+
+/* Reference ID Pill */
+.ledger-ref-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: monospace;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .ledger-ref-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #d1d5db;
+}
+
+/* Remarks Cell */
+.ledger-cell-remarks {
+  color: #4b5563;
+  max-width: 260px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.inventory-app.dark .ledger-cell-remarks {
+  color: #9ca3af;
+}
+
+/* 5. Custom Pagination (Node 458:16080) */
+.stock-ledger-pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+}
+
+.stock-ledger-pagination-info {
+  font-family: 'Lato', 'Inter', sans-serif;
+  font-size: 14.5px;
+  color: #000000;
+  opacity: 0.55;
+}
+
+.inventory-app.dark .stock-ledger-pagination-info {
+  color: #8bb09c;
+  opacity: 0.8;
+}
+
+.stock-ledger-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock-ledger-page-btn,
+.stock-ledger-arrow-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Lato', 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.inventory-app.dark .stock-ledger-page-btn,
+.inventory-app.dark .stock-ledger-arrow-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #e2ede7;
+}
+
+.stock-ledger-arrow-btn {
+  background: #f0f5f8;
+}
+
+.inventory-app.dark .stock-ledger-arrow-btn {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stock-ledger-page-btn:hover:not(.active),
+.stock-ledger-arrow-btn:hover:not(:disabled) {
+  border-color: #12a807;
+  color: #12a807;
+}
+
+.stock-ledger-arrow-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stock-ledger-page-btn.active {
+  background: #12a807;
+  border-color: #12a807;
+  color: #fbfbfb !important;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(18, 168, 7, 0.3);
+}
+
+/* Empty / Loading states */
+.stock-ledger-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.inventory-app.dark .stock-ledger-empty {
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stock-ledger-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stock-ledger-toolbar-left,
+  .stock-ledger-toolbar-right {
+    justify-content: space-between;
+  }
+  .stock-ledger-search-wrap {
+    width: 100%;
+  }
+}
