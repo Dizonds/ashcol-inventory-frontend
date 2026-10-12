@@ -210,18 +210,15 @@ export default function Sidebar({
   setPage,
   user,
   canManage,
-  isDark,
-  setIsDark,
-  logout,
 }) {
   const operations = [
-    { id: "inventory", label: "Inventory Catalog", icon: <InventoryIcon />, nodeId: "441:3952" },
-    { id: "requests", label: "Material Requests", icon: <RequestsIcon />, nodeId: "441:3954" },
-    ...(canManage ? [{ id: "post_movement", label: "Post Movement", icon: <PostMovementIcon />, nodeId: "441:3956" }] : []),
-    { id: "movements", label: "Stock Ledger", icon: <StockLedgerIcon />, nodeId: "441:3959" },
-    { id: "service_vehicles", label: "Service Vehicles", icon: <ServiceVehiclesIcon />, nodeId: "441:3958" },
-    { id: "compatibility", label: "Model Matching", icon: <ModelMatchingIcon />, nodeId: "441:3962" },
-    { id: "suppliers", label: "Suppliers & Vendors", icon: <SuppliersIcon />, nodeId: "441:3964" },
+    { id: "inventory", label: "Inventory Catalog", icon: <InventoryIcon />, nodeId: "488:5002" },
+    { id: "requests", label: "Material Requests", icon: <RequestsIcon />, nodeId: "488:5009" },
+    ...(canManage ? [{ id: "post_movement", label: "Post Movement", icon: <PostMovementIcon />, nodeId: "488:5011" }] : []),
+    { id: "movements", label: "Stock Ledger", icon: <StockLedgerIcon />, nodeId: "488:5028" },
+    { id: "service_vehicles", label: "Service Vehicles", icon: <ServiceVehiclesIcon />, nodeId: "488:5013" },
+    { id: "compatibility", label: "Model Matching", icon: <ModelMatchingIcon />, nodeId: "488:5016" },
+    { id: "suppliers", label: "Suppliers & Vendors", icon: <SuppliersIcon />, nodeId: "488:5018" },
   ];
 
   const adminOther = user && user.role === "ADMIN" ? [
@@ -229,20 +226,20 @@ export default function Sidebar({
   ] : [];
 
   return (
-    <aside className="ashcol-sidebar" data-node-id="441:3922">
+    <aside className="ashcol-sidebar" data-node-id="488:4982">
       {/* Brand Header */}
-      <div className="sidebar-brand-header" data-node-id="441:3926">
+      <div className="sidebar-brand-header" data-node-id="488:4985">
         <img
           src={ashcolLogo}
           alt="ASHCOL Logo"
           className="sidebar-brand-logo"
-          data-node-id="441:3927"
+          data-node-id="488:4986"
         />
         <div className="sidebar-brand-text">
-          <h2 className="sidebar-brand-title" data-node-id="441:3930">
+          <h2 className="sidebar-brand-title" data-node-id="488:4989">
             ASHCOL
           </h2>
-          <span className="sidebar-brand-sub" data-node-id="441:3932">
+          <span className="sidebar-brand-sub" data-node-id="488:4991">
             Smart Stock Tracking
           </span>
         </div>
@@ -251,29 +248,29 @@ export default function Sidebar({
       <div className="sidebar-nav-container">
         {/* Main Menu Section */}
         <div className="sidebar-section">
-          <div className="sidebar-section-label" data-node-id="441:3933">
+          <div className="sidebar-section-label" data-node-id="488:4992">
             Main Menu
           </div>
           <button
             type="button"
             className={`sidebar-item-btn ${page === "dashboard" ? "active" : ""}`}
             onClick={() => setPage("dashboard")}
-            data-node-id="441:3936"
+            data-node-id="488:4995"
           >
             <span className="sidebar-item-icon">
               <OverviewIcon />
             </span>
-            <span className="sidebar-item-text" data-node-id="441:3939">
+            <span className="sidebar-item-text" data-node-id="488:4998">
               Overview
             </span>
           </button>
         </div>
 
-        <div className="sidebar-divider" data-node-id="441:3925" />
+        <div className="sidebar-divider" data-node-id="488:4984" />
 
         {/* Operations Section */}
         <div className="sidebar-section">
-          <div className="sidebar-section-label" data-node-id="441:3934">
+          <div className="sidebar-section-label" data-node-id="488:4993">
             Operations
           </div>
           {operations.map((item) => (
@@ -290,76 +287,32 @@ export default function Sidebar({
           ))}
         </div>
 
-        <div className="sidebar-divider" data-node-id="441:3924" />
-
-        {/* Other Section */}
-        <div className="sidebar-section">
-          <div className="sidebar-section-label" data-node-id="441:3935">
-            Other
-          </div>
-          {adminOther.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`sidebar-item-btn ${page === item.id ? "active" : ""}`}
-              onClick={() => setPage(item.id)}
-              data-node-id={item.nodeId}
-            >
-              <span className="sidebar-item-icon">{item.icon}</span>
-              <span className="sidebar-item-text">{item.label}</span>
-            </button>
-          ))}
-
-          {/* Dark Mode Toggle */}
-          <button
-            type="button"
-            className="sidebar-item-btn"
-            onClick={() => {
-              const nextMode = !isDark;
-              setIsDark(nextMode);
-              localStorage.setItem("ashcol_theme", nextMode ? "dark" : "light");
-            }}
-            data-node-id="441:3969"
-          >
-            <span className="sidebar-item-icon">
-              {isDark ? <SunIcon /> : <MoonIcon />}
-            </span>
-            <span className="sidebar-item-text" data-node-id="441:3970">
-              {isDark ? "Light Mode" : "Dark Mode"}
-            </span>
-          </button>
-
-          {/* Log Out */}
-          <button
-            type="button"
-            className="sidebar-item-btn"
-            onClick={logout}
-            data-node-id="441:3971"
-          >
-            <span className="sidebar-item-icon">
-              <LogoutIcon />
-            </span>
-            <span className="sidebar-item-text" data-node-id="441:3972">
-              Log Out
-            </span>
-          </button>
-        </div>
+        {/* Other Section (Admin only) */}
+        {adminOther.length > 0 && (
+          <>
+            <div className="sidebar-divider" data-node-id="488:4983" />
+            <div className="sidebar-section">
+              <div className="sidebar-section-label" data-node-id="488:4994">
+                Other
+              </div>
+              {adminOther.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`sidebar-item-btn ${page === item.id ? "active" : ""}`}
+                  onClick={() => setPage(item.id)}
+                  data-node-id={item.nodeId}
+                >
+                  <span className="sidebar-item-icon">{item.icon}</span>
+                  <span className="sidebar-item-text">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
-
-      {/* User Info Card */}
-      {user && (
-        <div className="sidebar-footer">
-          <div className="sidebar-user-card">
-            <div className="sidebar-user-avatar">
-              {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
-            </div>
-            <div className="sidebar-user-meta">
-              <span className="sidebar-user-name">{user.fullName}</span>
-              <span className="sidebar-user-role">{user.role}</span>
-            </div>
-          </div>
-        </div>
-      )}
     </aside>
   );
 }
+
+

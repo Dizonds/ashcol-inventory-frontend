@@ -263,9 +263,6 @@ export default function App() {
               setPage={setPage}
               user={user}
               canManage={canManage}
-              isDark={isDark}
-              setIsDark={setIsDark}
-              logout={logout}
             />
 
             {/* MAIN CONTENT */}
