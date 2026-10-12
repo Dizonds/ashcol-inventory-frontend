@@ -40,16 +40,21 @@ export default function ServiceVansPage({
   const [newVanDriver, setNewVanDriver] = useState("");
   const [newVanBusy, setNewVanBusy] = useState(false);
   const [newVanError, setNewVanError] = useState("");
+  const [localServiceVans, setLocalServiceVans] = useState(serviceVans);
   const canManage = user?.role !== "EMPLOYEE";
   const isAdmin = user?.role === "ADMIN";
 
-  const currentVan = serviceVans.find((v) => v.id === selectedVanId);
+  const currentVan = localServiceVans.find((v) => v.id === selectedVanId);
 
   useEffect(() => {
-    if (!selectedVanId && serviceVans.length > 0) {
-      setSelectedVanId(serviceVans[0].id);
+    setLocalServiceVans(serviceVans);
+  }, [serviceVans]);
+
+  useEffect(() => {
+    if (!localServiceVans.some((van) => van.id === selectedVanId)) {
+      setSelectedVanId(localServiceVans[0]?.id || "");
     }
-  }, [serviceVans, selectedVanId]);
+  }, [localServiceVans, selectedVanId]);
 
   useEffect(() => {
     if (!selectedVanId) {
@@ -103,6 +108,26 @@ export default function ServiceVansPage({
     };
   }, [canManage]);
 
+  const assignedVehicles = localServiceVans.filter((van) => van.id !== selectedVanId);
+  const currentDriverMatches = (candidate) => {
+    const candidateId = candidate.id || candidate._id;
+    return (
+      candidateId === currentVan?.driverId ||
+      candidate.fullName === currentVan?.driverName ||
+      `${candidate.fullName} (${candidate.role})` === currentVan?.driverName
+    );
+  };
+  const availableDrivers = usersList.filter((candidate) => {
+    const candidateId = candidate.id || candidate._id;
+    const alreadyAssigned = assignedVehicles.some(
+      (van) =>
+        van.driverId === candidateId ||
+        van.driverName === candidate.fullName ||
+        van.driverName === `${candidate.fullName} (${candidate.role})`,
+    );
+    return !alreadyAssigned || currentDriverMatches(candidate);
+  });
+
   function handleStatusChange(newStatus) {
     if (["ON_FIELD", "ARRIVED"].includes(newStatus) && !currentVan?.driverName) {
       setError("An assigned driver/lead technician is required before marking this van as En Route or Arrived.");
@@ -114,16 +139,24 @@ export default function ServiceVansPage({
       `/service-vans/${selectedVanId}/status`,
       { status: newStatus },
       `Van status updated to ${newStatus}.`,
-    ).catch((err) => {
-      setError(errorMessage(err));
-    });
+      undefined,
+      { refresh: false },
+    )
+      .then((updatedVan) => {
+        setLocalServiceVans((current) =>
+          current.map((van) => (van.id === updatedVan.id ? updatedVan : van)),
+        );
+      })
+      .catch((err) => {
+        setError(errorMessage(err));
+      });
   }
 
   function handleAssignDriver() {
     save(
       "patch",
       `/service-vans/${selectedVanId}/driver`,
-      { driverName: driverInput },
+      { driverId: driverInput },
       "Assigned driver/technician updated.",
     )
       .then(() => setAssigningDriver(false))
@@ -173,7 +206,7 @@ export default function ServiceVansPage({
             value={selectedVanId || undefined}
             onChange={setSelectedVanId}
             style={{ minWidth: 260 }}
-            options={serviceVans.map((van) => ({
+             options={localServiceVans.map((van) => ({
               value: van.id,
               label: (
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -187,7 +220,7 @@ export default function ServiceVansPage({
             <Button
               type="primary"
               onClick={() => {
-                setNewVanId(`VAN-${String(serviceVans.length + 1).padStart(2, "0")}`);
+                 setNewVanId(`VAN-${String(localServiceVans.length + 1).padStart(2, "0")}`);
                 setNewVanName("");
                 setNewVanPlate("");
                 setNewVanDriver("");
@@ -215,47 +248,7 @@ export default function ServiceVansPage({
           type="inner"
           title={`Vehicle Details: ${currentVan.name}`}
           style={{ marginBottom: 16, background: "rgba(5, 150, 105, 0.04)" }}
-          extra={
-            <Space wrap>
-              <span>Quick Status:</span>
-              <Button
-                size="small"
-                type={currentVan.status === "ON_FIELD" ? "primary" : "default"}
-                onClick={() => handleStatusChange("ON_FIELD")}
-              >
-                🚀 En Route
-              </Button>
-              <Button
-                size="small"
-                type={currentVan.status === "ARRIVED" ? "primary" : "default"}
-                style={
-                  currentVan.status === "ARRIVED"
-                    ? { backgroundColor: "#854d0e", borderColor: "#854d0e" }
-                    : {}
-                }
-                onClick={() => handleStatusChange("ARRIVED")}
-              >
-                📍 Arrived at Site
-              </Button>
-              <Button
-                size="small"
-                type={currentVan.status === "AVAILABLE" ? "primary" : "default"}
-                onClick={() => handleStatusChange("AVAILABLE")}
-              >
-                🟢 Available / Base
-              </Button>
-              {canManage && (
-                <Button
-                  size="small"
-                  danger={currentVan.status === "MAINTENANCE"}
-                  type={currentVan.status === "MAINTENANCE" ? "primary" : "default"}
-                  onClick={() => handleStatusChange("MAINTENANCE")}
-                >
-                  🟠 Maintenance
-                </Button>
-              )}
-            </Space>
-          }
+           extra={null}
         >
           <Space orientation="horizontal" size="large" wrap>
             <div>
@@ -276,8 +269,8 @@ export default function ServiceVansPage({
                     style={{ minWidth: 200 }}
                     value={driverInput || undefined}
                     onChange={setDriverInput}
-                    options={usersList.map((u) => ({
-                      value: `${u.fullName} (${u.role})`,
+                     options={availableDrivers.map((u) => ({
+                       value: u.id || u._id,
                       label: `${u.fullName} (${u.role})`,
                     }))}
                   />
@@ -298,7 +291,10 @@ export default function ServiceVansPage({
                       size="small"
                       type="link"
                       onClick={() => {
-                        setDriverInput(currentVan.driverName || "");
+                         const selectedDriver = usersList.find((candidate) =>
+                           currentDriverMatches(candidate),
+                         );
+                         setDriverInput(selectedDriver?.id || selectedDriver?._id || "");
                         setAssigningDriver(true);
                       }}
                     >
@@ -310,25 +306,18 @@ export default function ServiceVansPage({
             </div>
             <div>
               <Typography.Text type="secondary">Live Status: </Typography.Text>
-              <Tag
-                color={
-                  currentVan.status === "AVAILABLE"
-                    ? "green"
-                    : currentVan.status === "ARRIVED"
-                      ? "gold"
-                      : currentVan.status === "ON_FIELD"
-                        ? "blue"
-                        : "orange"
-                }
-              >
-                {currentVan.status === "ARRIVED"
-                  ? "📍 ARRIVED AT CLIENT SITE"
-                  : currentVan.status === "ON_FIELD"
-                    ? "🚀 EN ROUTE / ON FIELD"
-                    : currentVan.status === "AVAILABLE"
-                      ? "🟢 AVAILABLE AT BASE"
-                      : "🟠 MAINTENANCE / REPAIR"}
-              </Tag>
+               <Select
+                 size="small"
+                 value={currentVan.status}
+                 onChange={handleStatusChange}
+                 style={{ minWidth: 190, marginLeft: 8 }}
+                 options={[
+                   { value: "AVAILABLE", label: "AVAILABLE AT BASE" },
+                   { value: "ON_FIELD", label: "EN ROUTE / ON FIELD" },
+                   { value: "ARRIVED", label: "ARRIVED AT CLIENT SITE" },
+                   { value: "MAINTENANCE", label: "MAINTENANCE / REPAIR" },
+                 ]}
+               />
             </div>
             <div>
               <Typography.Text type="secondary">Loaded SKUs: </Typography.Text>
@@ -338,7 +327,7 @@ export default function ServiceVansPage({
         </Card>
       )}
 
-      {serviceVans.length === 0 ? (
+      {localServiceVans.length === 0 ? (
         <Empty description="No service vehicles configured. Administrators can add vehicles here." />
       ) : (
         <Table
@@ -464,7 +453,7 @@ export default function ServiceVansPage({
                 id: newVanId.trim(),
                 name: newVanName.trim(),
                 plateNumber: newVanPlate.trim(),
-                driverName: newVanDriver.trim(),
+                 driverId: newVanDriver,
                 status: "AVAILABLE",
               },
               `New Service Vehicle "${newVanName}" registered successfully!`,
@@ -525,8 +514,8 @@ export default function ServiceVansPage({
               value={newVanDriver || undefined}
               onChange={(val) => setNewVanDriver(val || "")}
               style={{ width: "100%", marginTop: 4 }}
-              options={usersList.map((u) => ({
-                value: `${u.fullName} (${u.role})`,
+               options={availableDrivers.map((u) => ({
+                 value: u.id || u._id,
                 label: `${u.fullName} (${u.role})`,
               }))}
             />

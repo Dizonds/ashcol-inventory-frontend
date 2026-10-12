@@ -173,10 +173,10 @@ export default function App() {
     };
   }, [user, branchId, refresh]);
 
-  function save(method, path, data, success, params) {
+  function save(method, path, data, success, params, options = {}) {
     return api(method, path, data, params)
       .then((response) => {
-        setRefresh((value) => value + 1);
+        if (options.refresh !== false) setRefresh((value) => value + 1);
         setNotice({ type: "success", text: success });
         return response.data;
       })
@@ -274,7 +274,6 @@ export default function App() {
             <main className="app-main">
               <Header
                 page={page}
-                branchName={TAGUIG_WAREHOUSE.name}
                 user={user}
                 loading={loading}
                 setRefresh={setRefresh}

@@ -71,7 +71,6 @@ const PAGE_TITLES = {
 
 export default function Header({
   page = "service_vehicles",
-  branchName = "ASHCOL Taguig Warehouse",
   user,
   setRefresh,
   isDark,
@@ -139,18 +138,8 @@ export default function Header({
         </h1>
       </div>
 
-      {/* Right: Branch Pill, Date Pill, Divider with Moon & Notifications, User Profile (Node 488:6923) */}
+       {/* Right: Date Pill, Divider with Moon & Notifications, User Profile (Node 488:6923) */}
       <div className="header-right-group" data-node-id="488:6923">
-        {/* Branch Display Pill (Node 488:6926, 488:6927) */}
-        <div className="header-branch-pill" data-node-id="488:6926">
-          <span className="header-branch-label" data-node-id="488:6927">
-            BRANCH:
-          </span>
-          <span className="header-branch-name">
-            {branchName}
-          </span>
-        </div>
-
         {/* Date Pill (Node 488:6929) */}
         <div className="header-date-pill" data-node-id="488:6929">
           <div className="header-date-inner" data-node-id="488:6930">
