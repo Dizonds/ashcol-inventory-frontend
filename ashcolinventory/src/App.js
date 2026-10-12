@@ -84,6 +84,11 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const canManage = user && user.role !== "EMPLOYEE";
 
+  // Keep page 100% full screen without shrinking html viewport
+  useEffect(() => {
+    document.documentElement.style.zoom = "";
+  }, []);
+
   useEffect(() => {
     let active = true;
     if (!sessionStorage.getItem("ashcol_inventory_token")) {
@@ -268,14 +273,14 @@ export default function App() {
             {/* MAIN CONTENT */}
             <main className="app-main">
               <Header
+                page={page}
+                branchName={TAGUIG_WAREHOUSE.name}
                 user={user}
                 loading={loading}
                 setRefresh={setRefresh}
                 isDark={isDark}
                 setIsDark={setIsDark}
                 logout={logout}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
                 pendingCount={requests.filter((r) => r.status === "PENDING").length}
               />
 

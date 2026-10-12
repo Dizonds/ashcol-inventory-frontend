@@ -227,14 +227,20 @@ export default function Sidebar({
 
   return (
     <aside className="ashcol-sidebar" data-node-id="488:4982">
-      {/* Brand Header */}
-      <div className="sidebar-brand-header" data-node-id="488:4985">
-        <img
-          src={ashcolLogo}
-          alt="ASHCOL Logo"
-          className="sidebar-brand-logo"
-          data-node-id="488:4986"
-        />
+      {/* Dynamic Brand Header */}
+      <div
+        className="sidebar-brand-header"
+        onClick={() => setPage("dashboard")}
+        title="ASHCOL Smart Stock Tracking"
+        data-node-id="488:4985"
+      >
+        <div className="sidebar-brand-logo-wrap" data-node-id="488:4986">
+          <img
+            src={ashcolLogo}
+            alt="ASHCOL Logo"
+            className="sidebar-brand-logo"
+          />
+        </div>
         <div className="sidebar-brand-text">
           <h2 className="sidebar-brand-title" data-node-id="488:4989">
             ASHCOL
@@ -256,6 +262,7 @@ export default function Sidebar({
             className={`sidebar-item-btn ${page === "dashboard" ? "active" : ""}`}
             onClick={() => setPage("dashboard")}
             data-node-id="488:4995"
+            title="Overview"
           >
             <span className="sidebar-item-icon">
               <OverviewIcon />
@@ -280,6 +287,7 @@ export default function Sidebar({
               className={`sidebar-item-btn ${page === item.id ? "active" : ""}`}
               onClick={() => setPage(item.id)}
               data-node-id={item.nodeId}
+              title={item.label}
             >
               <span className="sidebar-item-icon">{item.icon}</span>
               <span className="sidebar-item-text">{item.label}</span>
@@ -302,6 +310,7 @@ export default function Sidebar({
                   className={`sidebar-item-btn ${page === item.id ? "active" : ""}`}
                   onClick={() => setPage(item.id)}
                   data-node-id={item.nodeId}
+                  title={item.label}
                 >
                   <span className="sidebar-item-icon">{item.icon}</span>
                   <span className="sidebar-item-text">{item.label}</span>
