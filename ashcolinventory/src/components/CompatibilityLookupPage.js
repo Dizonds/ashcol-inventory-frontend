@@ -82,7 +82,7 @@ export default function CompatibilityLookupPage({ items, onNavigateToItem }) {
       <Typography.Paragraph type="secondary">
         Select an AC unit model to instantly look up all verified compatible
         refrigerants, copper tubing, compressors, capacitors, and installation
-        parts in your branch inventory.
+        parts in your Taguig warehouse inventory.
       </Typography.Paragraph>
 
       <Card style={{ marginBottom: 20 }}>

@@ -166,19 +166,6 @@ function UserManagementIcon() {
   );
 }
 
-function BranchesIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 22" fill="none">
-      <path
-        d="M11.37 20.12C10.93 20.52 10.35 20.75 9.75 20.75C9.15 20.75 8.57 20.52 8.13 20.12C4.16 16.38 -1.16 12.2 1.44 6.13C2.84 2.85 6.21 0.75 9.75 0.75C13.29 0.75 16.66 2.85 18.07 6.13C20.66 12.19 15.35 16.39 11.37 20.12Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <circle cx="9.75" cy="9.75" r="3.5" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
 function MoonIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
@@ -239,7 +226,6 @@ export default function Sidebar({
 
   const adminOther = user && user.role === "ADMIN" ? [
     { id: "user_management", label: "User Management", icon: <UserManagementIcon />, nodeId: "441:3966" },
-    { id: "branches", label: "Branches", icon: <BranchesIcon />, nodeId: "441:3968" },
   ] : [];
 
   return (

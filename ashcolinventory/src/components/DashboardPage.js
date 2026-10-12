@@ -349,7 +349,7 @@ export default function DashboardPage({
           Welcome Back, {displayName}! 👋🏼
         </h1>
         <p className="dashboard-welcome-subtitle" data-node-id="441:5360">
-          Here is today's dashboard. Stock readiness, material requests, and real-time inventory valuations for this branch.
+          Here is today's dashboard. Stock readiness, material requests, and real-time inventory valuations for the Taguig warehouse.
         </p>
       </div>
 
@@ -561,7 +561,7 @@ export default function DashboardPage({
             <h2 className="sales-header-title" data-node-id="441:5626">
               Total Sales
             </h2>
-            <Tooltip title="Aggregated turnover and potential fulfillment volume for this branch based on inventory records.">
+            <Tooltip title="Aggregated turnover and potential fulfillment volume for the Taguig warehouse based on inventory records.">
               <span className="sales-info-icon" data-node-id="441:5627">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />

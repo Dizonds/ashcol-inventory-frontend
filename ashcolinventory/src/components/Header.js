@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Select, Dropdown } from "antd";
-import { ShopBoldDuotoneIcon } from "@solar-icons/react";
+import { Dropdown } from "antd";
 import "./Header.css";
 import avatarImg from "../assets/header/avatar.png";
 
@@ -70,9 +69,6 @@ function ChevronDownIcon() {
 
 export default function Header({
   user,
-  branches = [],
-  branchId,
-  setBranchId,
   loading,
   setRefresh,
   isDark,
@@ -125,7 +121,7 @@ export default function Header({
 
   return (
     <header className="ashcol-header" data-node-id="441:5286">
-      {/* Left: Search Bar & Branch Selector */}
+      {/* Left: Search Bar & Warehouse */}
       <div className="header-left-group">
         <div className="header-search-wrap" data-node-id="441:5287">
           <span className="header-search-icon" data-node-id="440:1874">
@@ -141,31 +137,6 @@ export default function Header({
           />
         </div>
 
-        {/* Branch Selection Pill */}
-        {branches && branches.length > 0 && (
-          <div className="header-branch-pill">
-            <span className="header-branch-label">Branch:</span>
-            <Select
-              aria-label="Current branch"
-              value={branchId || undefined}
-              variant="borderless"
-              style={{ minWidth: 160 }}
-              disabled={user?.role !== "ADMIN"}
-              options={branches
-                .filter((b) => b.branchType !== "SERVICE_VAN")
-                .map((b) => ({
-                  value: b.id,
-                  label: (
-                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <ShopBoldDuotoneIcon size={15} />
-                      {b.name}
-                    </span>
-                  ),
-                }))}
-              onChange={(value) => setBranchId(value)}
-            />
-          </div>
-        )}
       </div>
 
       {/* Right: Date, Actions (Theme, Notifications), User Profile */}

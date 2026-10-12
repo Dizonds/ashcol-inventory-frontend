@@ -32,11 +32,14 @@ import {
   CartLargeBoldDuotoneIcon,
   TransferVerticalBoldDuotoneIcon,
   ClipboardListBoldDuotoneIcon,
-  MapPointBoldDuotoneIcon,
   UsersGroupTwoRoundedBoldDuotoneIcon,
-  ShopBoldDuotoneIcon
 } from "@solar-icons/react";
 import "./App.css";
+
+const TAGUIG_WAREHOUSE = {
+  id: "LOCAL-WAREHOUSE",
+  name: "ASHCOL Taguig Warehouse",
+};
 
 function InventoryLoadingState() {
   return (
@@ -62,8 +65,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
   const [page, setPage] = useState("dashboard");
-  const [branches, setBranches] = useState([]);
-  const [branchId, setBranchId] = useState("");
+  const [serviceVans, setServiceVans] = useState([]);
+  const branchId = TAGUIG_WAREHOUSE.id;
   const [items, setItems] = useState([]);
   const [brands, setBrands] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -109,11 +112,13 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     let active = true;
-    api("get", "/branches")
+    if (user.branchId !== TAGUIG_WAREHOUSE.id) {
+      setError("This account is not assigned to the Taguig warehouse.");
+    }
+    api("get", "/service-vans")
       .then(({ data }) => {
-        if (active) {
-          setBranches(data);
-          setBranchId((current) => current || user.branchId);
+        if (active && Array.isArray(data)) {
+          setServiceVans(data);
         }
       })
       .catch((err) => {
@@ -184,10 +189,8 @@ export default function App() {
       .then(() => {
         sessionStorage.removeItem("ashcol_inventory_token");
         setUser(null);
-        setBranchId("");
         setItems([]);
         setRequests([]);
-        setBranches([]);
         setDataReady(false);
         setError("");
         setNotice(null);
@@ -197,7 +200,6 @@ export default function App() {
         if (err.response && err.response.status === 401) {
           sessionStorage.removeItem("ashcol_inventory_token");
           setUser(null);
-          setBranchId("");
         } else setNotice({ type: "error", text: errorMessage(err) });
       });
   }
@@ -211,10 +213,7 @@ export default function App() {
     ...(canManage ? [{ id: "post_movement", label: "Post Movement", icon: <TransferVerticalBoldDuotoneIcon size={22} /> }] : []),
     { id: "movements", label: "Stock Ledger", icon: <ClipboardListBoldDuotoneIcon size={22} /> },
     ...(user && user.role === "ADMIN"
-      ? [
-          { id: "branches", label: "Branches", icon: <MapPointBoldDuotoneIcon size={22} /> },
-          { id: "user_management", label: "User Management", icon: <UsersGroupTwoRoundedBoldDuotoneIcon size={22} /> },
-        ]
+      ? [{ id: "user_management", label: "User Management", icon: <UsersGroupTwoRoundedBoldDuotoneIcon size={22} /> }]
       : []),
   ];
   return (
@@ -251,7 +250,6 @@ export default function App() {
             onLogin={(account) => {
               setError("");
               setUser(account);
-              setBranchId(account.branchId);
               setPage("dashboard");
             }}
           />
@@ -274,14 +272,6 @@ export default function App() {
             <main className="app-main">
               <Header
                 user={user}
-                branches={branches}
-                branchId={branchId}
-                setBranchId={(val) => {
-                  setBranchId(val);
-                  setItems([]);
-                  setRequests([]);
-                  setTargetId("");
-                }}
                 loading={loading}
                 setRefresh={setRefresh}
                 isDark={isDark}
@@ -367,7 +357,7 @@ export default function App() {
                                 : items
                             }
                             brands={brands}
-                            branches={branches}
+                            serviceVans={serviceVans}
                             user={user}
                             branchId={branchId}
                             save={save}
@@ -380,7 +370,7 @@ export default function App() {
                         )}
                         {(page === "service_vehicles" || page === "service_vans") && (
                           <ServiceVansPage
-                            branches={branches}
+                            serviceVans={serviceVans}
                             branchId={branchId}
                             user={user}
                             save={save}
@@ -408,7 +398,6 @@ export default function App() {
                         {page === "post_movement" && canManage && (
                           <PostMovementPage
                             items={items}
-                            branches={branches}
                             branchId={branchId}
                             user={user}
                             save={save}
@@ -418,18 +407,9 @@ export default function App() {
                         {page === "movements" && (
                           <MovementsPage branchId={branchId} refresh={refresh} />
                         )}
-                        {page === "branches" && user.role === "ADMIN" && (
-                          <SettingsPage
-                            section="branches"
-                            branches={branches}
-                            save={save}
-                            refresh={refresh}
-                          />
-                        )}
                         {page === "user_management" && user.role === "ADMIN" && (
                           <SettingsPage
                             section="users"
-                            branches={branches}
                             save={save}
                             refresh={refresh}
                           />

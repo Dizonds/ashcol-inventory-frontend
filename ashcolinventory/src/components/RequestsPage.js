@@ -84,7 +84,7 @@ export default function RequestsPage({
         <Alert type="error" title={error} style={{ marginBottom: 16 }} />
       )}
       <Card
-        title="Branch requests"
+        title="Warehouse requests"
         extra={
           <Button
             type="primary"

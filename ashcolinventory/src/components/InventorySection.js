@@ -54,7 +54,7 @@ const units = [
 export default function InventorySection({
   items,
   brands,
-  branches = [],
+  serviceVans = [],
   user,
   branchId,
   save,
@@ -62,7 +62,6 @@ export default function InventorySection({
   onNavigateToPostMovement,
 }) {
   const canManage = user.role !== "EMPLOYEE";
-  const serviceVans = branches.filter((b) => b.branchType === "SERVICE_VAN");
   const [loadVanItem, setLoadVanItem] = useState(null);
   const [selectedVanId, setSelectedVanId] = useState("");
   const [loadQuantity, setLoadQuantity] = useState(1);
@@ -320,7 +319,7 @@ export default function InventorySection({
     <>
       <Typography.Title level={3}>Inventory Catalog</Typography.Title>
       <Typography.Paragraph type="secondary">
-        AC equipment and service materials for the selected branch. Stock
+        AC equipment and service materials for the Taguig warehouse. Stock
         quantities change only through recorded movements.
       </Typography.Paragraph>
       <Card>
@@ -768,7 +767,7 @@ export default function InventorySection({
             )}
             <div style={{ marginBottom: 12 }}>
               <Typography.Text type="secondary">
-                Current Branch Stock:{" "}
+                Current Warehouse Stock:{" "}
                 <strong>
                   {loadVanItem.quantity} {loadVanItem.unitOfMeasure}
                 </strong>

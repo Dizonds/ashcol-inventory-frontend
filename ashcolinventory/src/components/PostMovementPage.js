@@ -11,7 +11,6 @@ import {
   Statistic,
   Space,
 } from "antd";
-import { ShopBoldDuotoneIcon } from "@solar-icons/react";
 import { errorMessage } from "../api";
 
 const isContinuousUnit = (unit) =>
@@ -19,9 +18,7 @@ const isContinuousUnit = (unit) =>
 
 export default function PostMovementPage({
   items,
-  branches,
   branchId,
-  user,
   save,
   preselectedItemId,
 }) {
@@ -30,7 +27,6 @@ export default function PostMovementPage({
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState("Supplier Delivery / Restock");
   const [notes, setNotes] = useState("");
-  const [destinationId, setDestinationId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const selected = items.filter((item) => item.id === productId)[0];
@@ -59,24 +55,11 @@ export default function PostMovementPage({
       setError("The requested quantity exceeds available stock.");
       return;
     }
-    if (operation === "TRANSFER" && !destinationId) {
-      setError("Choose a destination branch.");
-      return;
-    }
     setBusy(true);
-    const path =
-      operation === "TRANSFER" ? "/transfers" : `/products/${productId}/stock`;
-    const data =
-      operation === "TRANSFER"
-        ? { branchId, productId, destinationId, quantity, reason: notes }
-        : {
-            branchId,
-            delta: stockIn ? quantity : -quantity,
-            reason,
-            notes,
-          };
+    const path = `/products/${productId}/stock`;
+    const data = { branchId, delta: stockIn ? quantity : -quantity, reason, notes };
     save(
-      operation === "TRANSFER" ? "post" : "patch",
+      "patch",
       path,
       data,
       "Stock movement recorded.",
@@ -85,7 +68,6 @@ export default function PostMovementPage({
         setProductId("");
         setQuantity(1);
         setNotes("");
-        setDestinationId("");
       })
       .catch((err) => setError(errorMessage(err)))
       .finally(() => setBusy(false));
@@ -116,9 +98,6 @@ export default function PostMovementPage({
               options={[
                 { label: "Stock In", value: "STOCK_IN" },
                 { label: "Stock Out", value: "STOCK_OUT" },
-                ...(user.role === "ADMIN"
-                  ? [{ label: "Branch Transfer", value: "TRANSFER" }]
-                  : []),
               ]}
             />
           </label>
@@ -148,40 +127,14 @@ export default function PostMovementPage({
                 style={{ width: "100%" }}
               />
             </label>
-            {operation === "TRANSFER" ? (
-              <label className="field">
-                Destination branch
-                <Select
-                  placeholder="Choose a different branch"
-                  value={destinationId || undefined}
-                  onChange={setDestinationId}
-                  options={branches
-                    .filter(
-                      (branch) =>
-                        branch.id !== branchId &&
-                        branch.branchType !== "SERVICE_VAN",
-                    )
-                    .map((branch) => ({
-                      value: branch.id,
-                      label: (
-                        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <ShopBoldDuotoneIcon size={16} />
-                          {branch.name} ({branch.id})
-                        </span>
-                      ),
-                    }))}
-                />
-              </label>
-            ) : (
-              <label className="field">
+            <label className="field">
                 Reason
                 <Select
                   value={reason}
                   onChange={setReason}
                   options={reasons.map((value) => ({ value, label: value }))}
                 />
-              </label>
-            )}
+            </label>
           </div>
           <label className="field">
             Receipt, transfer reference, or explanation

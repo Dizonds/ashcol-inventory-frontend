@@ -49,7 +49,7 @@ export default function MovementsPage({ branchId, refresh }) {
     <>
       <Typography.Title level={3}>Stock Movements Ledger</Typography.Title>
       <Typography.Paragraph type="secondary">
-        Search the full retained branch history. Times are displayed in
+        Search the full retained warehouse history. Times are displayed in
         Philippine time. Legacy records may lack a verified actor or balance.
       </Typography.Paragraph>
       <Card>

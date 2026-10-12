@@ -27,7 +27,8 @@
     "moduleNameMapper": {
       "^@rc-component/pagination/locale/(.*)$": "<rootDir>/node_modules/@rc-component/pagination/lib/locale/$1",
       "^@rc-component/picker/locale/(.*)$": "<rootDir>/node_modules/@rc-component/picker/lib/locale/$1",
-      "^@rc-component/picker/generate/(.*)$": "<rootDir>/node_modules/@rc-component/picker/lib/generate/$1"
+      "^@rc-component/picker/generate/(.*)$": "<rootDir>/node_modules/@rc-component/picker/lib/generate/$1",
+      "^@solar-icons/react$": "<rootDir>/node_modules/@solar-icons/react/dist/index.mjs"
     }
   },
   "eslintConfig": {

@@ -17,13 +17,12 @@ import { BusBoldDuotoneIcon } from "@solar-icons/react";
 import { api, errorMessage } from "../api";
 
 export default function ServiceVansPage({
-  branches,
+  serviceVans,
   branchId,
   user,
   save,
   refresh,
 }) {
-  const serviceVans = branches.filter((b) => b.branchType === "SERVICE_VAN");
   const [selectedVanId, setSelectedVanId] = useState(
     serviceVans[0]?.id || "",
   );
@@ -45,6 +44,12 @@ export default function ServiceVansPage({
   const isAdmin = user?.role === "ADMIN";
 
   const currentVan = serviceVans.find((v) => v.id === selectedVanId);
+
+  useEffect(() => {
+    if (!selectedVanId && serviceVans.length > 0) {
+      setSelectedVanId(serviceVans[0].id);
+    }
+  }, [serviceVans, selectedVanId]);
 
   useEffect(() => {
     if (!selectedVanId) {
@@ -106,7 +111,7 @@ export default function ServiceVansPage({
     setError("");
     save(
       "patch",
-      `/branches/${selectedVanId}/status`,
+      `/service-vans/${selectedVanId}/status`,
       { status: newStatus },
       `Van status updated to ${newStatus}.`,
     ).catch((err) => {
@@ -117,7 +122,7 @@ export default function ServiceVansPage({
   function handleAssignDriver() {
     save(
       "patch",
-      `/branches/${selectedVanId}/driver`,
+      `/service-vans/${selectedVanId}/driver`,
       { driverName: driverInput },
       "Assigned driver/technician updated.",
     )
@@ -150,7 +155,7 @@ export default function ServiceVansPage({
                   setUnloadError("");
                 }}
               >
-                📥 Unload to Branch
+                📥 Return to Warehouse
               </Button>
             ),
           },
@@ -334,7 +339,7 @@ export default function ServiceVansPage({
       )}
 
       {serviceVans.length === 0 ? (
-        <Empty description="No service vans configured. Administrators can add vans under Settings." />
+        <Empty description="No service vehicles configured. Administrators can add vehicles here." />
       ) : (
         <Table
           rowKey="id"
@@ -348,7 +353,7 @@ export default function ServiceVansPage({
       {/* Unload modal */}
       <Modal
         open={Boolean(unloadItem)}
-        title={unloadItem ? `📥 Return to Branch: ${unloadItem.name}` : ""}
+        title={unloadItem ? `📥 Return to Warehouse: ${unloadItem.name}` : ""}
         onCancel={() => setUnloadItem(null)}
         footer={null}
         destroyOnClose
@@ -367,9 +372,9 @@ export default function ServiceVansPage({
                   destinationId: branchId,
                   productId: unloadItem.id,
                   quantity: unloadQty,
-                  reason: `Van Return to Branch ${branchId}`,
+                  reason: `Van Return to Taguig Warehouse ${branchId}`,
                 },
-                `Returned ${unloadQty} ${unloadItem.unitOfMeasure} of ${unloadItem.name} back to branch stock.`,
+                `Returned ${unloadQty} ${unloadItem.unitOfMeasure} of ${unloadItem.name} back to warehouse stock.`,
               )
                 .then(() => {
                   setUnloadItem(null);
@@ -389,7 +394,7 @@ export default function ServiceVansPage({
               />
             )}
             <p>
-              Return unused parts or equipment from the van back to the branch
+              Return unused parts or equipment from the van back to the warehouse
               warehouse.
             </p>
             <div style={{ marginBottom: 12 }}>
@@ -454,11 +459,10 @@ export default function ServiceVansPage({
             setNewVanError("");
             save(
               "post",
-              "/branches",
+              "/service-vans",
               {
                 id: newVanId.trim(),
                 name: newVanName.trim(),
-                branchType: "SERVICE_VAN",
                 plateNumber: newVanPlate.trim(),
                 driverName: newVanDriver.trim(),
                 status: "AVAILABLE",
