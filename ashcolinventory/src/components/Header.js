@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dropdown } from "antd";
+import { Dropdown, Modal } from "antd";
 import "./Header.css";
 import avatarImg from "../assets/header/avatar.png";
 
@@ -115,7 +115,15 @@ export default function Header({
     {
       key: "logout",
       label: <span style={{ color: "#ef4444" }}>Log Out</span>,
-      onClick: logout,
+      onClick: () =>
+        Modal.confirm({
+          title: "Log out?",
+          content: "Are you sure you want to log out of ASHCOL Inventory?",
+          okText: "Log out",
+          okButtonProps: { danger: true },
+          cancelText: "Cancel",
+          onOk: logout,
+        }),
     },
   ];
 
