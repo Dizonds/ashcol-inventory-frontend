@@ -55,6 +55,13 @@
   flex-wrap: wrap;
 }
 
+.stock-ledger-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .stock-ledger-title-group {
   display: flex;
   align-items: center;
@@ -202,6 +209,10 @@
 .stock-ledger-filter-pill:hover {
   background: #f0f0f0;
   border-color: rgba(0, 0, 0, 0.08);
+}
+
+.stock-ledger-sort-pill {
+  min-width: 170px;
 }
 
 .inventory-app.dark .stock-ledger-filter-pill {

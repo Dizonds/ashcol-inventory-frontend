@@ -248,6 +248,16 @@ const units = [
   "SET",
 ];
 
+const CATALOG_SORTS = [
+  { value: "item-az", label: "Item A–Z" },
+  { value: "item-za", label: "Item Z–A" },
+  { value: "sku-az", label: "SKU A–Z" },
+  { value: "quantity-low", label: "Quantity low–high" },
+  { value: "quantity-high", label: "Quantity high–low" },
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+];
+
 export default function InventorySection({
   items,
   brands,
@@ -295,6 +305,7 @@ export default function InventorySection({
   const [newBrand, setNewBrand] = useState("");
   const [suppliersList, setSuppliersList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState("item-az");
   const pageSize = 6;
 
   const categoriesByType = {
@@ -415,13 +426,38 @@ export default function InventorySection({
     );
   });
 
+  const sortedVisible = [...visible].sort((a, b) => {
+    const textCompare = (first, second) =>
+      String(first || "").localeCompare(String(second || ""), undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
+    switch (sortBy) {
+      case "item-za":
+        return textCompare(b.name, a.name);
+      case "sku-az":
+        return textCompare(a.sku, b.sku);
+      case "quantity-low":
+        return Number(a.quantity || 0) - Number(b.quantity || 0);
+      case "quantity-high":
+        return Number(b.quantity || 0) - Number(a.quantity || 0);
+      case "newest":
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      case "oldest":
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      case "item-az":
+      default:
+        return textCompare(a.name, b.name);
+    }
+  });
+
   // Calculate pagination boundaries
-  const totalEntries = visible.length;
+  const totalEntries = sortedVisible.length;
   const totalPages = Math.max(1, Math.ceil(totalEntries / pageSize));
   const currentSafePage = Math.min(currentPage, totalPages);
   const startEntry = totalEntries === 0 ? 0 : (currentSafePage - 1) * pageSize + 1;
   const endEntry = Math.min(currentSafePage * pageSize, totalEntries);
-  const paginatedData = visible.slice((currentSafePage - 1) * pageSize, currentSafePage * pageSize);
+  const paginatedData = sortedVisible.slice((currentSafePage - 1) * pageSize, currentSafePage * pageSize);
 
   // Menus for Dropdown filter pills
   const typeMenu = {
@@ -493,6 +529,20 @@ export default function InventorySection({
       },
     })),
   };
+
+  const sortMenu = {
+    items: CATALOG_SORTS.map((option) => ({
+      key: option.value,
+      label: option.label,
+      onClick: () => {
+        setSortBy(option.value);
+        setCurrentPage(1);
+      },
+    })),
+  };
+
+  const activeSortLabel =
+    CATALOG_SORTS.find((option) => option.value === sortBy)?.label || "Item A–Z";
 
   const columns = [
     {
@@ -744,6 +794,15 @@ export default function InventorySection({
               </div>
             </Dropdown>
 
+            {/* Sort catalog items */}
+            <Dropdown menu={sortMenu} trigger={["click"]}>
+              <div className="catalog-filter-pill catalog-sort-pill" aria-label="Sort catalog">
+                <span>↕</span>
+                <span>{activeSortLabel}</span>
+                <ChevronDownIcon size={12} />
+              </div>
+            </Dropdown>
+
             {/* Icon Group: Reset & Archive (Node 488:5088) */}
             <div className="catalog-icon-group" data-node-id="488:5088">
               <Tooltip title="Reset all filters">
@@ -757,6 +816,7 @@ export default function InventorySection({
                     setStatus("ALL");
                     setCategory("");
                     setBrand("");
+                    setSortBy("item-az");
                     setCurrentPage(1);
                   }}
                 >

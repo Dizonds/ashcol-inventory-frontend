@@ -36,6 +36,7 @@ export default function SettingsPage({ section = "branches", save, refresh }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
+  const [activeModule, setActiveModule] = useState(null);
 
   useEffect(() => {
     if (section !== "users") return undefined;
@@ -102,9 +103,34 @@ export default function SettingsPage({ section = "branches", save, refresh }) {
           Create and review authenticated inventory accounts. Assign the least-privileged
           role; all accounts automatically use the Taguig warehouse.
         </Typography.Paragraph>
+        {!activeModule && <div className="user-management-actions" aria-label="User management actions">
+          <Button className="user-management-action" onClick={() => setActiveModule("create")}>
+            <span className="user-management-action-icon">+</span>
+            <span>
+              <strong>Create User Account</strong>
+              <small>Add a new administrator, manager, or employee</small>
+            </span>
+          </Button>
+          <Button className="user-management-action" onClick={() => setActiveModule("registered")}>
+            <span className="user-management-action-icon user-management-action-icon--list">☷</span>
+            <span>
+              <strong>Registered User Accounts</strong>
+              <small>Review all accounts and their assigned roles</small>
+            </span>
+          </Button>
+        </div>}
+        {activeModule && (
+          <Button className="user-management-back" onClick={() => {
+            setActiveModule(null);
+            setError("");
+            setFormError("");
+          }}>
+            ← Back to User Management
+          </Button>
+        )}
         {error && <Alert type="error" title={error} showIcon />}
         {formError && <Alert type="warning" title={formError} showIcon style={{ marginTop: 12 }} />}
-        <Card title="Create User Account" style={{ marginTop: 16 }}>
+        {activeModule === "create" && <Card title="Create User Account" className="user-management-module">
           <form onSubmit={createAccount}>
             <div className="form-grid">
               <label className="field">
@@ -145,8 +171,8 @@ export default function SettingsPage({ section = "branches", save, refresh }) {
               Create User Account
             </Button>
           </form>
-        </Card>
-        <Card title="Registered User Accounts" style={{ marginTop: 20 }}>
+        </Card>}
+        {activeModule === "registered" && <Card title="Registered User Accounts" className="user-management-module">
           <Table
             rowKey="id"
             dataSource={users}
@@ -157,7 +183,7 @@ export default function SettingsPage({ section = "branches", save, refresh }) {
               { title: "Role", dataIndex: "role", render: (role) => <Tag color={role === "ADMIN" ? "green" : role === "MANAGER" ? "blue" : "default"}>{role}</Tag> },
             ]}
           />
-        </Card>
+        </Card>}
       </>
     );
   }

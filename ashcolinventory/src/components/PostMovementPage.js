@@ -10,6 +10,8 @@ import {
   Radio,
   Statistic,
   Space,
+  Modal,
+  Descriptions,
 } from "antd";
 import { errorMessage } from "../api";
 
@@ -29,6 +31,7 @@ export default function PostMovementPage({
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [reviewOpen, setReviewOpen] = useState(false);
   const selected = items.filter((item) => item.id === productId)[0];
   const stockIn = operation === "STOCK_IN";
   const reasons = stockIn
@@ -55,7 +58,12 @@ export default function PostMovementPage({
       setError("The requested quantity exceeds available stock.");
       return;
     }
+    setReviewOpen(true);
+  }
+
+  function confirmPost() {
     setBusy(true);
+    setReviewOpen(false);
     const path = `/products/${productId}/stock`;
     const data = { branchId, delta: stockIn ? quantity : -quantity, reason, notes };
     save(
@@ -79,9 +87,20 @@ export default function PostMovementPage({
         Record deliveries, returns, dispatches and explained stock corrections.
         Use Material Requests to issue an approved request.
       </Typography.Paragraph>
-      <Card style={{ maxWidth: 820 }}>
+      <Card
+        className="post-movement-card"
+        title={
+          <div className="post-movement-card-title">
+            <span className="post-movement-card-icon">↕</span>
+            <span>
+              <strong>Record inventory movement</strong>
+              <small>Update warehouse stock with a clear reason and reference.</small>
+            </span>
+          </div>
+        }
+      >
         {error && <Alert type="error" showIcon title={error} />}
-        <form onSubmit={submit}>
+        <form className="post-movement-form" onSubmit={submit}>
           <label className="field">
             Operation
             <Radio.Group
@@ -147,7 +166,7 @@ export default function PostMovementPage({
             />
           </label>
           {selected && (
-            <Space size="large" wrap style={{ marginBottom: 20 }}>
+            <Space className="post-movement-stock-preview" size="large" wrap>
               <Statistic
                 title="Available"
                 value={selected.quantity}
@@ -166,13 +185,43 @@ export default function PostMovementPage({
               />
             </Space>
           )}
-          <div>
+          <div className="post-movement-submit-row">
             <Button type="primary" htmlType="submit" loading={busy}>
               Confirm & Post
             </Button>
           </div>
         </form>
       </Card>
+      <Modal
+        title="Review Stock Movement"
+        open={reviewOpen}
+        onCancel={() => setReviewOpen(false)}
+        onOk={confirmPost}
+        okText="Yes, Confirm & Post"
+        confirmLoading={busy}
+      >
+        <Typography.Paragraph>
+          Are these details correct? Please review them before posting this stock movement.
+        </Typography.Paragraph>
+        <Descriptions bordered column={1} size="small">
+          <Descriptions.Item label="Operation">
+            {stockIn ? "Stock In" : "Stock Out"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Inventory item">
+            {selected ? `${selected.sku} — ${selected.name}` : "—"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Quantity">
+            {quantity} {selected?.unitOfMeasure || ""}
+          </Descriptions.Item>
+          <Descriptions.Item label="Reason">{reason}</Descriptions.Item>
+          <Descriptions.Item label="Explanation / reference">{notes || "—"}</Descriptions.Item>
+          <Descriptions.Item label="Projected balance">
+            {selected
+              ? `${Math.round((selected.quantity + (stockIn ? Number(quantity) : -Number(quantity))) * 1000) / 1000} ${selected.unitOfMeasure}`
+              : "—"}
+          </Descriptions.Item>
+        </Descriptions>
+      </Modal>
     </>
   );
 }

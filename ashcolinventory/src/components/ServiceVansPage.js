@@ -24,9 +24,8 @@ export default function ServiceVansPage({
   save,
   refresh,
 }) {
-  const [selectedVanId, setSelectedVanId] = useState(
-    serviceVans[0]?.id || "",
-  );
+  const [selectedVanId, setSelectedVanId] = useState("");
+  const [viewMode, setViewMode] = useState("list");
   const [vanItems, setVanItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -64,7 +63,7 @@ export default function ServiceVansPage({
     setSelectedVanId((currentId) =>
       currentId && serviceVans.some((van) => van.id === currentId)
         ? currentId
-        : serviceVans[0]?.id || "",
+        : "",
     );
   }, [serviceVans]);
 
@@ -74,7 +73,7 @@ export default function ServiceVansPage({
       localServiceVans.length > 0 &&
       !localServiceVans.some((van) => van.id === selectedVanId)
     ) {
-      setSelectedVanId(localServiceVans[0]?.id || "");
+      setSelectedVanId("");
     }
   }, [localServiceVans, selectedVanId]);
 
@@ -247,8 +246,9 @@ export default function ServiceVansPage({
       title={<span style={{ display: "flex", alignItems: "center", gap: 8 }}><BusBoldDuotoneIcon size={22} /> Mobile Service Vehicles Inventory & Field Tracking</span>}
       extra={
         <Space wrap>
-          {canManage && <strong>Select Vehicle:</strong>}
-          {canManage && <Select
+          {viewMode === "details" && <Button onClick={() => setViewMode("list")}>← All Vehicles</Button>}
+          {viewMode === "details" && canManage && <strong>Select Vehicle:</strong>}
+          {viewMode === "details" && canManage && <Select
             value={selectedVanId || undefined}
             onChange={setSelectedVanId}
             style={{ minWidth: 260 }}
@@ -289,7 +289,42 @@ export default function ServiceVansPage({
         />
       )}
 
-      {currentVan && (
+      {viewMode === "list" && (
+        <div className="service-vehicle-list">
+          {localServiceVans.length === 0 ? (
+            <Empty description="No service vehicles configured. Administrators can add vehicles here." />
+          ) : (
+            localServiceVans.map((van) => (
+              <Card
+                key={van.id}
+                hoverable
+                className="service-vehicle-list-card"
+                onClick={() => {
+                  setSelectedVanId(van.id);
+                  setViewMode("details");
+                }}
+              >
+                <div className="service-vehicle-list-card-heading">
+                  <span className="service-vehicle-list-icon"><BusBoldDuotoneIcon size={26} /></span>
+                  <div>
+                    <Typography.Title level={5}>{van.name}</Typography.Title>
+                    <Typography.Text type="secondary">{van.plateNumber || "No plate number"}</Typography.Text>
+                  </div>
+                </div>
+                <div className="service-vehicle-list-card-meta">
+                  <Tag color={van.status === "AVAILABLE" ? "green" : van.status === "MAINTENANCE" ? "orange" : "blue"}>
+                    {van.status}
+                  </Tag>
+                  <Typography.Text type="secondary">{van.driverName || "No driver assigned"}</Typography.Text>
+                </div>
+                <Button type="link" className="service-vehicle-list-open">View vehicle details →</Button>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {viewMode === "details" && currentVan && (
         <Card
           type="inner"
           title={`Vehicle Details: ${currentVan.name}`}
@@ -359,7 +394,7 @@ export default function ServiceVansPage({
         </Card>
       )}
 
-      {localServiceVans.length === 0 ? (
+      {viewMode === "details" && (localServiceVans.length === 0 ? (
         <Empty description="No service vehicles configured. Administrators can add vehicles here." />
       ) : (
         <Table
@@ -369,7 +404,7 @@ export default function ServiceVansPage({
           columns={columns}
           pagination={{ pageSize: 10 }}
         />
-      )}
+      ))}
 
       {/* Record material used modal */}
       <Modal

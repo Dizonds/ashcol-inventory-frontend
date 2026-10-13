@@ -109,6 +109,13 @@ const MOVEMENT_TYPES = [
   { value: "RESTORE", label: "Restore" },
 ];
 
+const LEDGER_SORTS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "az", label: "Item A–Z" },
+  { value: "za", label: "Item Z–A" },
+];
+
 export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -117,6 +124,7 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [type, setType] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -133,7 +141,7 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
     let active = true;
     setLoading(true);
     setError("");
-    api("get", "/movements", null, { branchId, page, pageSize, search, type })
+    api("get", "/movements", null, { branchId, page, pageSize, search, type, sort: sortBy })
       .then(({ data }) => {
         if (active) {
           setRows(data.items || []);
@@ -153,7 +161,7 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
     return () => {
       active = false;
     };
-  }, [branchId, page, pageSize, search, type, refresh]);
+  }, [branchId, page, pageSize, search, type, sortBy, refresh]);
 
   // Format timestamp in Philippine time matching Figma: 10/11/2026 1:41 AM
   const formatTimestamp = (entry) => {
@@ -252,6 +260,22 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
     return found ? found.label : "All Movement Types";
   }, [type]);
 
+  const sortMenuItems = useMemo(() => {
+    return LEDGER_SORTS.map((item) => ({
+      key: item.value,
+      label: (
+        <span style={{ fontWeight: item.value === sortBy ? 600 : 400, color: item.value === sortBy ? "#006830" : "inherit" }}>
+          {item.label}
+        </span>
+      ),
+    }));
+  }, [sortBy]);
+
+  const activeSortLabel = useMemo(() => {
+    const found = LEDGER_SORTS.find((item) => item.value === sortBy);
+    return found ? found.label : "Newest first";
+  }, [sortBy]);
+
   return (
     <div className="stock-ledger-container">
       {error && (
@@ -305,6 +329,27 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
 
           {/* Filter Dropdown Pill (Figma Node 458:15896 / 458:15897) */}
           <div className="stock-ledger-toolbar-right" data-node-id="458:15896">
+            <Dropdown
+              menu={{
+                items: sortMenuItems,
+                onClick: ({ key }) => {
+                  setSortBy(key);
+                  setPage(1);
+                },
+              }}
+              trigger={["click"]}
+              placement="bottomRight"
+            >
+              <div className="stock-ledger-filter-pill stock-ledger-sort-pill" role="button" tabIndex={0} aria-label="Sort ledger">
+                <div className="stock-ledger-filter-label">
+                  <span className="stock-ledger-filter-icon">↕</span>
+                  <span>{activeSortLabel}</span>
+                </div>
+                <span className="stock-ledger-filter-chevron">
+                  <ChevronDownIcon size={14} />
+                </span>
+              </div>
+            </Dropdown>
             <Dropdown
               menu={{
                 items: filterMenuItems,
