@@ -80,6 +80,10 @@ export default function App() {
   const [notice, setNotice] = useState(null);
   const [targetId, setTargetId] = useState("");
   const [inventoryFilter, setInventoryFilter] = useState(null);
+  const [stockChartView, setStockChartView] = useState(null);
+  useEffect(() => {
+    if (!user) setStockChartView(null);
+  }, [user]);
   const [isDark, setIsDark] = useState(
     localStorage.getItem("ashcol_theme") === "dark",
   );
@@ -335,6 +339,8 @@ export default function App() {
                             branchId={branchId}
                             canManage={canManage}
                             user={user}
+                            stockChartView={stockChartView}
+                            onStockChartViewSave={setStockChartView}
                             onRestockItem={(id) => {
                               setTargetId(id);
                               setPage("post_movement");

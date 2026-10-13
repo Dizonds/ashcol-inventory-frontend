@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from "react";
 import {
-  Card,
   Table,
   Button,
   Tag,
-  Tooltip,
-  Dropdown,
   Row,
   Col,
-  Space,
   Radio,
   Progress,
-  Statistic,
 } from "antd";
 import { formatMoney } from "../utils/formatters";
 import { api } from "../api";
 import "./DashboardPage.css";
+import StockActivityChart from "./StockActivityChart";
 import arrowGrow from "../assets/dashboard/arrowGrow.png";
 
 /* --- FIGMA EXACT SVG ICONS --- */
@@ -77,41 +73,6 @@ function PackageIcon() {
   );
 }
 
-function GraphTrendingIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M3 19V5M3 19H21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M7 14L11 9L15 12L20 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M16 6H20V10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function FilterIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M4 6H20M7 12H17M10 18H14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M3 9H21M8 2V5M16 2V5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
-      <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 
 
 export default function DashboardPage({
@@ -122,11 +83,13 @@ export default function DashboardPage({
   user,
   onRestockItem,
   onNavigateToInventoryWithFilter,
+  stockChartView,
+  onStockChartViewSave,
 }) {
   const [view, setView] = useState("cards");
   const [analytics, setAnalytics] = useState({ fastMoving: [], slowMoving: [] });
-  const [selectedPeriod, setSelectedPeriod] = useState("Last Week");
-  const [selectedFilter, setSelectedFilter] = useState("All Products");
+  const [movementHistory, setMovementHistory] = useState([]);
+  const [movementHistoryReady, setMovementHistoryReady] = useState(false);
 
   // Keep original analytics fetch
   useEffect(() => {
@@ -135,6 +98,31 @@ export default function DashboardPage({
     api("get", "/analytics", null, { branchId })
       .then(({ data }) => {
         if (active) setAnalytics(data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [branchId, items]);
+
+  useEffect(() => {
+    if (!branchId) return;
+    let active = true;
+    api("get", "/movements", null, { branchId, page: 1, pageSize: 100 })
+      .then(async ({ data }) => {
+        const firstPage = data.items || [];
+        const pageSize = data.pageSize || firstPage.length || 100;
+        const totalPages = Math.ceil((data.total || firstPage.length) / pageSize);
+        const remaining = await Promise.all(
+          Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) =>
+            api("get", "/movements", null, { branchId, page: index + 2, pageSize })
+              .then((response) => response.data.items || [])
+          )
+        );
+        if (active) {
+          setMovementHistory(firstPage.concat(...remaining));
+          setMovementHistoryReady(true);
+        }
       })
       .catch(() => {});
     return () => {
@@ -156,6 +144,7 @@ export default function DashboardPage({
     (sum, item) => sum + item.listPrice * item.quantity,
     0
   );
+  const potentialInventoryValue = salesValue;
   const totalUnits = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const pending = requests.filter(
     (request) => request.status === "PENDING"
@@ -164,6 +153,9 @@ export default function DashboardPage({
     (acc, it) => acc + (it.reservedQuantity || 0),
     0
   );
+  const recentMovementCount = movementHistory.length;
+
+
   const totals = items.reduce((result, item) => {
     const unit = item.unitOfMeasure;
     result[unit] =
@@ -200,129 +192,6 @@ export default function DashboardPage({
     ? user.fullName.replace("Administrator", "Admin")
     : "Admin";
 
-  // Filtered items based on Total Sales dropdown filter
-  const filteredItems = items.filter((item) => {
-    if (selectedFilter === "AC Units") {
-      return (
-        item.itemType === "AC Unit" ||
-        (item.category && item.category.toLowerCase().includes("type"))
-      );
-    }
-    if (selectedFilter === "Parts & Materials") {
-      return (
-        item.itemType !== "AC Unit" &&
-        (!item.category || !item.category.toLowerCase().includes("type"))
-      );
-    }
-    return true; // All Products
-  });
-
-  // Calculate filtered turnover / potential value
-  const filteredSalesValue = filteredItems.reduce(
-    (sum, item) => sum + (item.listPrice || 0) * (item.quantity || 0),
-    0
-  );
-
-  // Calculate period multiplier
-  const periodMultiplier =
-    selectedPeriod === "Last Week"
-      ? 0.32
-      : selectedPeriod === "Last Month"
-      ? 0.75
-      : 1.0;
-
-  const displaySalesAmount = Math.round(filteredSalesValue * periodMultiplier);
-
-  // Dynamic growth %
-  const markupPercent =
-    cost > 0 ? Math.round(((salesValue - cost) / cost) * 100) : 40;
-  const marginPercent =
-    salesValue > 0 ? Math.round(((salesValue - cost) / salesValue) * 100) : 27;
-
-  // Calculate dynamic green dot color based on vertical stack position
-  function getDotColor(dotIndex, totalDots) {
-    const fraction = dotIndex / Math.max(totalDots - 1, 1);
-    if (fraction === 0) return "#12a807";
-    if (fraction < 0.25) return "#22c55e";
-    if (fraction < 0.5) return "#4ade80";
-    if (fraction < 0.75) return "#86efac";
-    if (fraction < 0.9) return "#bbf7d0";
-    return "#dcfce7";
-  }
-
-  // 12 Months dynamic dot matrix
-  const MONTHS_CONFIG = [
-    { month: "Jan", weight: 0.65 },
-    { month: "Feb", weight: 0.55 },
-    { month: "Mar", weight: 0.92 },
-    { month: "Apr", weight: 0.78 },
-    { month: "May", weight: 0.60 },
-    { month: "Jun", weight: 0.98 },
-    { month: "Jul", weight: 0.85 },
-    { month: "Aug", weight: 0.94 },
-    { month: "Sept", weight: 0.76 },
-    { month: "Oct", weight: 0.74 },
-    { month: "Nov", weight: 0.71 },
-    { month: "Dec", weight: 0.48 },
-  ];
-
-  const monthsChartData = MONTHS_CONFIG.map((m) => {
-    const monthSales = Math.round(
-      (filteredSalesValue * m.weight * periodMultiplier) / 4
-    );
-    const maxDots = 13;
-    const baseDots = Math.max(3, Math.min(maxDots, Math.round(m.weight * 12)));
-    return {
-      month: m.month,
-      dots: [
-        Math.max(2, Math.min(maxDots, baseDots + 1)),
-        Math.max(2, Math.min(maxDots, baseDots - 2)),
-        Math.max(2, Math.min(maxDots, baseDots)),
-      ],
-      amount: formatMoney(monthSales),
-    };
-  });
-
-  const filterMenu = {
-    items: [
-      {
-        key: "all",
-        label: "All Products",
-        onClick: () => setSelectedFilter("All Products"),
-      },
-      {
-        key: "units",
-        label: "AC Units Only",
-        onClick: () => setSelectedFilter("AC Units"),
-      },
-      {
-        key: "parts",
-        label: "Parts & Materials",
-        onClick: () => setSelectedFilter("Parts & Materials"),
-      },
-    ],
-  };
-
-  const periodMenu = {
-    items: [
-      {
-        key: "last_week",
-        label: "Last Week",
-        onClick: () => setSelectedPeriod("Last Week"),
-      },
-      {
-        key: "last_month",
-        label: "Last Month",
-        onClick: () => setSelectedPeriod("Last Month"),
-      },
-      {
-        key: "this_year",
-        label: "Full Year (2026)",
-        onClick: () => setSelectedPeriod("Full Year"),
-      },
-    ],
-  };
-
   return (
     <div className="dashboard-container">
       {/* 1. WELCOME GREETING BANNER (NODE 441:5358) */}
@@ -337,7 +206,7 @@ export default function DashboardPage({
 
       {/* 2. KPI METRIC CARDS ROW (NODES 441:5405 & 441:5549) */}
       <div className="dashboard-kpi-grid" data-node-id="441:5405">
-        {/* Card 1: Total Revenue (441:5406 / 441:5549) */}
+        {/* Card 1: Total Inventory Cost */}
         <div
           className="dashboard-kpi-card"
           data-node-id="441:5406"
@@ -351,26 +220,26 @@ export default function DashboardPage({
                 <MoneySendIcon />
               </div>
               <h3 className="kpi-title" data-node-id="441:5412">
-                Total Revenue
+                Total Inventory Cost
               </h3>
             </div>
 
             <div className="kpi-trend-row" data-node-id="441:5413">
               <div className="kpi-trend-badge" data-node-id="441:5415">
                 <img src={arrowGrow} alt="Trend Up" className="kpi-trend-arrow" />
-                <span>+{markupPercent}%</span>
+                <span>{items.length} SKUs</span>
               </div>
               <span className="kpi-trend-period" data-node-id="441:5418">
-                Over inventory cost
+                Current stock at cost
               </span>
             </div>
 
             <div className="kpi-values-row" data-node-id="441:5420">
               <span className="kpi-value-large" data-node-id="441:5421">
-                {formatMoney(salesValue)}
+                {formatMoney(cost)}
               </span>
               <span className="kpi-subdelta" data-node-id="441:5422">
-                +{formatMoney(salesValue - cost)}
+                {totalUnits} units
               </span>
             </div>
           </div>
@@ -384,7 +253,7 @@ export default function DashboardPage({
           </div>
         </div>
 
-        {/* Card 2: Profit / Gross Margin (441:5428) */}
+        {/* Card 2: Potential Inventory Value */}
         <div
           className="dashboard-kpi-card"
           data-node-id="441:5428"
@@ -398,26 +267,26 @@ export default function DashboardPage({
                 <MoneyBagIcon />
               </div>
               <h3 className="kpi-title" data-node-id="441:5434">
-                Profit
+                Potential Inventory Value
               </h3>
             </div>
 
             <div className="kpi-trend-row" data-node-id="441:5435">
               <div className="kpi-trend-badge" data-node-id="441:5437">
                 <img src={arrowGrow} alt="Trend Up" className="kpi-trend-arrow" />
-                <span>+{marginPercent}%</span>
+                <span>List price</span>
               </div>
               <span className="kpi-trend-period" data-node-id="441:5440">
-                Gross margin
+                Estimated catalog value
               </span>
             </div>
 
             <div className="kpi-values-row" data-node-id="441:5442">
               <span className="kpi-value-large" data-node-id="441:5443">
-                {formatMoney(salesValue - cost)}
+                {formatMoney(potentialInventoryValue)}
               </span>
               <span className="kpi-subdelta" data-node-id="441:5444">
-                Cost: {formatMoney(cost)}
+                Cost basis: {formatMoney(cost)}
               </span>
             </div>
           </div>
@@ -478,7 +347,7 @@ export default function DashboardPage({
           </div>
         </div>
 
-        {/* Card 4: Stock Health & Reorders (Functional System UI Integration) */}
+        {/* Card 4: Low Stock Items */}
         <div
           className="dashboard-kpi-card"
           style={{ cursor: "pointer" }}
@@ -496,7 +365,7 @@ export default function DashboardPage({
               >
                 <PackageIcon />
               </div>
-              <h3 className="kpi-title">Stock Health</h3>
+              <h3 className="kpi-title">Low Stock Items</h3>
             </div>
 
             <div className="kpi-trend-row">
@@ -506,7 +375,7 @@ export default function DashboardPage({
               >
                 <img src={arrowGrow} alt="Trend" className="kpi-trend-arrow" />
                 <span>
-                  {warnings.length > 0 ? `${warnings.length} Reorders` : "Healthy"}
+                  {low.length > 0 ? `${low.length} Need attention` : "Healthy"}
                 </span>
               </div>
               <span className="kpi-trend-period">
@@ -516,10 +385,10 @@ export default function DashboardPage({
 
             <div className="kpi-values-row">
               <span className="kpi-value-large">
-                {warnings.length}
+                {low.length}
               </span>
               <span className="kpi-subdelta" style={{ color: "#3b82f6" }}>
-                {pending} Requests
+                {out.length} Out of stock
               </span>
             </div>
           </div>
@@ -533,105 +402,58 @@ export default function DashboardPage({
         </div>
       </div>
 
-      {/* 3. TOTAL SALES ANALYTICS CHART CARD (NODE 441:5620) */}
-      <div className="dashboard-sales-card" data-node-id="441:5620">
-        <div className="sales-card-header" data-node-id="441:5621">
-          <div className="sales-header-left" data-node-id="441:5622">
-            <div className="sales-header-icon" data-node-id="441:5624">
-              <GraphTrendingIcon />
-            </div>
-            <h2 className="sales-header-title" data-node-id="441:5626">
-              Total Sales
-            </h2>
-            <Tooltip title="Aggregated turnover and potential fulfillment volume for the Taguig warehouse based on inventory records.">
-              <span className="sales-info-icon" data-node-id="441:5627">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
-                  <path d="M12 16V12M12 8H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
+      {/* 3. INVENTORY MOVEMENT TREND */}
+      <div className="dashboard-main-grid">
+        <StockActivityChart
+          movementHistory={movementHistory}
+          historyReady={movementHistoryReady}
+          initialView={stockChartView}
+          onViewSave={onStockChartViewSave}
+        />
+
+      <div className="dashboard-attention-card">
+        <div className="dashboard-section-header">
+          <div className="section-header-title-wrap">
+            <h3 className="section-title">Needs Attention</h3>
+            <span className="section-subtitle">Items and work requiring follow-up</span>
+          </div>
+        </div>
+        <button type="button" className="attention-row" onClick={() => onNavigateToInventoryWithFilter({ status: "LOW" })}>
+          <span className="attention-row-icon attention-warning">!</span>
+          <span><strong>{low.length} low-stock items</strong><small>Review reorder levels</small></span>
+          <span className="attention-arrow">→</span>
+        </button>
+        <button type="button" className="attention-row" onClick={() => onNavigateToInventoryWithFilter({ status: "OUT" })}>
+          <span className="attention-row-icon attention-danger">×</span>
+          <span><strong>{out.length} out-of-stock items</strong><small>Require replenishment</small></span>
+          <span className="attention-arrow">→</span>
+        </button>
+        <div className="attention-row attention-row-static">
+          <span className="attention-row-icon attention-info">↗</span>
+          <span><strong>{pending} pending requests</strong><small>Awaiting review or fulfillment</small></span>
+        </div>
+      </div>
+      </div>
+
+      <div className="dashboard-section-card recent-activity-card">
+        <div className="dashboard-section-header">
+          <div className="section-header-title-wrap">
+            <h3 className="section-title">Recent Activity</h3>
+            <span className="section-subtitle">Latest stock ledger updates</span>
+          </div>
+          <Tag color="cyan">{recentMovementCount} entries</Tag>
+        </div>
+        <div className="recent-activity-list">
+          {movementHistory.slice(0, 5).map((entry) => (
+            <div className="recent-activity-row" key={entry.id || entry._id}>
+              <span className={`recent-activity-type ${Number(entry.quantityDelta) >= 0 ? "recent-in" : "recent-out"}`}>
+                {Number(entry.quantityDelta) >= 0 ? "IN" : "OUT"}
               </span>
-            </Tooltip>
-          </div>
-
-          <div className="sales-header-controls" data-node-id="441:5628">
-            <Dropdown menu={filterMenu} trigger={["click"]}>
-              <div className="sales-control-pill" data-node-id="441:5629">
-                <FilterIcon />
-                <span data-node-id="441:5632">{selectedFilter}</span>
-                <ChevronDownIcon />
-              </div>
-            </Dropdown>
-
-            <Dropdown menu={periodMenu} trigger={["click"]}>
-              <div className="sales-control-pill" data-node-id="441:5634">
-                <CalendarIcon />
-                <span data-node-id="441:5637">{selectedPeriod}</span>
-                <ChevronDownIcon />
-              </div>
-            </Dropdown>
-          </div>
-        </div>
-
-        {/* Big Sales Metric Value */}
-        <div className="sales-stat-summary" data-node-id="441:5639">
-          <span className="sales-stat-amount" data-node-id="441:5640">
-            {formatMoney(displaySalesAmount)}
-          </span>
-          <div className="sales-stat-trend" data-node-id="441:5641">
-            <img src={arrowGrow} alt="Trend Up" className="kpi-trend-arrow" />
-            <span data-node-id="441:5645">+{marginPercent}%</span>
-          </div>
-          <span className="sales-stat-period" data-node-id="441:5646">
-            Estimated for {selectedPeriod.toLowerCase()} ({filteredItems.length} SKUs)
-          </span>
-        </div>
-
-        {/* Dot Matrix Sales Chart Visual */}
-        <div className="sales-chart-wrapper" data-node-id="441:5647">
-          {/* Y-Axis */}
-          <div className="sales-y-axis" data-node-id="441:5648">
-            <span data-node-id="441:5649">50k</span>
-            <span data-node-id="441:5650">30k</span>
-            <span data-node-id="441:5651">10k</span>
-            <span data-node-id="441:5652">0</span>
-          </div>
-
-          {/* Chart Content */}
-          <div className="sales-chart-content">
-            <div className="sales-columns-container" data-node-id="441:5654">
-              {monthsChartData.map((item) => (
-                <div key={item.month} className="sales-month-group">
-                  {item.dots.map((dotCount, cIdx) => (
-                    <Tooltip
-                      key={cIdx}
-                      title={`${item.month} (Week ${cIdx + 1}): ~${item.amount} (${selectedFilter})`}
-                    >
-                      <div className="sales-dot-column">
-                        {Array.from({ length: dotCount }).map((_, dIdx) => (
-                          <div
-                            key={dIdx}
-                            className="sales-dot"
-                            style={{
-                              backgroundColor: getDotColor(dIdx, dotCount),
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </Tooltip>
-                  ))}
-                </div>
-              ))}
+              <span className="recent-activity-item"><strong>{entry.itemName || entry.sku}</strong><small>{entry.reason || "Stock movement"}</small></span>
+              <span className="recent-activity-quantity">{Number(entry.quantityDelta) > 0 ? "+" : ""}{entry.quantityDelta} {entry.unitOfMeasure}</span>
             </div>
-
-            {/* X-Axis */}
-            <div className="sales-x-axis" data-node-id="441:6021">
-              {monthsChartData.map((item) => (
-                <span key={item.month} className="sales-x-label">
-                  {item.month}
-                </span>
-              ))}
-            </div>
-          </div>
+          ))}
+          {movementHistory.length === 0 && <span className="recent-activity-empty">No recent stock movements.</span>}
         </div>
       </div>
 
