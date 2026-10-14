@@ -5,8 +5,6 @@ import {
   Alert,
   Button,
   Card,
-  Select,
-  Space,
   Spin,
   Skeleton,
 } from "antd";
@@ -23,17 +21,6 @@ import SuppliersPage from "./components/SuppliersPage";
 import ServiceVansPage from "./components/ServiceVansPage";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-import {
-  Widget5BoldDuotoneIcon,
-  BoxBoldDuotoneIcon,
-  BusBoldDuotoneIcon,
-  ScannerBoldDuotoneIcon,
-  BuildingsBoldDuotoneIcon,
-  CartLargeBoldDuotoneIcon,
-  TransferVerticalBoldDuotoneIcon,
-  ClipboardListBoldDuotoneIcon,
-  UsersGroupTwoRoundedBoldDuotoneIcon,
-} from "@solar-icons/react";
 import "./App.css";
 
 const TAGUIG_WAREHOUSE = {
@@ -71,7 +58,6 @@ export default function App() {
   const branchId = TAGUIG_WAREHOUSE.id;
   const [items, setItems] = useState([]);
   const [brands, setBrands] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
   const [requests, setRequests] = useState([]);
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -81,13 +67,13 @@ export default function App() {
   const [targetId, setTargetId] = useState("");
   const [inventoryFilter, setInventoryFilter] = useState(null);
   const [stockChartView, setStockChartView] = useState(null);
+  const [searchQuery] = useState("");
   useEffect(() => {
     if (!user) setStockChartView(null);
   }, [user]);
   const [isDark, setIsDark] = useState(
     localStorage.getItem("ashcol_theme") === "dark",
   );
-  const [searchQuery, setSearchQuery] = useState("");
   const canManage = user && user.role !== "EMPLOYEE";
 
   // Keep page 100% full screen without shrinking html viewport
@@ -215,19 +201,6 @@ export default function App() {
         } else setNotice({ type: "error", text: errorMessage(err) });
       });
   }
-  const navigation = [
-    { id: "dashboard", label: "Overview", icon: <Widget5BoldDuotoneIcon size={22} /> },
-    { id: "inventory", label: "Inventory Catalog", icon: <BoxBoldDuotoneIcon size={22} /> },
-    { id: "service_vehicles", label: "Service Vehicles", icon: <BusBoldDuotoneIcon size={22} /> },
-    { id: "compatibility", label: "Model Matching", icon: <ScannerBoldDuotoneIcon size={22} /> },
-    { id: "suppliers", label: "Suppliers & Vendors", icon: <BuildingsBoldDuotoneIcon size={22} /> },
-    { id: "requests", label: "Material Requests", icon: <CartLargeBoldDuotoneIcon size={22} /> },
-    ...(canManage ? [{ id: "post_movement", label: "Post Movement", icon: <TransferVerticalBoldDuotoneIcon size={22} /> }] : []),
-    { id: "movements", label: "Stock Ledger", icon: <ClipboardListBoldDuotoneIcon size={22} /> },
-    ...(user && user.role === "ADMIN"
-      ? [{ id: "user_management", label: "User Management", icon: <UsersGroupTwoRoundedBoldDuotoneIcon size={22} /> }]
-      : []),
-  ];
   return (
     <ConfigProvider
       theme={{
