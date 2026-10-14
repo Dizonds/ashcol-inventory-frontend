@@ -12,6 +12,8 @@ import {
   Space,
   Modal,
   Descriptions,
+  Table,
+  Tag,
 } from "antd";
 import { api, errorMessage } from "../api";
 
@@ -44,6 +46,26 @@ export default function PostMovementPage({
     ? activeItems.filter((item) => item.itemType === itemType && item.brand === brand)
     : [];
   const selected = filteredItems.find((item) => item.id === productId);
+  const lowStockItems = activeItems
+    .filter((item) => item.quantity === 0 || item.quantity <= item.reorderLevel)
+    .sort((first, second) => {
+      const firstRatio = first.quantity / Math.max(first.reorderLevel, 1);
+      const secondRatio = second.quantity / Math.max(second.reorderLevel, 1);
+      return firstRatio - secondRatio || first.name.localeCompare(second.name);
+    });
+  const depletedCount = lowStockItems.filter((item) => item.quantity === 0).length;
+
+  function selectRestockItem(item) {
+    if (busy || reviewOpen) return;
+    setItemType(item.itemType);
+    setBrand(item.brand);
+    setProductId(item.id);
+    setOperation("STOCK_IN");
+    setReason("Supplier Delivery / Restock");
+    setQuantity(1);
+    setNotes("");
+    setError("");
+  }
   const stockIn = operation === "STOCK_IN";
   const reasons = stockIn
     ? [
@@ -118,6 +140,7 @@ export default function PostMovementPage({
         Record deliveries, returns, dispatches and explained stock corrections.
         Use Material Requests to issue an approved request.
       </Typography.Paragraph>
+      <div className="post-movement-layout">
       <Card
         className="post-movement-card"
         title={
@@ -268,6 +291,75 @@ export default function PostMovementPage({
           </div>
         </form>
       </Card>
+      <Card
+        className="post-movement-low-stock-card"
+        title={
+          <div className="post-movement-card-title">
+            <span className="post-movement-card-icon post-movement-stock-alert-icon">!</span>
+            <span>
+              <strong>Low stock & depleted items</strong>
+              <small>Warehouse items at or below their reorder level.</small>
+            </span>
+          </div>
+        }
+      >
+        <Space wrap className="post-movement-stock-alert-summary">
+          <Tag color="red">{depletedCount} depleted</Tag>
+          <Tag color="orange">{lowStockItems.length - depletedCount} low stock</Tag>
+        </Space>
+        <Typography.Paragraph type="secondary">
+          Select Restock to fill the movement form for an item.
+        </Typography.Paragraph>
+        <Table
+          size="small"
+          rowKey="id"
+          dataSource={lowStockItems}
+          scroll={{ x: 520 }}
+          pagination={{ defaultPageSize: 6, hideOnSinglePage: true, showSizeChanger: false }}
+          locale={{ emptyText: "No low-stock or depleted items." }}
+          rowClassName={(item) => item.id === productId ? "post-movement-low-stock-selected" : ""}
+          columns={[
+            {
+              title: "Item",
+              width: 160,
+              render: (_, item) => (
+                <div>
+                  <Typography.Text strong>{item.name}</Typography.Text>
+                  <Typography.Text type="secondary" className="post-movement-low-stock-sku">{item.sku}</Typography.Text>
+                </div>
+              ),
+            },
+            { title: "Brand", dataIndex: "brand", width: 85 },
+            {
+              title: "Available",
+              width: 105,
+              render: (_, item) => (
+                <div className="post-movement-low-stock-quantity">
+                  <strong>{item.quantity} {item.unitOfMeasure}</strong>
+                  <Tag color={item.quantity === 0 ? "red" : "orange"}>
+                    {item.quantity === 0 ? "Depleted" : "Low stock"}
+                  </Tag>
+                </div>
+              ),
+            },
+            {
+              title: "Reorder level",
+              width: 90,
+              render: (_, item) => `${item.reorderLevel} ${item.unitOfMeasure}`,
+            },
+            {
+              title: "Action",
+              width: 80,
+              render: (_, item) => (
+                <Button size="small" disabled={busy || reviewOpen} onClick={() => selectRestockItem(item)}>
+                  Restock
+                </Button>
+              ),
+            },
+          ]}
+        />
+      </Card>
+      </div>
       <Modal
         title="Review Stock Movement"
         open={reviewOpen}

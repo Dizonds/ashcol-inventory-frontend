@@ -563,7 +563,21 @@
   border-top: 1px solid var(--border-light);
 }
 .service-vehicle-list-open { padding: 8px 0 0 !important; }
-.post-movement-card { max-width: 980px; }
+.post-movement-layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(0, 1.2fr);
+  gap: 24px;
+  align-items: start;
+}
+.post-movement-card,
+.post-movement-low-stock-card { min-width: 0; }
+.post-movement-stock-alert-summary { margin-bottom: 12px; }
+.post-movement-low-stock-sku { display: block; font-size: 11px; }
+.post-movement-low-stock-quantity { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.post-movement-low-stock-selected > td { background: rgba(5, 150, 105, 0.07) !important; }
+@media (max-width: 1200px) {
+  .post-movement-layout { grid-template-columns: minmax(0, 1fr); }
+}
 .post-movement-card .ant-card-head { padding: 16px 24px; }
 .post-movement-card-title {
   display: flex;
@@ -576,7 +590,7 @@
   gap: 3px;
 }
 .post-movement-card-title strong { color: var(--text-main); font-size: 15px; }
-.post-movement-card-title small { color: var(--text-secondary); font-size: 11px; font-weight: 400; }
+.post-movement-card-title small { color: var(--text-secondary); font-size: 11px; font-weight: 400; white-space: normal; }
 .post-movement-card-icon {
   display: grid;
   width: 36px;
@@ -587,6 +601,7 @@
   background: linear-gradient(135deg, var(--brand), var(--brand-light));
   font-size: 22px;
 }
+.post-movement-stock-alert-icon { background: #fff3d6; color: #a66900; }
 .post-movement-form { display: flex; flex-direction: column; gap: 16px; }
 .post-movement-form > .field { margin: 0; }
 .post-movement-form > .form-grid { margin: 0; }
