@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Table,
@@ -12,7 +12,10 @@ import {
   Typography,
   Space,
   Popconfirm,
+  Checkbox,
+  Descriptions,
 } from "antd";
+import { EyeOutlined } from "@ant-design/icons";
 import { api, errorMessage } from "../api";
 
 const isContinuousUnit = (unit) =>
@@ -45,6 +48,28 @@ export default function RequestsPage({
   const [decisionReason, setDecisionReason] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [deleting, setDeleting] = useState(null);
+  const [viewing, setViewing] = useState(null);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deletedEntries, setDeletedEntries] = useState([]);
+  const canManage = ["ADMIN", "MANAGER"].includes(user.role);
+  const ownsRequest = (entry) => String(entry.requestedBy) === String(user.id);
+  useEffect(() => {
+    if (!showDeleted) return;
+    let active = true;
+    api("get", "/requests", null, { branchId, includeDeleted: true })
+      .then(({ data }) => { if (active) setDeletedEntries(data.filter((entry) => entry.deletedAt)); })
+      .catch((err) => { if (active) setError(errorMessage(err)); });
+    return () => { active = false; };
+  }, [showDeleted, branchId, requests]);
+  function deleteRequest() {
+    if (!deleting || busy) return;
+    setBusy(true); setError("");
+    save("delete", `/requests/${deleting.id}`, { branchId }, `Request ${requestNumber(deleting)} deleted.`)
+      .then(() => setDeleting(null))
+      .catch((err) => setError(errorMessage(err)))
+      .finally(() => setBusy(false));
+  }
   const activeItems = items.filter((item) => !item.archived);
   const itemTypes = [...new Set(activeItems.map((item) => item.itemType).filter(Boolean))].sort();
   const brands = [...new Set(activeItems
@@ -115,11 +140,11 @@ export default function RequestsPage({
         fulfillment checks availability and deducts it once. Search a request ID
         to see its status and history.
       </Typography.Paragraph>
-      {error && (
+      {error && !deleting && (
         <Alert type="error" title={error} style={{ marginBottom: 16 }} />
       )}
       <Card
-        title="Warehouse requests"
+        title={user.role === "EMPLOYEE" ? "My requests" : "Warehouse requests"}
         extra={
           user.role === "EMPLOYEE" && (
             <Button
@@ -153,8 +178,9 @@ export default function RequestsPage({
         />
         <Table
           rowKey="id"
-          dataSource={requests.filter(
-            (entry) => (filter === "ALL" || entry.status === filter) &&
+          dataSource={[...requests, ...(showDeleted ? deletedEntries : [])].filter(
+            (entry) => (user.role !== "EMPLOYEE" || ownsRequest(entry)) &&
+              (filter === "ALL" || entry.status === filter) &&
               [requestNumber(entry), entry.id, entry.workOrderId, entry.sku, entry.itemName, entry.brand, entry.itemType, entry.requestedByName]
                 .some((value) => String(value || "").toLowerCase().includes(search.trim().toLowerCase())),
           )}
@@ -212,7 +238,7 @@ export default function RequestsPage({
             { title: "Requested by", dataIndex: "requestedByName" },
             {
               title: "Status",
-              render: (_, entry) => (
+              render: (_, entry) => entry.deletedAt ? <Tag>Deleted ({entry.status.toLowerCase()})</Tag> : (
                 <Tag
                   color={
                     {
@@ -229,10 +255,16 @@ export default function RequestsPage({
             },
             {
               title: "Actions",
-              render: (_, entry) =>
-                user.role !== "EMPLOYEE" && (
+              render: (_, entry) => (
+                <Space wrap>
+                  {entry.status === "DENIED" && (
+                    <Button icon={<EyeOutlined />} aria-label={`View denied request ${requestNumber(entry)}`}
+                      title="View request details and denial reason" onClick={() => setViewing(entry)} />
+                  )}
+                {(canManage || (user.role === "EMPLOYEE" && ownsRequest(entry) && entry.status === "PENDING")) && !entry.deletedAt && (
                   <Space wrap>
-                    {entry.status === "PENDING" && (
+                    <Button danger disabled={busy} onClick={() => { setError(""); setDeleting(entry); }}>Delete</Button>
+                    {canManage && entry.status === "PENDING" && (
                       <Button
                         disabled={busy}
                         onClick={() => transition(entry, "APPROVED")}
@@ -240,7 +272,7 @@ export default function RequestsPage({
                         Approve
                       </Button>
                     )}
-                    {["PENDING", "APPROVED"].includes(entry.status) && (
+                    {canManage && ["PENDING", "APPROVED"].includes(entry.status) && (
                       <Button
                         disabled={busy}
                         danger
@@ -252,7 +284,7 @@ export default function RequestsPage({
                         Deny
                       </Button>
                     )}
-                    {entry.status === "APPROVED" && (
+                    {canManage && entry.status === "APPROVED" && (
                       <Popconfirm
                         title="Issue these materials and deduct stock?"
                         onConfirm={() => transition(entry, "FULFILLED")}
@@ -263,11 +295,47 @@ export default function RequestsPage({
                       </Popconfirm>
                     )}
                   </Space>
-                ),
+                )}
+                </Space>
+              ),
             },
           ]}
         />
+        <Checkbox checked={showDeleted} onChange={(event) => setShowDeleted(event.target.checked)} style={{ marginTop: 16 }}>
+          Show deleted requests
+        </Checkbox>
       </Card>
+      <Modal title="Denied request details" open={Boolean(viewing)} onCancel={() => setViewing(null)}
+        footer={<Button onClick={() => setViewing(null)}>Close</Button>}>
+        {viewing && (
+          <>
+            <Descriptions column={1} size="small" bordered items={[
+              { key: "id", label: "Request ID", children: requestNumber(viewing) },
+              { key: "status", label: "Status", children: <Tag color="red">DENIED</Tag> },
+              { key: "item", label: "Item", children: viewing.itemName },
+              { key: "sku", label: "SKU", children: viewing.sku },
+              { key: "type", label: "Type / Category", children: [viewing.itemType, viewing.category].filter(Boolean).join(" / ") || "Not specified" },
+              { key: "brand", label: "Brand", children: viewing.brand || "Not specified" },
+              { key: "quantity", label: "Quantity", children: `${viewing.quantityNeeded} ${viewing.unitOfMeasure}` },
+              { key: "requester", label: "Requested by", children: viewing.requestedByName },
+              { key: "requested", label: "Requested at", children: formatDate(viewing.createdAt) },
+              { key: "notes", label: "Notes", children: <span style={{ whiteSpace: "pre-wrap" }}>{viewing.notes || "None"}</span> },
+              { key: "reviewer", label: "Denied by", children: viewing.reviewedByName || "Not recorded" },
+              { key: "reviewed", label: "Denied at", children: viewing.reviewedAt ? formatDate(viewing.reviewedAt) : "Not recorded" },
+            ]} />
+            <Typography.Title level={5}>Denial reason</Typography.Title>
+            <Typography.Paragraph style={{ whiteSpace: "pre-wrap" }}>
+              {viewing.decisionReason || "No denial reason recorded."}
+            </Typography.Paragraph>
+          </>
+        )}
+      </Modal>
+      <Modal title="Delete Material Request" open={Boolean(deleting)} onOk={deleteRequest}
+        onCancel={() => !busy && setDeleting(null)} okText="Delete Request"
+        okButtonProps={{ danger: true }} cancelButtonProps={{ disabled: busy }} confirmLoading={busy} closable={!busy} maskClosable={!busy}>
+        <Typography.Paragraph>Delete {deleting ? requestNumber(deleting) : ""} from the request list? Stock balances and ledger entries will stay unchanged. Its history remains available under Show deleted requests.</Typography.Paragraph>
+        {error && <Alert type="error" showIcon title={error} />}
+      </Modal>
       <Modal
         title="New material request"
         open={user.role === "EMPLOYEE" && open}
