@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   ConfigProvider,
   theme,
@@ -19,6 +19,7 @@ import SettingsPage from "./components/SettingsPage";
 import CompatibilityLookupPage from "./components/CompatibilityLookupPage";
 import SuppliersPage from "./components/SuppliersPage";
 import ServiceVansPage from "./components/ServiceVansPage";
+import { DEMO_SERVICE_VEHICLES } from "./data/demoServiceVehicles";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import "./App.css";
@@ -53,6 +54,26 @@ export default function App() {
   const [checking, setChecking] = useState(true);
   const [page, setPage] = useState("dashboard");
   const [serviceVans, setServiceVans] = useState([]);
+  const [demoServiceVans, setDemoServiceVans] = useState(() =>
+    DEMO_SERVICE_VEHICLES.map((vehicle) => ({ ...vehicle })),
+  );
+  const serviceVehicleList = useMemo(() => {
+    const visibleDemos = user?.role === "EMPLOYEE"
+      ? demoServiceVans.filter((van) => van.driverId === user.id || van.driverName === user.fullName)
+      : demoServiceVans;
+    return [...serviceVans, ...visibleDemos];
+  }, [serviceVans, demoServiceVans, user]);
+
+  function updateDemoVehicle(vehicle) {
+    setDemoServiceVans((current) => current.map((van) => van.id === vehicle.id ? vehicle : van));
+    setNotice({ type: "success", text: "Service vehicle updated." });
+    return vehicle;
+  }
+
+  function removeDemoVehicle(id) {
+    setDemoServiceVans((current) => current.filter((van) => van.id !== id));
+    setNotice({ type: "success", text: "Service vehicle deleted." });
+  }
   // The main inventory view is the fixed Taguig warehouse for every role.
   // Employee-specific van access is handled inside Service Vehicles.
   const branchId = TAGUIG_WAREHOUSE.id;
@@ -353,7 +374,9 @@ export default function App() {
                         )}
                         {(page === "service_vehicles" || page === "service_vans") && (
                           <ServiceVansPage
-                            serviceVans={serviceVans}
+                            serviceVans={serviceVehicleList}
+                            updateDemoVehicle={updateDemoVehicle}
+                            removeDemoVehicle={removeDemoVehicle}
                             branchId={branchId}
                             user={user}
                             save={save}
@@ -403,6 +426,7 @@ export default function App() {
                         {page === "user_management" && user.role === "ADMIN" && (
                           <SettingsPage
                             section="users"
+                            user={user}
                             save={save}
                             refresh={refresh}
                           />

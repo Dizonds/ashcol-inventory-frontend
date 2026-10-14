@@ -23,6 +23,8 @@ export default function ServiceVansPage({
   user,
   save,
   refresh,
+  updateDemoVehicle,
+  removeDemoVehicle,
 }) {
   const [selectedVanId, setSelectedVanId] = useState("");
   const [viewMode, setViewMode] = useState("list");
@@ -47,18 +49,53 @@ export default function ServiceVansPage({
   const [newVanDriver, setNewVanDriver] = useState("");
   const [newVanBusy, setNewVanBusy] = useState(false);
   const [newVanError, setNewVanError] = useState("");
+  const [deleteVan, setDeleteVan] = useState(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [vehicleUpdateBusy, setVehicleUpdateBusy] = useState(false);
   const [localServiceVans, setLocalServiceVans] = useState(serviceVans);
   const canManage = user?.role !== "EMPLOYEE";
   const isAdmin = user?.role === "ADMIN";
 
   const currentVan = localServiceVans.find((v) => v.id === selectedVanId);
+  const selectedVanIsDemo = Boolean(currentVan?.isDemo);
+  const deleteTarget = localServiceVans.find((van) => van.id === deleteVan?.id) || deleteVan;
+  const deleteBlocked = deleteTarget && (
+    deleteTarget.driverId?.trim() || deleteTarget.driverName?.trim() || deleteTarget.status !== "AVAILABLE"
+  );
+
+  function openDelete(van) {
+    setDeleteError("");
+    setDeleteVan(van);
+  }
+
+  function confirmDelete() {
+    if (!isAdmin || !deleteVan || deleteBlocked || deleteBusy) return;
+    const vehicleId = deleteVan.id;
+    setDeleteBusy(true);
+    setDeleteError("");
+    const removal = deleteTarget.isDemo
+      ? Promise.resolve(removeDemoVehicle(vehicleId))
+      : save("delete", `/service-vans/${encodeURIComponent(vehicleId)}`, undefined, "Service vehicle deleted.");
+    removal
+      .then(() => {
+        setLocalServiceVans((current) => current.filter((van) => van.id !== vehicleId));
+        if (selectedVanId === vehicleId) {
+          setSelectedVanId("");
+          setVanItems([]);
+          setViewMode("list");
+        }
+        setDeleteVan(null);
+      })
+      .catch((err) => setDeleteError(errorMessage(err)))
+      .finally(() => setDeleteBusy(false));
+  }
 
   useEffect(() => {
     // Preserve the user's current vehicle when the parent refreshes the list
     // after a status/driver update. Previously the list refresh could fall
     // back to the first vehicle (often Bravo) while the selected update was
     // still being applied.
-    if (serviceVans.length === 0) return;
     setLocalServiceVans(serviceVans);
     setSelectedVanId((currentId) =>
       currentId && serviceVans.some((van) => van.id === currentId)
@@ -78,8 +115,10 @@ export default function ServiceVansPage({
   }, [localServiceVans, selectedVanId]);
 
   useEffect(() => {
-    if (!selectedVanId) {
+    if (!selectedVanId || selectedVanIsDemo) {
       setVanItems([]);
+      setLoading(false);
+      setError("");
       return;
     }
     let active = true;
@@ -105,7 +144,7 @@ export default function ServiceVansPage({
     return () => {
       active = false;
     };
-  }, [selectedVanId, refresh]);
+  }, [selectedVanId, refresh, selectedVanIsDemo]);
 
   const [usersList, setUsersList] = useState([]);
 
@@ -146,21 +185,39 @@ export default function ServiceVansPage({
     );
     return !alreadyAssigned || currentDriverMatches(candidate);
   });
+  const driverOptions = [
+    { value: "", label: "No Driver" },
+    ...availableDrivers.map((candidate) => ({
+      value: candidate.id || candidate._id,
+      label: `${candidate.fullName} (${candidate.role})`,
+    })),
+  ];
+  const matchingDriver = availableDrivers.find(currentDriverMatches);
+  const currentDriverValue = currentVan?.driverId || matchingDriver?.id || matchingDriver?._id ||
+    (currentVan?.driverName ? "__legacy_driver__" : "");
+  const currentDriverOptions = driverOptions.some((option) => option.value === currentDriverValue)
+    ? driverOptions
+    : [...driverOptions, { value: currentDriverValue, label: currentVan?.driverName || "Assigned driver", disabled: true }];
 
   function handleStatusChange(newStatus) {
+    if (vehicleUpdateBusy || deleteBusy) return;
     if (["ON_FIELD", "ARRIVED"].includes(newStatus) && !currentVan?.driverName) {
       setError("An assigned driver/lead technician is required before marking this van as En Route or Arrived.");
       return;
     }
     setError("");
-    save(
+    setVehicleUpdateBusy(true);
+    const update = currentVan.isDemo
+      ? Promise.resolve(updateDemoVehicle({ ...currentVan, status: newStatus }))
+      : save(
       "patch",
       `/service-vans/${selectedVanId}/status`,
       { status: newStatus },
       `Van status updated to ${newStatus}.`,
       undefined,
       { refresh: false },
-    )
+    );
+    update
       .then((updatedVan) => {
         setLocalServiceVans((current) =>
           current.map((van) => (van.id === updatedVan.id ? updatedVan : van)),
@@ -168,24 +225,33 @@ export default function ServiceVansPage({
       })
       .catch((err) => {
         setError(errorMessage(err));
-      });
+      })
+      .finally(() => setVehicleUpdateBusy(false));
   }
 
   function handleDriverChange(driverId) {
-    save(
+    if (vehicleUpdateBusy || deleteBusy || driverId === "__legacy_driver__") return;
+    setError("");
+    setVehicleUpdateBusy(true);
+    const driver = usersList.find((candidate) => (candidate.id || candidate._id) === driverId);
+    const update = currentVan.isDemo
+      ? Promise.resolve(updateDemoVehicle({ ...currentVan, driverId: driverId || "", driverName: driver?.fullName || "" }))
+      : save(
       "patch",
       `/service-vans/${selectedVanId}/driver`,
       { driverId: driverId || "" },
       "Assigned driver/technician updated.",
       undefined,
       { refresh: false },
-    )
+    );
+    update
       .then((updatedVan) => {
         setLocalServiceVans((current) =>
           current.map((van) => (van.id === updatedVan.id ? updatedVan : van)),
         );
       })
-      .catch((err) => setError(errorMessage(err)));
+      .catch((err) => setError(errorMessage(err)))
+      .finally(() => setVehicleUpdateBusy(false));
   }
 
   const columns = [
@@ -247,26 +313,12 @@ export default function ServiceVansPage({
       extra={
         <Space wrap>
           {viewMode === "details" && <Button onClick={() => setViewMode("list")}>← All Vehicles</Button>}
-          {viewMode === "details" && canManage && <strong>Select Vehicle:</strong>}
-          {viewMode === "details" && canManage && <Select
-            value={selectedVanId || undefined}
-            onChange={setSelectedVanId}
-            style={{ minWidth: 260 }}
-             options={localServiceVans.map((van) => ({
-              value: van.id,
-              label: (
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <BusBoldDuotoneIcon size={16} />
-                  {van.name} ({van.plateNumber ? `${van.plateNumber} · ` : ""}{van.status})
-                </span>
-              ),
-            }))}
-          />}
           {isAdmin && (
             <Button
               type="primary"
               onClick={() => {
-                 setNewVanId(`VAN-${String(localServiceVans.length + 1).padStart(2, "0")}`);
+                const nextNumber = Math.max(0, ...localServiceVans.map((van) => Number(van.id.match(/^VAN-(\d+)$/)?.[1]) || 0)) + 1;
+                setNewVanId(`VAN-${String(nextNumber).padStart(2, "0")}`);
                 setNewVanName("");
                 setNewVanPlate("");
                 setNewVanDriver("");
@@ -312,6 +364,7 @@ export default function ServiceVansPage({
                   </div>
                 </div>
                 <div className="service-vehicle-list-card-meta">
+                  {van.isDemo && <Tag>Demo</Tag>}
                   <Tag color={van.status === "AVAILABLE" ? "green" : van.status === "MAINTENANCE" ? "orange" : "blue"}>
                     {van.status}
                   </Tag>
@@ -329,7 +382,7 @@ export default function ServiceVansPage({
           type="inner"
           title={`Vehicle Details: ${currentVan.name}`}
           style={{ marginBottom: 16, background: "rgba(5, 150, 105, 0.04)" }}
-           extra={null}
+          extra={isAdmin && <Button danger disabled={vehicleUpdateBusy} onClick={() => openDelete(currentVan)}>Delete Vehicle</Button>}
         >
           <Space orientation="horizontal" size="large" wrap>
             <div>
@@ -345,17 +398,17 @@ export default function ServiceVansPage({
               {canManage ? (
                 <Space style={{ marginTop: 4 }}>
                   <Select
+                    aria-label="Assigned vehicle driver"
                     showSearch
+                    optionFilterProp="label"
                     allowClear
                     placeholder="No Driver Assigned"
                     style={{ minWidth: 240 }}
-                    value={currentVan.driverId || undefined}
+                    value={currentDriverValue}
                     onChange={handleDriverChange}
-                    disabled={["ON_FIELD", "ARRIVED"].includes(currentVan.status)}
-                     options={availableDrivers.map((u) => ({
-                       value: u.id || u._id,
-                      label: `${u.fullName} (${u.role})`,
-                    }))}
+                    loading={vehicleUpdateBusy}
+                    disabled={deleteBusy || vehicleUpdateBusy || ["ON_FIELD", "ARRIVED"].includes(currentVan.status)}
+                    options={currentDriverOptions}
                   />
                   {["ON_FIELD", "ARRIVED"].includes(currentVan.status) && (
                     <Typography.Text type="secondary">
@@ -374,6 +427,7 @@ export default function ServiceVansPage({
             <div>
               <Typography.Text type="secondary">Live Status: </Typography.Text>
                <Select
+                 disabled={deleteBusy || vehicleUpdateBusy}
                  size="small"
                  value={currentVan.status}
                  onChange={handleStatusChange}
@@ -405,6 +459,34 @@ export default function ServiceVansPage({
           pagination={{ pageSize: 10 }}
         />
       ))}
+
+      <Modal
+        title="Delete Service Vehicle"
+        open={Boolean(deleteVan)}
+        onCancel={() => !deleteBusy && setDeleteVan(null)}
+        onOk={confirmDelete}
+        okText="Delete Vehicle"
+        okButtonProps={{ danger: true, disabled: Boolean(deleteBlocked) }}
+        cancelButtonProps={{ disabled: deleteBusy }}
+        confirmLoading={deleteBusy}
+        closable={!deleteBusy}
+        maskClosable={!deleteBusy}
+      >
+        {deleteBlocked ? (
+          <Alert
+            type="warning"
+            showIcon
+            title="Vehicle is busy"
+            description="Unassign its driver and set it to Available before deleting it."
+          />
+        ) : (
+          <Typography.Paragraph>
+            Delete {deleteTarget?.name}? The vehicle must have no stock or open requests.
+            Its past stock movements and request history will be kept.
+          </Typography.Paragraph>
+        )}
+        {deleteError && <Alert type="error" showIcon title={deleteError} />}
+      </Modal>
 
       {/* Record material used modal */}
       <Modal
@@ -666,12 +748,11 @@ export default function ServiceVansPage({
           <label className="field" style={{ display: "block", marginBottom: 12 }}>
             Vehicle ID / Code
             <Input
-              required
-              placeholder="e.g. VAN-03"
+              readOnly
               value={newVanId}
-              onChange={(e) => setNewVanId(e.target.value)}
               style={{ marginTop: 4 }}
             />
+            <Typography.Text type="secondary">Generated automatically.</Typography.Text>
           </label>
           <label className="field" style={{ display: "block", marginBottom: 12 }}>
             Vehicle Name / Description
@@ -695,16 +776,15 @@ export default function ServiceVansPage({
           <label className="field" style={{ display: "block", marginBottom: 16 }}>
             Assigned Lead Technician / Driver (optional)
             <Select
+              aria-label="New vehicle driver"
               showSearch
+              optionFilterProp="label"
               allowClear
               placeholder="Select technician"
-              value={newVanDriver || undefined}
+              value={newVanDriver}
               onChange={(val) => setNewVanDriver(val || "")}
               style={{ width: "100%", marginTop: 4 }}
-               options={availableDrivers.map((u) => ({
-                 value: u.id || u._id,
-                label: `${u.fullName} (${u.role})`,
-              }))}
+              options={driverOptions}
             />
           </label>
           <Space style={{ width: "100%", justifyContent: "flex-end" }}>

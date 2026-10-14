@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Input,
+  Modal,
   Select,
   Table,
   Tag,
@@ -30,13 +31,33 @@ function nameIsValid(value) {
   return /^[\p{L}][\p{L} .'-]{1,49}$/u.test(clean(value));
 }
 
-export default function SettingsPage({ section = "branches", save, refresh }) {
+export default function SettingsPage({ section = "branches", save, refresh, user: currentUser }) {
   const [account, setAccount] = useState(emptyAccount);
   const [users, setUsers] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
   const [activeModule, setActiveModule] = useState(null);
+  const [removeAccount, setRemoveAccount] = useState(null);
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [removeError, setRemoveError] = useState("");
+  const isAdmin = currentUser?.role === "ADMIN";
+  const isProtectedAccount = (user) => user.id === (currentUser?.id || currentUser?._id) ||
+    (user.role === "ADMIN" && users.filter((entry) => entry.role === "ADMIN").length <= 1);
+
+  function confirmRemoveAccount() {
+    if (!isAdmin || !removeAccount || isProtectedAccount(removeAccount) || removeBusy) return;
+    setRemoveBusy(true);
+    setRemoveError("");
+    const id = removeAccount.id;
+    save("delete", `/users/${id}`, undefined, "User account removed.", undefined, { refresh: false })
+      .then(() => {
+        setUsers((current) => current.filter((user) => user.id !== id));
+        setRemoveAccount(null);
+      })
+      .catch((err) => setRemoveError(errorMessage(err)))
+      .finally(() => setRemoveBusy(false));
+  }
 
   useEffect(() => {
     if (section !== "users") return undefined;
@@ -181,9 +202,43 @@ export default function SettingsPage({ section = "branches", save, refresh }) {
               { title: "Name", render: (_, user) => <strong>{user.fullName || `${user.firstName} ${user.lastName}`}</strong> },
               { title: "Email", dataIndex: "email" },
               { title: "Role", dataIndex: "role", render: (role) => <Tag color={role === "ADMIN" ? "green" : role === "MANAGER" ? "blue" : "default"}>{role}</Tag> },
+              ...(isAdmin ? [{
+                title: "Actions",
+                render: (_, user) => (
+                  <Button
+                    danger
+                    disabled={isProtectedAccount(user)}
+                    title={isProtectedAccount(user) ? "Your signed-in account and the last administrator are protected." : "Remove this user account"}
+                    onClick={() => {
+                      setRemoveError("");
+                      setRemoveAccount(user);
+                    }}
+                  >
+                    Remove User
+                  </Button>
+                ),
+              }] : []),
             ]}
           />
         </Card>}
+        <Modal
+          title="Remove User Account"
+          open={Boolean(removeAccount)}
+          onCancel={() => !removeBusy && setRemoveAccount(null)}
+          onOk={confirmRemoveAccount}
+          okText="Remove User"
+          okButtonProps={{ danger: true, disabled: !removeAccount || isProtectedAccount(removeAccount) }}
+          cancelButtonProps={{ disabled: removeBusy }}
+          confirmLoading={removeBusy}
+          closable={!removeBusy}
+          maskClosable={!removeBusy}
+        >
+          <Typography.Paragraph>
+            Remove {removeAccount?.fullName} ({removeAccount?.email})? Their active sessions will end.
+            Past stock movements and material request history will be kept.
+          </Typography.Paragraph>
+          {removeError && <Alert type="error" showIcon title={removeError} />}
+        </Modal>
       </>
     );
   }
