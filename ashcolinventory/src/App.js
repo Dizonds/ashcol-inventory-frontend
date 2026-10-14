@@ -398,7 +398,6 @@ export default function App() {
                           <MovementsPage
                             branchId={branchId}
                             refresh={refresh}
-                            serviceVans={serviceVans}
                           />
                         )}
                         {page === "user_management" && user.role === "ADMIN" && (

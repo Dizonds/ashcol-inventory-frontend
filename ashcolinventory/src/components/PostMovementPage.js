@@ -13,7 +13,7 @@ import {
   Modal,
   Descriptions,
 } from "antd";
-import { errorMessage } from "../api";
+import { api, errorMessage } from "../api";
 
 const isContinuousUnit = (unit) =>
   ["METER", "FOOT", "KG", "LITER"].includes(unit);
@@ -24,7 +24,10 @@ export default function PostMovementPage({
   save,
   preselectedItemId,
 }) {
-  const [productId, setProductId] = useState(preselectedItemId || "");
+  const preselected = items.find((item) => item.id === preselectedItemId && !item.archived);
+  const [productId, setProductId] = useState(preselected?.id || "");
+  const [itemType, setItemType] = useState(preselected?.itemType || "");
+  const [brand, setBrand] = useState(preselected?.brand || "");
   const [operation, setOperation] = useState("STOCK_IN");
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState("Supplier Delivery / Restock");
@@ -32,7 +35,15 @@ export default function PostMovementPage({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
-  const selected = items.filter((item) => item.id === productId)[0];
+  const [review, setReview] = useState(null);
+  const activeItems = items.filter((item) => !item.archived);
+  const itemTypes = [...new Set(activeItems.map((item) => item.itemType).filter(Boolean))].sort();
+  const brands = [...new Set(activeItems.filter((item) => item.itemType === itemType)
+    .map((item) => item.brand).filter(Boolean))].sort();
+  const filteredItems = itemType && brand
+    ? activeItems.filter((item) => item.itemType === itemType && item.brand === brand)
+    : [];
+  const selected = filteredItems.find((item) => item.id === productId);
   const stockIn = operation === "STOCK_IN";
   const reasons = stockIn
     ? [
@@ -49,6 +60,7 @@ export default function PostMovementPage({
       ];
   function submit(event) {
     event.preventDefault();
+    if (busy || reviewOpen) return;
     setError("");
     if (!selected || !quantity || quantity <= 0) {
       setError("Select an item and enter a positive quantity.");
@@ -58,24 +70,43 @@ export default function PostMovementPage({
       setError("The requested quantity exceeds available stock.");
       return;
     }
-    setReviewOpen(true);
+    const draft = { item: selected, productId, branchId, quantity: Number(quantity), stockIn, reason, notes };
+    setBusy(true);
+    api("post", "/movement-tickets", { movementType: operation })
+      .then(({ data }) => {
+        setReview({ ...draft, referenceId: data.referenceId });
+        setReviewOpen(true);
+      })
+      .catch((err) => setError(errorMessage(err)))
+      .finally(() => setBusy(false));
   }
 
   function confirmPost() {
+    if (busy || !review) return;
     setBusy(true);
-    setReviewOpen(false);
-    const path = `/products/${productId}/stock`;
-    const data = { branchId, delta: stockIn ? quantity : -quantity, reason, notes };
+    setError("");
+    const path = `/products/${review.productId}/stock`;
+    const data = {
+      branchId: review.branchId,
+      delta: review.stockIn ? review.quantity : -review.quantity,
+      reason: review.reason,
+      notes: review.notes,
+      referenceId: review.referenceId,
+    };
     save(
       "patch",
       path,
       data,
-      "Stock movement recorded.",
+      `Stock movement ${review.referenceId} recorded.`,
     )
       .then(() => {
         setProductId("");
+        setItemType("");
+        setBrand("");
         setQuantity(1);
         setNotes("");
+        setReviewOpen(false);
+        setReview(null);
       })
       .catch((err) => setError(errorMessage(err)))
       .finally(() => setBusy(false));
@@ -99,11 +130,12 @@ export default function PostMovementPage({
           </div>
         }
       >
-        {error && <Alert type="error" showIcon title={error} />}
+        {error && !reviewOpen && <Alert type="error" showIcon title={error} />}
         <form className="post-movement-form" onSubmit={submit}>
           <label className="field">
             Operation
             <Radio.Group
+              disabled={busy || reviewOpen}
               value={operation}
               onChange={(e) => {
                 const value = e.target.value;
@@ -121,16 +153,57 @@ export default function PostMovementPage({
             />
           </label>
           <label className="field">
-            Inventory item
+            Item Type
             <Select
+              aria-label="Movement item type"
               showSearch
               optionFilterProp="label"
-              value={productId || undefined}
-              placeholder="Select a SKU"
-              onChange={setProductId}
-              options={items.map((item) => ({
+              placeholder="Select item type"
+              disabled={busy || reviewOpen}
+              value={itemType || undefined}
+              onChange={(value) => {
+                setItemType(value);
+                setBrand("");
+                setProductId("");
+                setQuantity(1);
+              }}
+              options={itemTypes.map((value) => ({ value, label: value }))}
+            />
+          </label>
+          <label className="field">
+            Brand
+            <Select
+              aria-label="Movement brand"
+              showSearch
+              optionFilterProp="label"
+              placeholder={itemType ? "Select brand" : "Select item type first"}
+              disabled={!itemType || busy || reviewOpen}
+              value={brand || undefined}
+              onChange={(value) => {
+                setBrand(value);
+                setProductId("");
+                setQuantity(1);
+              }}
+              options={brands.map((value) => ({ value, label: value }))}
+            />
+          </label>
+          <label className="field">
+            Inventory item
+            <Select
+              aria-label="Movement item"
+              showSearch
+              optionFilterProp="label"
+              disabled={!itemType || !brand || busy || reviewOpen}
+              value={selected?.id}
+              placeholder={itemType && brand ? "Select item" : "Select item type and brand first"}
+              notFoundContent="No matching items"
+              onChange={(value) => {
+                setProductId(value);
+                setQuantity(1);
+              }}
+              options={filteredItems.map((item) => ({
                 value: item.id,
-                label: `${item.sku} — ${item.name} (${item.quantity} ${item.unitOfMeasure})`,
+                label: `${item.name} — ${item.sku} (${item.quantity} ${item.unitOfMeasure})`,
               }))}
             />
           </label>
@@ -138,6 +211,7 @@ export default function PostMovementPage({
             <label className="field">
               Quantity {selected ? `(${selected.unitOfMeasure})` : ""}
               <InputNumber
+                disabled={busy || reviewOpen}
                 min={isContinuousUnit(selected?.unitOfMeasure) ? 0.001 : 1}
                 step={isContinuousUnit(selected?.unitOfMeasure) ? 0.1 : 1}
                 precision={isContinuousUnit(selected?.unitOfMeasure) ? 3 : 0}
@@ -149,6 +223,7 @@ export default function PostMovementPage({
             <label className="field">
                 Reason
                 <Select
+                  disabled={busy || reviewOpen}
                   value={reason}
                   onChange={setReason}
                   options={reasons.map((value) => ({ value, label: value }))}
@@ -158,6 +233,7 @@ export default function PostMovementPage({
           <label className="field">
             Receipt, transfer reference, or explanation
             <Input.TextArea
+              disabled={busy || reviewOpen}
               required
               rows={3}
               maxLength={200}
@@ -186,7 +262,7 @@ export default function PostMovementPage({
             </Space>
           )}
           <div className="post-movement-submit-row">
-            <Button type="primary" htmlType="submit" loading={busy}>
+            <Button type="primary" htmlType="submit" loading={busy} disabled={!selected || reviewOpen}>
               Confirm & Post
             </Button>
           </div>
@@ -195,29 +271,46 @@ export default function PostMovementPage({
       <Modal
         title="Review Stock Movement"
         open={reviewOpen}
-        onCancel={() => setReviewOpen(false)}
+        onCancel={() => {
+          if (!busy) {
+            setReviewOpen(false);
+            setReview(null);
+          }
+        }}
         onOk={confirmPost}
         okText="Yes, Confirm & Post"
         confirmLoading={busy}
+        okButtonProps={{ disabled: !review }}
+        cancelButtonProps={{ disabled: busy }}
+        closable={!busy}
+        maskClosable={!busy}
       >
+        {error && <Alert type="error" showIcon title={error} />}
         <Typography.Paragraph>
           Are these details correct? Please review them before posting this stock movement.
         </Typography.Paragraph>
         <Descriptions bordered column={1} size="small">
+          <Descriptions.Item label="Ticket ID">
+            <Typography.Text copyable>{review?.referenceId || ""}</Typography.Text>
+          </Descriptions.Item>
           <Descriptions.Item label="Operation">
-            {stockIn ? "Stock In" : "Stock Out"}
+            {review?.stockIn ? "Stock In" : "Stock Out"}
           </Descriptions.Item>
           <Descriptions.Item label="Inventory item">
-            {selected ? `${selected.sku} — ${selected.name}` : "—"}
+            {review ? `${review.item.sku} — ${review.item.name}` : "—"}
           </Descriptions.Item>
+          <Descriptions.Item label="Type / Category">
+            {review ? `${review.item.itemType} / ${review.item.category}` : "—"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Brand">{review?.item.brand || "—"}</Descriptions.Item>
           <Descriptions.Item label="Quantity">
-            {quantity} {selected?.unitOfMeasure || ""}
+            {review?.quantity} {review?.item.unitOfMeasure || ""}
           </Descriptions.Item>
-          <Descriptions.Item label="Reason">{reason}</Descriptions.Item>
-          <Descriptions.Item label="Explanation / reference">{notes || "—"}</Descriptions.Item>
+          <Descriptions.Item label="Reason">{review?.reason}</Descriptions.Item>
+          <Descriptions.Item label="Explanation / reference">{review?.notes || "—"}</Descriptions.Item>
           <Descriptions.Item label="Projected balance">
-            {selected
-              ? `${Math.round((selected.quantity + (stockIn ? Number(quantity) : -Number(quantity))) * 1000) / 1000} ${selected.unitOfMeasure}`
+            {review
+              ? `${Math.round((review.item.quantity + (review.stockIn ? review.quantity : -review.quantity)) * 1000) / 1000} ${review.item.unitOfMeasure}`
               : "—"}
           </Descriptions.Item>
         </Descriptions>

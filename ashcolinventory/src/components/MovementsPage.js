@@ -116,7 +116,7 @@ const LEDGER_SORTS = [
   { value: "za", label: "Item Z–A" },
 ];
 
-export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
+export default function MovementsPage({ branchId, refresh }) {
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -205,13 +205,6 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
     }
     const label = rawType ? rawType.replace(/_/g, " ") : "Movement";
     return <span className="movement-badge default">{label}</span>;
-  };
-
-  const locationLabel = (locationId) => {
-    if (locationId === "LOCAL-WAREHOUSE") return "Taguig Warehouse";
-    const van = serviceVans.find((item) => item.id === locationId);
-    if (!van) return locationId || "—";
-    return `${van.name}${van.plateNumber ? ` (${van.plateNumber})` : ""}`;
   };
 
   // Pagination calculation matching Figma
@@ -382,21 +375,22 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
             <table className="stock-ledger-table">
               <thead>
                 <tr>
-                  <th style={{ width: "13%" }} data-node-id="458:15908">TIMESTAMP</th>
-                  <th style={{ width: "16%" }} data-node-id="458:15924">INVENTORY ITEM</th>
-                  <th style={{ width: "12%" }}>LOCATION</th>
+                  <th style={{ width: "12%" }} data-node-id="458:15908">TIMESTAMP</th>
+                  <th style={{ width: "15%" }} data-node-id="458:15924">INVENTORY ITEM</th>
+                  <th style={{ width: "11%" }}>TYPE / CATEGORY</th>
+                  <th style={{ width: "8%" }}>BRAND</th>
                   <th style={{ width: "11%" }} data-node-id="458:15945">MOVEMENT TYPE</th>
-                  <th style={{ width: "10%" }} data-node-id="458:15966">QUANTITY</th>
-                  <th style={{ width: "11%" }} data-node-id="458:15987">STOCK BALANCE</th>
-                  <th style={{ width: "11%" }} data-node-id="458:16003">PROCESSED BY</th>
-                  <th style={{ width: "10%" }} data-node-id="459:16250">REFERENCE ID</th>
-                  <th style={{ width: "14%" }} data-node-id="459:16271">REMARKS</th>
+                  <th style={{ width: "8%" }} data-node-id="458:15966">QUANTITY</th>
+                  <th style={{ width: "10%" }} data-node-id="458:15987">STOCK BALANCE</th>
+                  <th style={{ width: "9%" }} data-node-id="458:16003">PROCESSED BY</th>
+                  <th style={{ width: "7%" }} data-node-id="459:16250">REFERENCE ID</th>
+                  <th style={{ width: "9%" }} data-node-id="459:16271">REMARKS</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && !loading ? (
                   <tr>
-                    <td colSpan={9} className="stock-ledger-empty">
+                    <td colSpan={10} className="stock-ledger-empty">
                       No stock movement transactions found matching your criteria.
                     </td>
                   </tr>
@@ -428,10 +422,13 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
                           </div>
                         </td>
 
-                        {/* LOCATION */}
                         <td>
-                          {locationLabel(entry.branchId)}
+                          <div className="table-type-cat">
+                            <span className="table-type-label">{entry.itemType || "—"}</span>
+                            <span className="table-cat-label">{entry.category || ""}</span>
+                          </div>
                         </td>
+                        <td>{entry.brand || "—"}</td>
 
                         {/* MOVEMENT TYPE */}
                         <td>
@@ -460,7 +457,7 @@ export default function MovementsPage({ branchId, refresh, serviceVans = [] }) {
                         {/* REFERENCE ID */}
                         <td>
                           <span className="ledger-cell-ref">
-                            {entry.referenceId || "—"}
+                            {entry.requestNumber || entry.referenceId || "—"}
                           </span>
                         </td>
 

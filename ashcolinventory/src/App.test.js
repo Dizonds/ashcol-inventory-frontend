@@ -112,6 +112,7 @@ test("manager specification save excludes quantity", async () => {
 });
 
 test("failed movement preserves entered data so it can be corrected", async () => {
+  api.mockResolvedValue({ data: { referenceId: "STI0001" } });
   const save = jest.fn().mockRejectedValue(new Error("Connection failed"));
   render(
     <PostMovementPage
@@ -128,11 +129,14 @@ test("failed movement preserves entered data so it can be corrected", async () =
     { target: { value: "Receipt 100" } },
   );
   fireEvent.click(screen.getByRole("button", { name: "Confirm & Post" }));
+  expect(await screen.findByText("STI0001")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Yes, Confirm & Post" }));
   expect(await screen.findByText("Connection failed")).toBeInTheDocument();
   expect(
     screen.getByLabelText("Receipt, transfer reference, or explanation"),
   ).toHaveValue("Receipt 100");
   expect(save.mock.calls[0][2].delta).toBe(1);
+  expect(save.mock.calls[0][2].referenceId).toBe("STI0001");
 });
 
 test("dashboard separates units and distinguishes cost from selling value", () => {

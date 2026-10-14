@@ -277,6 +277,7 @@
 
 .stock-ledger-table {
   width: 100%;
+  min-width: 1440px;
   border-collapse: collapse;
   text-align: left;
 }
