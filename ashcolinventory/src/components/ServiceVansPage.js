@@ -16,6 +16,7 @@ import {
 } from "antd";
 import { BusBoldDuotoneIcon } from "@solar-icons/react";
 import { api, errorMessage } from "../api";
+const VEHICLE_TYPES = ["Cab Chassis", "Cargo Van", "Pickup", "Hatchback", "Micro SUV"];
 
 export default function ServiceVansPage({
   serviceVans,
@@ -46,6 +47,7 @@ export default function ServiceVansPage({
   const [newVanId, setNewVanId] = useState("");
   const [newVanName, setNewVanName] = useState("");
   const [newVanPlate, setNewVanPlate] = useState("");
+  const [newVanType, setNewVanType] = useState("");
   const [newVanDriver, setNewVanDriver] = useState("");
   const [newVanBusy, setNewVanBusy] = useState(false);
   const [newVanError, setNewVanError] = useState("");
@@ -321,6 +323,7 @@ export default function ServiceVansPage({
                 setNewVanId(`VAN-${String(nextNumber).padStart(2, "0")}`);
                 setNewVanName("");
                 setNewVanPlate("");
+                setNewVanType("");
                 setNewVanDriver("");
                 setNewVanError("");
                 setNewVanModal(true);
@@ -385,6 +388,10 @@ export default function ServiceVansPage({
           extra={isAdmin && <Button danger disabled={vehicleUpdateBusy} onClick={() => openDelete(currentVan)}>Delete Vehicle</Button>}
         >
           <Space orientation="horizontal" size="large" wrap>
+            <div>
+              <Typography.Text type="secondary">Vehicle Type: </Typography.Text>
+              <strong>{currentVan.vehicleType || "Not specified"}</strong>
+            </div>
             <div>
               <Typography.Text type="secondary">Plate Number: </Typography.Text>
               <strong>{currentVan.plateNumber || "N/A"}</strong>
@@ -713,6 +720,10 @@ export default function ServiceVansPage({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (!newVanType) {
+              setNewVanError("Select a vehicle type.");
+              return;
+            }
             setNewVanBusy(true);
             setNewVanError("");
             save(
@@ -722,6 +733,7 @@ export default function ServiceVansPage({
                 id: newVanId.trim(),
                 name: newVanName.trim(),
                 plateNumber: newVanPlate.trim(),
+                vehicleType: newVanType,
                  driverId: newVanDriver,
                 status: "AVAILABLE",
               },
@@ -765,6 +777,18 @@ export default function ServiceVansPage({
             />
           </label>
           <label className="field" style={{ display: "block", marginBottom: 12 }}>
+            Vehicle Type
+            <Select
+              aria-label="New vehicle type"
+              placeholder="Select vehicle type"
+              value={newVanType || undefined}
+              disabled={newVanBusy}
+              onChange={setNewVanType}
+              options={VEHICLE_TYPES.map((value) => ({ value, label: value }))}
+              style={{ width: "100%", marginTop: 4 }}
+            />
+          </label>
+          <label className="field" style={{ display: "block", marginBottom: 12 }}>
             Vehicle Plate Number
             <Input
               placeholder="e.g. NCD-9876"
@@ -793,7 +817,7 @@ export default function ServiceVansPage({
               type="primary"
               htmlType="submit"
               loading={newVanBusy}
-              disabled={!newVanId.trim() || !newVanName.trim()}
+              disabled={!newVanId.trim() || !newVanName.trim() || !newVanType}
             >
               Register Vehicle
             </Button>

@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  Dropdown,
   Input,
   Modal,
   Select,
@@ -11,6 +12,7 @@ import {
   Typography,
 } from "antd";
 import { api, errorMessage } from "../api";
+import AccountEditor from "./AccountEditor";
 
 const emptyAccount = {
   firstName: "",
@@ -31,7 +33,7 @@ function nameIsValid(value) {
   return /^[\p{L}][\p{L} .'-]{1,49}$/u.test(clean(value));
 }
 
-export default function SettingsPage({ section = "branches", save, refresh, user: currentUser }) {
+export default function SettingsPage({ section = "branches", save, refresh, user: currentUser, onUserUpdate }) {
   const [account, setAccount] = useState(emptyAccount);
   const [users, setUsers] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -41,6 +43,7 @@ export default function SettingsPage({ section = "branches", save, refresh, user
   const [removeAccount, setRemoveAccount] = useState(null);
   const [removeBusy, setRemoveBusy] = useState(false);
   const [removeError, setRemoveError] = useState("");
+  const [editAccount, setEditAccount] = useState(null);
   const isAdmin = currentUser?.role === "ADMIN";
   const isProtectedAccount = (user) => user.id === (currentUser?.id || currentUser?._id) ||
     (user.role === "ADMIN" && users.filter((entry) => entry.role === "ADMIN").length <= 1);
@@ -202,25 +205,26 @@ export default function SettingsPage({ section = "branches", save, refresh, user
               { title: "Name", render: (_, user) => <strong>{user.fullName || `${user.firstName} ${user.lastName}`}</strong> },
               { title: "Email", dataIndex: "email" },
               { title: "Role", dataIndex: "role", render: (role) => <Tag color={role === "ADMIN" ? "green" : role === "MANAGER" ? "blue" : "default"}>{role}</Tag> },
+              { title: "Availability", render: (_, user) => <Tag color={user.availability === "BUSY" ? "orange" : user.availability === "AWAY" ? "default" : "green"}>{user.availability || "AVAILABLE"}</Tag> },
               ...(isAdmin ? [{
                 title: "Actions",
                 render: (_, user) => (
-                  <Button
-                    danger
-                    disabled={isProtectedAccount(user)}
-                    title={isProtectedAccount(user) ? "Your signed-in account and the last administrator are protected." : "Remove this user account"}
-                    onClick={() => {
-                      setRemoveError("");
-                      setRemoveAccount(user);
-                    }}
-                  >
-                    Remove User
-                  </Button>
+                  <Dropdown trigger={["click"]} menu={{ items: [
+                    { key: "edit", label: "Edit User", onClick: () => setEditAccount(user) },
+                    { key: "delete", label: "Delete User", danger: true, disabled: isProtectedAccount(user), onClick: () => { setRemoveError(""); setRemoveAccount(user); } },
+                  ] }}>
+                    <Button aria-label={`Actions for ${user.fullName}`} title="User actions">⋯</Button>
+                  </Dropdown>
                 ),
               }] : []),
             ]}
           />
         </Card>}
+        {editAccount && <AccountEditor key={editAccount.id} account={editAccount} administrative currentUser={currentUser} save={save}
+          onSaved={(updated) => {
+            setUsers((current) => current.map((user) => user.id === updated.id ? updated : user));
+            onUserUpdate?.(updated, editAccount);
+          }} onClose={() => setEditAccount(null)} />}
         <Modal
           title="Remove User Account"
           open={Boolean(removeAccount)}

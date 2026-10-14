@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Dropdown, Modal } from "antd";
 import "./Header.css";
 import avatarImg from "../assets/header/avatar.png";
+import AccountEditor from "./AccountEditor";
 
 function CalendarIcon() {
   return (
@@ -77,8 +78,11 @@ export default function Header({
   setIsDark,
   logout,
   pendingCount = 0,
+  save,
+  onProfileUpdate,
 }) {
   const [useFallbackAvatar, setUseFallbackAvatar] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const pageTitle = PAGE_TITLES[page] || "Service Vehicles";
 
@@ -99,12 +103,14 @@ export default function Header({
           <div style={{ fontSize: 12, color: "#888" }}>{user?.email || "Signed in"}</div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#006830", marginTop: 4 }}>
             Role: {user?.role || "EMPLOYEE"}
+            <div>Status: {user?.availability || "AVAILABLE"}</div>
           </div>
         </div>
       ),
       disabled: true,
     },
     { type: "divider" },
+    { key: "edit-profile", label: "Edit Profile", onClick: () => setProfileOpen(true) },
     {
       key: "theme",
       label: isDark ? "Switch to Light Mode" : "Switch to Dark Mode",
@@ -130,6 +136,7 @@ export default function Header({
   ];
 
   return (
+    <>
     <header className="ashcol-header" data-node-id="488:6920">
       {/* Left: Dynamic Page Title (Node 488:6921, 488:6922) */}
       <div className="header-page-title-wrap" data-node-id="488:6921">
@@ -219,5 +226,7 @@ export default function Header({
         </Dropdown>
       </div>
     </header>
+    {profileOpen && <AccountEditor account={user} currentUser={user} save={save} onSaved={onProfileUpdate} onClose={() => setProfileOpen(false)} />}
+    </>
   );
 }

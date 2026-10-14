@@ -74,6 +74,14 @@ export default function App() {
     setDemoServiceVans((current) => current.filter((van) => van.id !== id));
     setNotice({ type: "success", text: "Service vehicle deleted." });
   }
+  function accountUpdated(updated, previous) {
+    const renameDriver = (van) => van.driverId === updated.id ||
+      (!van.driverId && [previous.fullName, `${previous.fullName} (${previous.role})`].includes(van.driverName))
+      ? { ...van, driverName: updated.fullName } : van;
+    setServiceVans((current) => current.map(renameDriver));
+    setDemoServiceVans((current) => current.map(renameDriver));
+    if (updated.id === user.id) setUser(updated);
+  }
   // The main inventory view is the fixed Taguig warehouse for every role.
   // Employee-specific van access is handled inside Service Vehicles.
   const branchId = TAGUIG_WAREHOUSE.id;
@@ -281,6 +289,8 @@ export default function App() {
                 isDark={isDark}
                 setIsDark={setIsDark}
                 logout={logout}
+                save={save}
+                onProfileUpdate={(updated) => accountUpdated(updated, user)}
                 pendingCount={requests.filter((r) => r.status === "PENDING").length}
               />
 
@@ -426,6 +436,7 @@ export default function App() {
                         {page === "user_management" && user.role === "ADMIN" && (
                           <SettingsPage
                             section="users"
+                            onUserUpdate={accountUpdated}
                             user={user}
                             save={save}
                             refresh={refresh}
