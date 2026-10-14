@@ -87,6 +87,7 @@ export default function DashboardPage({
   onStockChartViewSave,
 }) {
   const [view, setView] = useState("cards");
+  const [isChartExpanded, setIsChartExpanded] = useState(false);
   const [analytics, setAnalytics] = useState({ fastMoving: [], slowMoving: [] });
   const [movementHistory, setMovementHistory] = useState([]);
   const [movementHistoryReady, setMovementHistoryReady] = useState(false);
@@ -403,12 +404,14 @@ export default function DashboardPage({
       </div>
 
       {/* 3. INVENTORY MOVEMENT TREND */}
-      <div className="dashboard-main-grid">
+      <div className={`dashboard-main-grid ${isChartExpanded ? "has-expanded-chart" : ""}`}>
         <StockActivityChart
           movementHistory={movementHistory}
           historyReady={movementHistoryReady}
           initialView={stockChartView}
           onViewSave={onStockChartViewSave}
+          isExpanded={isChartExpanded}
+          onExpandedChange={setIsChartExpanded}
         />
 
       <div className="dashboard-attention-card">

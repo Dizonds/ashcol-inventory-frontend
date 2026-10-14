@@ -78,7 +78,7 @@ function calculateNiceTicks(maxValue, targetTickCount = 5) {
   return { ticks, maxTick: topTick || step };
 }
 
-export default function StockActivityChart({ movementHistory = [], historyReady = true, initialView = null, onViewSave }) {
+export default function StockActivityChart({ movementHistory = [], historyReady = true, initialView = null, onViewSave, isExpanded = false, onExpandedChange }) {
   const [selectedTimeframe, setSelectedTimeframe] = useState(initialView?.selectedTimeframe ?? 7);
   const [visibleDays, setVisibleDays] = useState(initialView?.visibleDays ?? 7);
   const [panDays, setPanDays] = useState(initialView?.panDays ?? 0);
@@ -88,11 +88,11 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   const [chartMode, setChartMode] = useState(initialView?.chartMode ?? "area"); // 'area' | 'bar'
   const [showStockIn, setShowStockIn] = useState(initialView?.showStockIn ?? true);
   const [showStockOut, setShowStockOut] = useState(initialView?.showStockOut ?? true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [hoverIndex, setHoverIndex] = useState(null);
   const [hoverY, setHoverY] = useState(null);
   const [hoverX, setHoverX] = useState(null);
   const [containerWidth, setContainerWidth] = useState(820);
+  const [containerHeight, setContainerHeight] = useState(420);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
 
@@ -148,12 +148,13 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
       for (const entry of entries) {
         if (entry.contentRect && entry.contentRect.width > 0) {
           setContainerWidth(Math.round(entry.contentRect.width));
+          if (isExpanded) setContainerHeight(Math.floor(entry.contentRect.height));
         }
       }
     });
     observer.observe(viewportRef.current);
     return () => observer.disconnect();
-  }, [isFullscreen]);
+  }, [isExpanded]);
 
   // Aggregate daily data over the chosen range
   const { seriesData, summaryStats } = useMemo(() => {
@@ -226,7 +227,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   }, [movementHistory, rangeDays, integerPanDays]);
 
   // Layout parameters for responsive SVG
-  const chartHeight = isFullscreen ? 420 : 320;
+  const chartHeight = isExpanded ? containerHeight : 320;
   const margin = { top: 22, right: 28, bottom: 36, left: 46 };
   const plotWidth = Math.max(100, containerWidth - margin.left - margin.right);
   const plotHeight = Math.max(60, chartHeight - margin.top - margin.bottom);
@@ -270,7 +271,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   }, [movementHistory, selectedTimeframe, showStockIn, showStockOut]);
   const autoScale = fittedScale ?? timeframeScale;
   const maxTick = autoScale / yZoom;
-  const tickStep = calculateNiceTicks(maxTick, isFullscreen ? 6 : 5).ticks[1] || maxTick;
+  const tickStep = calculateNiceTicks(maxTick, isExpanded ? 6 : 5).ticks[1] || maxTick;
   const firstTick = Math.ceil(quantityFloor / tickStep) * tickStep;
   const ticks = Array.from({ length: Math.ceil(maxTick / tickStep) + 1 }, (_, index) => firstTick + index * tickStep)
     .filter((tick) => tick <= quantityFloor + maxTick);
@@ -449,16 +450,18 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   }, []);
 
   useEffect(() => {
-    if (!isFullscreen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (event) => { if (event.key === "Escape" && !selectedDay) setIsFullscreen(false); };
+    if (!isExpanded) return;
+    if (zoomFrameRef.current !== null) cancelAnimationFrame(zoomFrameRef.current);
+    zoomFrameRef.current = null;
+    zoomTargetRef.current = null;
+    setHoverIndex(null);
+    setHoverY(null);
+    const onKey = (event) => { if (event.key === "Escape" && !selectedDay) onExpandedChange?.(false); };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
     };
-  }, [isFullscreen, selectedDay]);
+  }, [isExpanded, selectedDay, onExpandedChange]);
 
   const resetView = () => {
     stopZoomAnimation();
@@ -531,7 +534,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
 
   return (
     <div
-      className={`stock-activity-card ${isFullscreen ? "is-fullscreen" : ""}`}
+      className={`stock-activity-card ${isExpanded ? "is-expanded" : ""}`}
       ref={containerRef}
     >
       {/* 1. CARD HEADER */}
@@ -644,15 +647,16 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             ))}
           </div>
 
-          {/* Fullscreen Button */}
+          {/* Expand / minimize the chart within the dashboard layout. */}
           <button
             type="button"
             className="stock-fullscreen-btn"
-            onClick={() => setIsFullscreen((prev) => !prev)}
-            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen View"}
-            aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen View"}
+            onClick={() => onExpandedChange?.(!isExpanded)}
+            aria-expanded={isExpanded}
+            title={isExpanded ? "Minimize chart" : "Expand chart"}
+            aria-label={isExpanded ? "Minimize chart" : "Expand chart"}
           >
-            {isFullscreen ? (
+            {isExpanded ? (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M4 14H10M10 14V20M10 14L3 21M20 10H14M14 10V4M14 10L21 3"
@@ -673,6 +677,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
                 />
               </svg>
             )}
+            {isExpanded && <span>Minimize</span>}
           </button>
         </div>
       </div>

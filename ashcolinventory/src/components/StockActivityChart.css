@@ -35,16 +35,23 @@
   --chart-hover-bg: rgba(52, 211, 153, 0.08);
 }
 
-/* Fullscreen Mode */
-.stock-activity-card.is-fullscreen {
-  position: fixed;
-  inset: 20px;
-  z-index: 1050;
-  overflow: auto;
-  min-height: calc(100vh - 40px);
+/* Expanded chart stays in the dashboard flow, with other cards below it. */
+.stock-activity-card.is-expanded {
+  overflow: hidden;
   padding: 28px 36px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(12px);
+}
+
+.stock-activity-card.is-expanded > .stock-chart-viewport {
+  flex: none;
+  height: clamp(360px, 60dvh, 720px);
+}
+
+.stock-activity-card.is-expanded .stock-fullscreen-btn {
+  width: auto;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 /* 1. HEADER ROW */
@@ -565,7 +572,6 @@
   cursor: pointer;
 }
 .stock-chart-toolbar button:hover { border-color: #10b981; color: #059669; }
-.dashboard-main-grid .stock-activity-card.is-fullscreen { position: fixed; width: auto; }
 
 @keyframes fadeInTooltip {
   from {
@@ -781,5 +787,27 @@
   .stock-legend-toggles {
     width: 100%;
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px), (max-height: 600px) {
+  .stock-activity-card.is-expanded {
+    padding: 12px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  .stock-activity-card.is-expanded .stock-card-header {
+    gap: 8px;
+  }
+
+  .stock-activity-card.is-expanded .stock-sub-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .stock-activity-card.is-expanded .stock-chart-toolbar {
+    padding-top: 6px;
   }
 }
