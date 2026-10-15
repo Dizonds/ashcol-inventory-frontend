@@ -18,7 +18,11 @@ import "./ServiceVansPage.css";
 import vanL300 from "../assets/vehicles/van_l300.jpg";
 import vanSuv from "../assets/vehicles/van_suv.jpg";
 import vanPickup from "../assets/vehicles/van_pickup.jpg";
-const VEHICLE_TYPES = ["Cab Chassis", "Cargo Van", "Pickup", "Hatchback", "Micro SUV"];
+const VEHICLE_TYPES = [
+  { value: "Cargo Van", label: "Cargo Van / L300", image: vanL300 },
+  { value: "Pickup", label: "Pickup", image: vanPickup },
+  { value: "SUV", label: "SUV", image: vanSuv },
+];
 
 export default function ServiceVansPage({
   serviceVans = [],
@@ -274,14 +278,9 @@ export default function ServiceVansPage({
       ];
 
   // Map vehicle image dynamically
-  function getVehicleImage(van, index) {
-    if (!van) return vanPickup;
-    if (["Cab Chassis", "Cargo Van"].includes(van.vehicleType)) return vanL300;
-    if (van.vehicleType === "Pickup") return vanPickup;
-    if (["Hatchback", "Micro SUV"].includes(van.vehicleType)) return vanSuv;
-    const images = [vanL300, vanSuv, vanPickup];
-    const vanNumber = Number(String(van.id).replace(/\D/g, "")) || (index + 1);
-    return images[(vanNumber - 1) % 3];
+  function getVehicleImage(van) {
+    const type = { "Cab Chassis": "Cargo Van", Hatchback: "SUV", "Micro SUV": "SUV" }[van?.vehicleType] || van?.vehicleType;
+    return VEHICLE_TYPES.find((vehicle) => vehicle.value === type)?.image || vanL300;
   }
 
   // Calculate Overview KPIs
@@ -650,7 +649,7 @@ export default function ServiceVansPage({
                     ? "Under Maintenance"
                     : "Available at Base";
                   const loadedCount = vanItemCounts[van.id] ?? 0;
-                const vehicleImg = getVehicleImage(van, index);
+                const vehicleImg = getVehicleImage(van);
 
                 return (
                   <div key={van.id} className="sv-card">
@@ -877,7 +876,7 @@ export default function ServiceVansPage({
             {/* Right Side Vehicle Hero Image (Figma Node 488:7465) */}
             <div className="sv-details-hero-wrap">
               <img
-                src={getVehicleImage(currentVan, 2)}
+                src={getVehicleImage(currentVan)}
                 alt={currentVan.name || currentVan.id}
                 className="sv-details-hero-img"
               />
@@ -1330,7 +1329,12 @@ export default function ServiceVansPage({
             <label>Vehicle Type</label>
             <Select aria-label="New vehicle type" placeholder="Select vehicle type" value={newVanType || undefined}
               disabled={newVanBusy} onChange={setNewVanType}
-              options={VEHICLE_TYPES.map((value) => ({ value, label: value }))} style={{ width: "100%", marginTop: 4 }} />
+              options={VEHICLE_TYPES.map(({ value, label }) => ({ value, label }))} style={{ width: "100%", marginTop: 4 }} />
+            {newVanType && <figure className="sv-vehicle-type-preview">
+              <img src={getVehicleImage({ vehicleType: newVanType })}
+                alt={`${VEHICLE_TYPES.find((type) => type.value === newVanType)?.label} vehicle preview`} />
+              <figcaption>Photo selected automatically by vehicle type.</figcaption>
+            </figure>}
           </div>
           <div className="sv-modal-field">
             <label>Vehicle Plate Number</label>
