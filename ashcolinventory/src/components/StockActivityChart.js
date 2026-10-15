@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useId } from "react";
 import { Tooltip, Modal, Table } from "antd";
 import "./StockActivityChart.css";
+import { formatRequestNumber } from "../utils/formatters";
 
 const TIMEFRAME_OPTIONS = [7, 14, 30, 90];
 
@@ -72,6 +73,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   const [yZoom, setYZoom] = useState(initialView?.yZoom ?? 1);
   const [quantityFloor, setQuantityFloor] = useState(initialView?.quantityFloor ?? 0);
   const [fittedScale, setFittedScale] = useState(initialView?.fittedScale ?? null);
+  const [chartMode, setChartMode] = useState(initialView?.chartMode === "bar" ? "bar" : "line");
   const [showStockIn, setShowStockIn] = useState(initialView?.showStockIn ?? true);
   const [showStockOut, setShowStockOut] = useState(initialView?.showStockOut ?? true);
   const [showBalance, setShowBalance] = useState(initialView?.showBalance ?? true);
@@ -92,10 +94,11 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   liveViewRef.current = { visibleDays, panDays, yZoom };
   const chartId = useId().replace(/:/g, "");
   const dragRef = useRef(null);
+  const suppressBarClickRef = useRef(false);
   const savedViewRef = useRef(null);
   savedViewRef.current = {
     selectedTimeframe, visibleDays, panDays, yZoom, quantityFloor,
-    fittedScale, showStockIn, showStockOut, showBalance,
+    fittedScale, chartMode, showStockIn, showStockOut, showBalance,
   };
   // The app owns this snapshot, so leaving the dashboard does not reset the view.
   // Saving only on departure avoids rerendering the dashboard during each drag.
@@ -337,6 +340,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     if (e.pointerType === "mouse" && e.button !== 0) return;
     stopZoomAnimation();
     const targetPoint = e.target.closest?.("[data-stock-point]");
+    suppressBarClickRef.current = false;
     dragRef.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -488,6 +492,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     e.currentTarget.releasePointerCapture?.(drag.pointerId);
     dragRef.current = null;
     setIsDragging(false);
+    suppressBarClickRef.current = e.type !== "pointerup" || Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) >= 5;
     if (e.type === "pointerup" && drag.pointDay && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 5) {
       setSelectedDay(drag.pointDay);
     }
@@ -534,7 +539,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
       return <strong className={delta > 0 ? "chart-movement-in" : delta < 0 ? "chart-movement-out" : ""}>{delta > 0 ? "+" : ""}{delta.toLocaleString()} {entry.unitOfMeasure || "units"}</strong>;
     } },
     { title: "Stock balance", width: 130, render: (_, entry) => entry.beforeQuantity == null || entry.afterQuantity == null ? "Not recorded" : `${entry.beforeQuantity.toLocaleString()} → ${entry.afterQuantity.toLocaleString()}` },
-    { title: "Reference / Work order", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{entry.referenceId || "No reference"}</span>{entry.workOrderId && <span>{entry.workOrderId}</span>}</div> },
+    { title: "Reference / Work order", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{formatRequestNumber(entry.requestNumber || entry.referenceId) || "No reference"}</span>{entry.workOrderId && <span>{formatRequestNumber(entry.workOrderId)}</span>}</div> },
     { title: "Processed by", dataIndex: "performedByName", width: 160, render: (value) => value || "Not recorded" },
     { title: "Remarks", dataIndex: "reason", width: 250, render: (value) => value || "No remarks" },
   ];
@@ -605,6 +610,22 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
         </div>
 
         <div className="stock-header-controls">
+          <div className="stock-mode-toggle" role="group" aria-label="Chart display type">
+            {[{ value: "line", label: "Line" }, { value: "bar", label: "Bar" }].map((mode) => (
+              <button
+                key={mode.value}
+                type="button"
+                className={chartMode === mode.value ? "active" : ""}
+                aria-pressed={chartMode === mode.value}
+                onClick={() => {
+                  stopZoomAnimation();
+                  setChartMode(mode.value);
+                  setHoverIndex(null);
+                  setHoverY(null);
+                }}
+              >{mode.label}</button>
+            ))}
+          </div>
           {/* Date Range Selector */}
           <div className="stock-range-pill" role="group" aria-label="Date range selector">
             {TIMEFRAME_OPTIONS.map((days) => (
@@ -851,7 +872,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             <line x1={margin.left} y1={getY(0)} x2={margin.left + plotWidth} y2={getY(0)} className="stock-baseline" strokeDasharray="4 4" />
           )}
               {/* Line Strokes */}
-              {showStockIn && (
+              {chartMode === "line" && showStockIn && (
                 <path
                   d={buildLinePath(pointsStockIn)}
                   fill="none"
@@ -862,7 +883,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
                   className="stock-curve stock-in-curve"
                 />
               )}
-              {showStockOut && (
+              {chartMode === "line" && showStockOut && (
                 <path
                   d={buildLinePath(pointsStockOut)}
                   fill="none"
@@ -875,11 +896,52 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
               )}
 
               {/* Small discrete points along the lines */}
-              {visibleDays <= 90 && showStockIn && pointsStockIn.map((point, index) => renderPoint(point, index, "in"))}
-              {visibleDays <= 90 && showStockOut && pointsStockOut.map((point, index) => renderPoint(point, index, "out"))}
+              {chartMode === "line" && visibleDays <= 90 && showStockIn && pointsStockIn.map((point, index) => renderPoint(point, index, "in"))}
+              {chartMode === "line" && visibleDays <= 90 && showStockOut && pointsStockOut.map((point, index) => renderPoint(point, index, "out"))}
+
+          {chartMode === "bar" && seriesData.map((day, index) => {
+            const bars = [
+              ...(showStockIn ? [{ label: "Stock In", value: day.stockIn, color: "#10b981" }] : []),
+              ...(showStockOut ? [{ label: "Stock Out", value: day.stockOut, color: "#f59e0b" }] : []),
+              ...(showBalance ? [{ label: "Net Balance", value: day.stockIn - day.stockOut, color: "#8b5cf6", opacity: 0.4 }] : []),
+            ];
+            const width = Math.min(18, dayWidth * 0.75 / Math.max(1, bars.length));
+            return bars.map((bar, barIndex) => bar.value !== 0 && (
+              <rect
+                key={`${day.key}-${bar.label}`}
+                x={getPointX(index) + (barIndex - bars.length / 2) * width + 1}
+                y={Math.min(getY(0), getY(bar.value))}
+                width={Math.max(0.5, width - 2)}
+                height={Math.abs(getY(bar.value) - getY(0))}
+                fill={bar.color}
+                opacity={bar.opacity ?? 1}
+                rx="2"
+                className="stock-bar"
+                data-stock-point={index}
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${bar.label} details for ${day.fullLabel}`}
+                onClick={() => {
+                  if (!suppressBarClickRef.current) {
+                    stopZoomAnimation();
+                    setSelectedDay(day);
+                  }
+                  suppressBarClickRef.current = false;
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    stopZoomAnimation();
+                    setSelectedDay(day);
+                  }
+                }}
+              />
+            ));
+          })}
 
           {/* Daily net balance line */}
-          {showBalance && (
+          {chartMode === "line" && showBalance && (
             <g opacity="0.4">
               <path
                 d={buildLinePath(pointsBalance)}
@@ -921,7 +983,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
               )}
 
               {/* Enhanced active dot on line */}
-              {showStockIn && (
+              {chartMode === "line" && showStockIn && (
                 <g>
                   <circle
                     cx={activeStockInPoint.x}
@@ -940,7 +1002,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
                 </g>
               )}
 
-              {showStockOut && activeStockOutPoint && (
+              {chartMode === "line" && showStockOut && activeStockOutPoint && (
                 <g>
                   <circle
                     cx={activeStockOutPoint.x}

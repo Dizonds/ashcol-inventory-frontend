@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Spin, Alert, Dropdown } from "antd";
 import { api, errorMessage } from "../api";
+import { formatRequestNumber } from "../utils/formatters";
 import "./MovementsPage.css";
 
 /* --- EXACT SVG ICONS MATCHING FIGMA NODE 488:7823 --- */
@@ -141,7 +142,7 @@ export default function MovementsPage({ branchId, refresh }) {
     let active = true;
     setLoading(true);
     setError("");
-    api("get", "/movements", null, { branchId, page, pageSize, search, type, sort: sortBy })
+    api("get", "/movements", null, { branchId, page, pageSize, search: search.trim().replace(/^REQ\s*-?\s*(\d+)$/i, "REQ$1"), type, sort: sortBy })
       .then(({ data }) => {
         if (active) {
           setRows(data.items || []);
@@ -457,7 +458,7 @@ export default function MovementsPage({ branchId, refresh }) {
                         {/* REFERENCE ID */}
                         <td>
                           <span className="ledger-cell-ref">
-                            {entry.requestNumber || entry.referenceId || "—"}
+                            {formatRequestNumber(entry.requestNumber || entry.referenceId) || "—"}
                           </span>
                         </td>
 

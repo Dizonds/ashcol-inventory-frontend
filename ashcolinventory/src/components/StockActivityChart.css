@@ -485,7 +485,16 @@
 .chart-movement-out { color: #d97706; }
 
 .stock-bar {
+  cursor: pointer;
+  pointer-events: all;
   transition: opacity 0.2s ease;
+}
+
+.stock-bar:hover,
+.stock-bar:focus-visible {
+  stroke: var(--text-main, #02081a);
+  stroke-width: 1.5;
+  outline: none;
 }
 
 .stock-bar.in-bar {

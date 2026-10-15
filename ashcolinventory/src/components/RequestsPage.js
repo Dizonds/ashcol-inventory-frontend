@@ -17,10 +17,11 @@ import {
 } from "antd";
 import { EyeOutlined } from "@ant-design/icons";
 import { api, errorMessage } from "../api";
+import { formatRequestNumber } from "../utils/formatters";
 
 const isContinuousUnit = (unit) =>
   ["METER", "FOOT", "KG", "LITER"].includes(unit);
-const requestNumber = (entry) => entry.requestNumber || entry.workOrderId || entry.id;
+const requestNumber = (entry) => formatRequestNumber(entry.requestNumber || entry.workOrderId || entry.id);
 const formatDate = (value) => new Date(value).toLocaleString("en-PH", { timeZone: "Asia/Manila" });
 const requestHistory = (entry) => entry.history?.length ? entry.history : [
   { status: "PENDING", performedByName: entry.requestedByName, at: entry.createdAt },
@@ -104,7 +105,7 @@ export default function RequestsPage({
       "post",
       "/requests",
       { branchId, productId, requestId: reference.id, quantityNeeded: quantity, notes },
-      `Material request ${reference.requestNumber} submitted.`,
+      `Material request ${formatRequestNumber(reference.requestNumber)} submitted.`,
     )
       .then(() => {
         setOpen(false);
@@ -182,7 +183,7 @@ export default function RequestsPage({
             (entry) => (user.role !== "EMPLOYEE" || ownsRequest(entry)) &&
               (filter === "ALL" || entry.status === filter) &&
               [requestNumber(entry), entry.id, entry.workOrderId, entry.sku, entry.itemName, entry.brand, entry.itemType, entry.requestedByName]
-                .some((value) => String(value || "").toLowerCase().includes(search.trim().toLowerCase())),
+                .some((value) => String(value || "").toLowerCase().includes(formatRequestNumber(search.trim()).toLowerCase())),
           )}
           scroll={{ x: 1300 }}
           pagination={{ defaultPageSize: 10 }}
@@ -402,7 +403,7 @@ export default function RequestsPage({
             Request ID
             <Input
               readOnly
-              value={reference?.requestNumber || ""}
+              value={formatRequestNumber(reference?.requestNumber) || ""}
             />
           </label>
           <label className="field">
