@@ -1,0 +1,595 @@
+/* ==========================================================================
+   POST MOVEMENT PAGE STYLES (FIGMA NODE 570:9029)
+   ========================================================================== */
+
+.pm-container {
+  width: 100%;
+  padding: 8px 12px 40px;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Two-Card Side-by-Side Layout */
+.pm-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Base Card Style */
+.pm-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  box-sizing: border-box;
+  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.02);
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.inventory-app.dark .pm-card {
+  background: #142018;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Card Titles */
+.pm-card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.inventory-app.dark .pm-card-title {
+  color: #f3f4f6;
+}
+
+/* ── LEFT CARD: RECORD INVENTORY MOVEMENT (Figma Node 570:9055) ── */
+.pm-form-card {
+  flex: 0 0 510px;
+  max-width: 530px;
+  width: 100%;
+  padding: 28px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.pm-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.pm-field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.inventory-app.dark .pm-field-label {
+  color: #9ca3af;
+}
+
+/* Radio Buttons: Stock In / Stock Out (Figma Nodes 573:9496, 573:9486) */
+.pm-operation-radios {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pm-radio-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.inventory-app.dark .pm-radio-btn {
+  background: #1a281f;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+}
+
+.pm-radio-btn:hover {
+  border-color: #cbd5e1;
+}
+
+.pm-radio-btn.active {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.inventory-app.dark .pm-radio-btn.active {
+  background: rgba(22, 163, 74, 0.15);
+  border-color: rgba(22, 163, 74, 0.4);
+  color: #4ade80;
+}
+
+.pm-radio-circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.pm-radio-btn.active .pm-radio-circle {
+  border-color: #16a34a;
+}
+
+.inventory-app.dark .pm-radio-btn.active .pm-radio-circle {
+  border-color: #4ade80;
+}
+
+.pm-radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+
+.inventory-app.dark .pm-radio-dot {
+  background: #4ade80;
+}
+
+/* 2-Column Form Row (Type & Brand, Item & Quantity) */
+.pm-form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Form Inputs, Selects, Number Inputs */
+.pm-select-wrap,
+.pm-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.pm-select {
+  width: 100%;
+  height: 46px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0 34px 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .pm-select {
+  background: #1a281f;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f3f4f6;
+}
+
+.pm-select:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.pm-select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+}
+
+.pm-input-number {
+  width: 100%;
+  height: 46px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .pm-input-number {
+  background: #1a281f;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f3f4f6;
+}
+
+.pm-input-number:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* Notes Textarea (Figma Node 571:9413) */
+.pm-textarea {
+  width: 100%;
+  min-height: 96px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .pm-textarea {
+  background: #1a281f;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f3f4f6;
+}
+
+.pm-textarea:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.pm-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Stock Preview Pills */
+.pm-stock-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid #f3f4f6;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.inventory-app.dark .pm-stock-preview {
+  background: #18221b;
+  border-color: rgba(255, 255, 255, 0.04);
+  color: #9ca3af;
+}
+
+.pm-stock-preview strong {
+  color: #111827;
+}
+
+.inventory-app.dark .pm-stock-preview strong {
+  color: #f9fafb;
+}
+
+/* Confirm and Post Button (Figma Node 573:10183) */
+.pm-btn-confirm {
+  width: fit-content;
+  height: 44px;
+  padding: 0 24px;
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28);
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.pm-btn-confirm:hover:not(:disabled) {
+  background: #15803d;
+  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.38);
+  transform: translateY(-1px);
+}
+
+.pm-btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── RIGHT CARD: LOW STOCK & DEPLETED ITEMS (Figma Node 573:9585) ── */
+.pm-table-card {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 28px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.pm-table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.pm-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.pm-table th {
+  background: #f9fafb;
+  padding: 16px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .pm-table th {
+  background: #18221b;
+  color: #9ca3af;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.pm-table td {
+  padding: 18px 20px;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.inventory-app.dark .pm-table td {
+  color: #d1d5db;
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.pm-table tbody tr:hover {
+  background: #fbfcfd;
+}
+
+.inventory-app.dark .pm-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pm-row-selected td {
+  background: #f0fdf4 !important;
+}
+
+.inventory-app.dark .pm-row-selected td {
+  background: rgba(22, 163, 74, 0.1) !important;
+}
+
+.pm-td-item {
+  font-weight: 600;
+  color: #111827 !important;
+}
+
+.inventory-app.dark .pm-td-item {
+  color: #f9fafb !important;
+}
+
+.pm-td-sku-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.pm-td-qty {
+  font-weight: 600;
+  color: #111827 !important;
+}
+
+.inventory-app.dark .pm-td-qty {
+  color: #f9fafb !important;
+}
+
+/* Action Cell: Restock Button & Status Badges (Figma Nodes 573:9766, 573:9870) */
+.pm-action-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.pm-btn-restock {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .pm-btn-restock {
+  background: #18221b;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.pm-btn-restock:hover {
+  background: #f3f4f6;
+  border-color: #cbd5e1;
+  color: #111827;
+}
+
+.inventory-app.dark .pm-btn-restock:hover {
+  background: #24352b;
+  color: #ffffff;
+}
+
+/* Badges: REORDER (Depleted) & LOW STOCK */
+.pm-badge-reorder {
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.inventory-app.dark .pm-badge-reorder {
+  background: rgba(220, 38, 38, 0.2);
+  color: #f87171;
+}
+
+.pm-badge-low-stock {
+  background: #fef3c7;
+  color: #d97706;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.inventory-app.dark .pm-badge-low-stock {
+  background: rgba(217, 119, 6, 0.2);
+  color: #fbbf24;
+}
+
+/* ── PAGINATION BAR (Figma Node 573:9772) ── */
+.pm-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20px;
+  margin-top: 16px;
+  border-top: 1px solid #f3f4f6;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.inventory-app.dark .pm-pagination-bar {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.pm-pagination-text {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.inventory-app.dark .pm-pagination-text {
+  color: #9ca3af;
+}
+
+.pm-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pm-page-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .pm-page-btn {
+  background: #1a281f;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d1d5db;
+}
+
+.pm-page-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #cbd5e1;
+}
+
+.inventory-app.dark .pm-page-btn:hover:not(:disabled) {
+  background: #24352b;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.pm-page-btn.active {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.inventory-app.dark .pm-page-btn.active {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+.pm-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .pm-layout {
+    flex-direction: column;
+  }
+  .pm-form-card {
+    flex: 1;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .pm-form-row-2col {
+    grid-template-columns: 1fr;
+  }
+}
