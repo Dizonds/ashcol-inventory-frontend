@@ -1,17 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Alert,
   Modal,
   Descriptions,
   Typography,
-  Button,
-  Card,
-  Input,
-  InputNumber,
-  Radio,
-  Select,
-  Space,
-  Statistic,
 } from "antd";
 import { api, errorMessage } from "../api";
 import { formatMovementNumber } from "../utils/formatters";
@@ -26,7 +18,10 @@ export default function PostMovementPage({
   save,
   preselectedItemId,
 }) {
-  const activeItems = useMemo(() => items.filter((item) => !item.archived), [items]);
+  const activeItems = useMemo(
+    () => items.filter((item) => !item.archived),
+    [items],
+  );
 
   const [productId, setProductId] = useState("");
   const [itemType, setItemType] = useState("");
@@ -35,41 +30,99 @@ export default function PostMovementPage({
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState("Supplier Delivery / Restock");
   const [notes, setNotes] = useState("");
+  const [referenceId, setReferenceId] = useState("");
+  const [ticketLoading, setTicketLoading] = useState(true);
+  const [ticketVersion, setTicketVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
   const [review, setReview] = useState(null);
+
+  // Pagination for Low stock & depleted items
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
-  const itemTypes = [...new Set(activeItems.map((item) => item.itemType).filter(Boolean))].sort();
-  const brands = [...new Set(activeItems.filter((item) => item.itemType === itemType)
-    .map((item) => item.brand).filter(Boolean))].sort();
-  const filteredItems = itemType && brand
-    ? activeItems.filter((item) => item.itemType === itemType && item.brand === brand)
-    : [];
-  const selected = filteredItems.find((item) => item.id === productId);
-  const lowStockItems = activeItems
-    .filter((item) => item.quantity === 0 || item.quantity <= item.reorderLevel)
-    .sort((first, second) => {
-      const firstRatio = first.quantity / Math.max(first.reorderLevel, 1);
-      const secondRatio = second.quantity / Math.max(second.reorderLevel, 1);
-      return firstRatio - secondRatio || first.name.localeCompare(second.name);
+  const pageSize = 6;
+
+  // Pre-generate transaction ticket ID whenever operation changes or on retry
+  useEffect(() => {
+    let active = true;
+    setReferenceId("");
+    setTicketLoading(true);
+    setError("");
+    api("post", "/movement-tickets", { movementType: operation })
+      .then(({ data }) => {
+        if (active) setReferenceId(data.referenceId);
+      })
+      .catch((err) => {
+        if (active) setError(errorMessage(err));
+      })
+      .finally(() => {
+        if (active) setTicketLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [operation, ticketVersion]);
+
+  // Handle preselected item from props
+  useEffect(() => {
+    if (preselectedItemId) {
+      const target = activeItems.find((i) => i.id === preselectedItemId);
+      if (target) {
+        setItemType(target.itemType || "");
+        setBrand(target.brand || "");
+        setProductId(target.id);
+        setOperation("STOCK_IN");
+        setReason("Supplier Delivery / Restock");
+        setQuantity(1);
+      }
+    }
+  }, [preselectedItemId, activeItems]);
+
+  const itemTypes = useMemo(() => {
+    return [
+      ...new Set(activeItems.map((item) => item.itemType).filter(Boolean)),
+    ].sort();
+  }, [activeItems]);
+
+  const brands = useMemo(() => {
+    const list = itemType
+      ? activeItems.filter((item) => item.itemType === itemType)
+      : activeItems;
+    return [
+      ...new Set(list.map((item) => item.brand).filter(Boolean)),
+    ].sort();
+  }, [activeItems, itemType]);
+
+  const filteredItems = useMemo(() => {
+    return activeItems.filter((item) => {
+      const matchType = !itemType || item.itemType === itemType;
+      const matchBrand = !brand || item.brand === brand;
+      return matchType && matchBrand;
     });
-  const depletedCount = lowStockItems.filter((item) => item.quantity === 0).length;
-  const totalPages = Math.max(1, Math.ceil(lowStockItems.length / pageSize));
-  const visibleLowStockItems = lowStockItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [activeItems, itemType, brand]);
+
+  const selected = activeItems.find((item) => item.id === productId);
+
+  // Low stock & depleted items list
+  const lowStockItems = useMemo(() => {
+    return activeItems
+      .filter((item) => item.quantity === 0 || item.quantity <= item.reorderLevel)
+      .sort((a, b) => {
+        const aRatio = a.quantity / Math.max(a.reorderLevel, 1);
+        const bRatio = b.quantity / Math.max(b.reorderLevel, 1);
+        return aRatio - bRatio || a.name.localeCompare(b.name);
+      });
+  }, [activeItems]);
+
+  const totalPages = Math.ceil((lowStockItems.length || 1) / pageSize);
+  const pagedLowStockItems = lowStockItems.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
-
-  useEffect(() => {
-    const item = activeItems.find((entry) => entry.id === preselectedItemId);
-    if (!item) return;
-    setItemType(item.itemType || "");
-    setBrand(item.brand || "");
-    setProductId(item.id);
-  }, [activeItems, preselectedItemId]);
 
   function selectRestockItem(item) {
     if (busy || reviewOpen) return;
@@ -100,7 +153,7 @@ export default function PostMovementPage({
 
   function submit(event) {
     event.preventDefault();
-    if (busy || reviewOpen) return;
+    if (busy || reviewOpen || ticketLoading || !referenceId) return;
     setError("");
     if (!selected || !quantity || quantity <= 0) {
       setError("Select an item and enter a positive quantity.");
@@ -110,15 +163,17 @@ export default function PostMovementPage({
       setError("The requested quantity exceeds available stock.");
       return;
     }
-    const draft = { item: selected, productId, branchId, quantity: Number(quantity), stockIn, reason, notes };
-    setBusy(true);
-    api("post", "/movement-tickets", { movementType: operation })
-      .then(({ data }) => {
-        setReview({ ...draft, referenceId: data.referenceId });
-        setReviewOpen(true);
-      })
-      .catch((err) => setError(errorMessage(err)))
-      .finally(() => setBusy(false));
+    setReview({
+      item: selected,
+      productId,
+      branchId,
+      quantity: Number(quantity),
+      stockIn,
+      reason,
+      notes,
+      referenceId,
+    });
+    setReviewOpen(true);
   }
 
   function confirmPost() {
@@ -145,6 +200,8 @@ export default function PostMovementPage({
         setBrand("");
         setQuantity(1);
         setNotes("");
+        setReferenceId("");
+        setTicketVersion((version) => version + 1);
         setReviewOpen(false);
         setReview(null);
       })
@@ -153,188 +210,434 @@ export default function PostMovementPage({
   }
 
   return (
-    <>
-      <Typography.Title level={3}>Post Stock Movement</Typography.Title>
-      <Typography.Paragraph type="secondary">
-        Record deliveries, returns, dispatches and explained stock corrections.
-        Use Material Requests to issue an approved request.
-      </Typography.Paragraph>
-      <div className="post-movement-layout">
-      <Card
-        className="post-movement-card"
-        title={
-          <div className="post-movement-card-title">
-            <span className="post-movement-card-icon">↕</span>
-            <span>
-              <strong>Record inventory movement</strong>
-              <small>Update warehouse stock with a clear reason and reference.</small>
-            </span>
-          </div>
-        }
-      >
-        {error && !reviewOpen && <Alert type="error" showIcon title={error} />}
-        <form className="post-movement-form" onSubmit={submit}>
-          <label className="field">
-            Operation
-            <Radio.Group
-              disabled={busy || reviewOpen}
-              value={operation}
-              onChange={(e) => {
-                const value = e.target.value;
-                setOperation(value);
-                setReason(
-                  value === "STOCK_IN"
-                    ? "Supplier Delivery / Restock"
-                    : "Client Installation / Site Project",
-                );
-              }}
-              options={[
-                { label: "Stock In", value: "STOCK_IN" },
-                { label: "Stock Out", value: "STOCK_OUT" },
-              ]}
-            />
-          </label>
-          <label className="field">
-            Item Type
-            <Select
-              aria-label="Movement item type"
-              showSearch
-              optionFilterProp="label"
-              placeholder="Select item type"
-              disabled={busy || reviewOpen}
-              value={itemType || undefined}
-              onChange={(value) => {
-                setItemType(value);
-                setBrand("");
-                setProductId("");
-                setQuantity(1);
-              }}
-              options={itemTypes.map((value) => ({ value, label: value }))}
-            />
-          </label>
-          <label className="field">
-            Brand
-            <Select
-              aria-label="Movement brand"
-              showSearch
-              optionFilterProp="label"
-              placeholder={itemType ? "Select brand" : "Select item type first"}
-              disabled={!itemType || busy || reviewOpen}
-              value={brand || undefined}
-              onChange={(value) => {
-                setBrand(value);
-                setProductId("");
-                setQuantity(1);
-              }}
-              options={brands.map((value) => ({ value, label: value }))}
-            />
-          </label>
-          <label className="field">
-            Inventory item
-            <Select
-              aria-label="Movement item"
-              showSearch
-              optionFilterProp="label"
-              disabled={!itemType || !brand || busy || reviewOpen}
-              value={selected?.id}
-              placeholder={itemType && brand ? "Select item" : "Select item type and brand first"}
-              notFoundContent="No matching items"
-              onChange={(value) => {
-                setProductId(value);
-                setQuantity(1);
-              }}
-              options={filteredItems.map((item) => ({
-                value: item.id,
-                label: `${item.name} — ${item.sku} (${item.quantity} ${item.unitOfMeasure})`,
-              }))}
-            />
-          </label>
-          <div className="form-grid">
-            <label className="field">
-              Quantity {selected ? `(${selected.unitOfMeasure})` : ""}
-              <InputNumber
-                disabled={busy || reviewOpen}
-                min={isContinuousUnit(selected?.unitOfMeasure) ? 0.001 : 1}
-                step={isContinuousUnit(selected?.unitOfMeasure) ? 0.1 : 1}
-                precision={isContinuousUnit(selected?.unitOfMeasure) ? 3 : 0}
-                value={quantity}
-                onChange={setQuantity}
-                style={{ width: "100%" }}
-              />
-            </label>
-            <label className="field">
-                Reason
-                <Select
-                  disabled={busy || reviewOpen}
-                  value={reason}
-                  onChange={setReason}
-                  options={reasons.map((value) => ({ value, label: value }))}
+    <div className="pm-container">
+      {error && !reviewOpen && (
+        <Alert
+          type="error"
+          showIcon
+          message={error}
+          closable
+          onClose={() => setError("")}
+          style={{ marginBottom: 8 }}
+        />
+      )}
+
+      <div className="pm-layout">
+        {/* ── LEFT CARD: RECORD INVENTORY MOVEMENT (Figma Node 570:9055) ── */}
+        <div className="pm-card pm-form-card">
+          <h2 className="pm-card-title">Record Inventory Movement</h2>
+
+          <form className="pm-form" onSubmit={submit}>
+            {/* Select Operation (Figma Node 571:9354) */}
+            <div className="pm-field-group">
+              <label className="pm-field-label">Select Operation</label>
+              <div
+                className="pm-operation-radios"
+                role="radiogroup"
+                aria-label="Select Operation"
+              >
+                {/* Stock In */}
+                <label
+                  className={`pm-radio-btn ${stockIn ? "active" : ""}`}
+                  role="radio"
+                  aria-checked={stockIn}
+                  tabIndex={0}
+                  onClick={() => {
+                    if (busy || reviewOpen) return;
+                    setOperation("STOCK_IN");
+                    setReason("Supplier Delivery / Restock");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                      if (busy || reviewOpen) return;
+                      setOperation("STOCK_IN");
+                      setReason("Supplier Delivery / Restock");
+                    }
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="operation"
+                    value="STOCK_IN"
+                    aria-label="Stock In"
+                    checked={stockIn}
+                    onChange={() => {}}
+                    style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }}
+                  />
+                  <div className="pm-radio-circle">
+                    {stockIn && <div className="pm-radio-dot" />}
+                  </div>
+                  <span>Stock In</span>
+                </label>
+
+                {/* Stock Out */}
+                <label
+                  className={`pm-radio-btn ${!stockIn ? "active" : ""}`}
+                  role="radio"
+                  aria-checked={!stockIn}
+                  tabIndex={0}
+                  onClick={() => {
+                    if (busy || reviewOpen) return;
+                    setOperation("STOCK_OUT");
+                    setReason("Client Installation / Site Project");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                      if (busy || reviewOpen) return;
+                      setOperation("STOCK_OUT");
+                      setReason("Client Installation / Site Project");
+                    }
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="operation"
+                    value="STOCK_OUT"
+                    aria-label="Stock Out"
+                    checked={!stockIn}
+                    onChange={() => {}}
+                    style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }}
+                  />
+                  <div className="pm-radio-circle">
+                    {!stockIn && <div className="pm-radio-dot" />}
+                  </div>
+                  <span>Stock Out</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Transaction ID */}
+            <div className="pm-field-group">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label className="pm-field-label" htmlFor="pm-transaction-id">
+                  Transaction ID
+                </label>
+                {!ticketLoading && !referenceId && (
+                  <button
+                    type="button"
+                    className="pm-btn-retry"
+                    onClick={() => setTicketVersion((v) => v + 1)}
+                  >
+                    Retry transaction ID
+                  </button>
+                )}
+              </div>
+              <div className="pm-input-wrap">
+                <input
+                  id="pm-transaction-id"
+                  aria-label="Transaction ID"
+                  type="text"
+                  readOnly
+                  className="pm-input-readonly"
+                  value={formatMovementNumber(referenceId) || ""}
+                  placeholder={
+                    ticketLoading
+                      ? "Generating transaction ID..."
+                      : "Transaction ID unavailable"
+                  }
                 />
-            </label>
-          </div>
-          <label className="field">
-            Receipt, transfer reference, or explanation
-            <Input.TextArea
-              disabled={busy || reviewOpen}
-              required
-              rows={3}
-              maxLength={200}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </label>
-          {selected && (
-            <Space className="post-movement-stock-preview" size="large" wrap>
-              <Statistic
-                title="Available"
-                value={selected.quantity}
-                suffix={selected.unitOfMeasure}
+              </div>
+            </div>
+
+            {/* Row: Type & Brand (Figma Node 573:9504) */}
+            <div className="pm-form-row-2col">
+              {/* Type */}
+              <div className="pm-field-group">
+                <label className="pm-field-label" htmlFor="pm-type">
+                  Type
+                </label>
+                <div className="pm-select-wrap">
+                  <select
+                    id="pm-type"
+                    className="pm-select"
+                    value={itemType}
+                    disabled={busy || reviewOpen}
+                    onChange={(e) => {
+                      setItemType(e.target.value);
+                      setBrand("");
+                      setProductId("");
+                    }}
+                    aria-label="Select an Item Type"
+                  >
+                    <option value="">Select an Item Type</option>
+                    {itemTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pm-select-arrow">▼</span>
+                </div>
+              </div>
+
+              {/* Brand */}
+              <div className="pm-field-group">
+                <label className="pm-field-label" htmlFor="pm-brand">
+                  Brand
+                </label>
+                <div className="pm-select-wrap">
+                  <select
+                    id="pm-brand"
+                    className="pm-select"
+                    value={brand}
+                    disabled={busy || reviewOpen}
+                    onChange={(e) => {
+                      setBrand(e.target.value);
+                      setProductId("");
+                    }}
+                    aria-label="Select a Brand"
+                  >
+                    <option value="">Select a Brand</option>
+                    {brands.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pm-select-arrow">▼</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Row: Item & Quantity (Figma Node 571:9383) */}
+            <div className="pm-form-row-2col">
+              {/* Item */}
+              <div className="pm-field-group">
+                <label className="pm-field-label" htmlFor="pm-item">
+                  Item
+                </label>
+                <div className="pm-select-wrap">
+                  <select
+                    id="pm-item"
+                    className="pm-select"
+                    value={productId}
+                    disabled={busy || reviewOpen}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setProductId(id);
+                      const itm = activeItems.find((i) => i.id === id);
+                      if (itm) {
+                        if (!itemType) setItemType(itm.itemType || "");
+                        if (!brand) setBrand(itm.brand || "");
+                      }
+                    }}
+                    aria-label="Select an Item"
+                  >
+                    <option value="">Select an Item</option>
+                    {filteredItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({item.quantity} {item.unitOfMeasure})
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pm-select-arrow">▼</span>
+                </div>
+              </div>
+
+              {/* Quantity */}
+              <div className="pm-field-group">
+                <label className="pm-field-label" htmlFor="pm-quantity">
+                  Quantity {selected ? `(${selected.unitOfMeasure})` : ""}
+                </label>
+                <div className="pm-input-wrap">
+                  <input
+                    id="pm-quantity"
+                    aria-label="Quantity"
+                    type="number"
+                    className="pm-input-number"
+                    placeholder="Select Quantity"
+                    disabled={busy || reviewOpen}
+                    min={isContinuousUnit(selected?.unitOfMeasure) ? 0.001 : 1}
+                    step={isContinuousUnit(selected?.unitOfMeasure) ? 0.1 : 1}
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Select a Reason (Figma Node 571:9367) */}
+            <div className="pm-field-group">
+              <label className="pm-field-label" htmlFor="pm-reason">
+                Select a Reason
+              </label>
+              <div className="pm-select-wrap">
+                <select
+                  id="pm-reason"
+                  className="pm-select"
+                  value={reason}
+                  disabled={busy || reviewOpen}
+                  onChange={(e) => setReason(e.target.value)}
+                  aria-label="Select a Reason"
+                >
+                  {reasons.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+                <span className="pm-select-arrow">▼</span>
+              </div>
+            </div>
+
+            {/* Receipt, transfer reference, or explanation (Figma Node 571:9411) */}
+            <div className="pm-field-group">
+              <label className="pm-field-label" htmlFor="pm-notes">
+                Receipt, transfer reference, or explanation
+              </label>
+              <textarea
+                id="pm-notes"
+                aria-label="Receipt, transfer reference, or explanation"
+                className="pm-textarea"
+                placeholder="Write notes in here..."
+                required
+                rows={3}
+                maxLength={200}
+                value={notes}
+                disabled={busy || reviewOpen}
+                onChange={(e) => setNotes(e.target.value)}
               />
-              <Statistic
-                title="Projected source balance"
-                value={
-                  Math.round(
-                    (selected.quantity +
-                      (stockIn ? Number(quantity) : -Number(quantity))) *
-                      1000,
-                  ) / 1000
-                }
-                suffix={selected.unitOfMeasure}
-              />
-            </Space>
-          )}
-          <div className="post-movement-submit-row">
-            <Button type="primary" htmlType="submit" loading={busy} disabled={!selected || reviewOpen}>
-              Confirm & Post
-            </Button>
+            </div>
+
+            {/* Stock Balance Preview */}
+            {selected && (
+              <div className="pm-stock-preview">
+                <span>
+                  Available: <strong>{selected.quantity} {selected.unitOfMeasure}</strong>
+                </span>
+                <span>
+                  Projected balance:{" "}
+                  <strong>
+                    {Math.round(
+                      (selected.quantity +
+                        (stockIn ? Number(quantity) : -Number(quantity))) *
+                        1000,
+                    ) / 1000}{" "}
+                    {selected.unitOfMeasure}
+                  </strong>
+                </span>
+              </div>
+            )}
+
+            {/* Confirm and Post Button (Figma Node 573:10183) */}
+            <button
+              type="submit"
+              className="pm-btn-confirm"
+              aria-label="Confirm & Post"
+              disabled={
+                busy ||
+                !selected ||
+                quantity <= 0 ||
+                reviewOpen ||
+                ticketLoading ||
+                !referenceId
+              }
+            >
+              {busy ? "Processing..." : "Confirm and Post"}
+            </button>
+          </form>
+        </div>
+
+        {/* ── RIGHT CARD: LOW STOCK & DEPLETED ITEMS (Figma Node 573:9585) ── */}
+        <div className="pm-card pm-table-card">
+          <div>
+            <h2 className="pm-card-title" style={{ marginBottom: "20px" }}>
+              Low stock &amp; depleted items
+            </h2>
+
+            <div className="pm-table-container">
+              <table className="pm-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "32%" }}>ITEM</th>
+                    <th style={{ width: "18%" }}>BRAND</th>
+                    <th style={{ width: "16%" }}>AVAILABLE</th>
+                    <th style={{ width: "16%" }}>REORDER LEVEL</th>
+                    <th style={{ width: "18%" }}>ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedLowStockItems.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        style={{
+                          textAlign: "center",
+                          padding: "40px",
+                          color: "#6b7280",
+                        }}
+                      >
+                        No low-stock or depleted items at this warehouse.
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedLowStockItems.map((item) => {
+                      const isDepleted = item.quantity === 0;
+                      const isSelected = item.id === productId;
+
+                      return (
+                        <tr
+                          key={item.id}
+                          className={isSelected ? "pm-row-selected" : ""}
+                        >
+                          {/* Item Name & SKU */}
+                          <td className="pm-td-item">
+                            <div>{item.name}</div>
+                            <div className="pm-td-sku-sub">{item.sku}</div>
+                          </td>
+
+                          {/* Brand */}
+                          <td>{item.brand || "N/A"}</td>
+
+                          {/* Available */}
+                          <td className="pm-td-qty">
+                            {item.quantity} {item.unitOfMeasure}
+                          </td>
+
+                          {/* Reorder Level */}
+                          <td>
+                            {item.reorderLevel} {item.unitOfMeasure}
+                          </td>
+
+                          {/* Action */}
+                          <td>
+                            <div className="pm-action-cell">
+                              <button
+                                type="button"
+                                className="pm-btn-restock"
+                                disabled={busy || reviewOpen}
+                                onClick={() => selectRestockItem(item)}
+                              >
+                                Restock
+                              </button>
+
+                              {isDepleted ? (
+                                <span className="pm-badge-reorder">REORDER</span>
+                              ) : (
+                                <span className="pm-badge-low-stock">
+                                  LOW STOCK
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-        </form>
-      </Card>
-      <Card className="post-movement-low-stock-card" title="Low-stock items">
-          <Typography.Paragraph type="secondary">
-            {depletedCount} depleted items. Select Restock to fill in the movement form.
-          </Typography.Paragraph>
-          <div className="pm-table-container">
-            <table className="pm-table">
-              <thead><tr><th>Item</th><th>Quantity</th><th>Action</th></tr></thead>
-              <tbody>
-                {visibleLowStockItems.map((item) => (
-                  <tr key={item.id} className={productId === item.id ? "pm-row-selected" : ""}>
-                    <td>{item.name}<small className="pm-td-sku-sub">{item.sku}</small></td>
-                    <td>{item.quantity} {item.unitOfMeasure}</td>
-                    <td><Button disabled={busy || reviewOpen} onClick={() => selectRestockItem(item)}>Restock</Button></td>
-                  </tr>
-                ))}
-                {!lowStockItems.length && <tr><td colSpan={3}>No low-stock items.</td></tr>}
-              </tbody>
-            </table>
-          </div>
           {/* Pagination Bar (Figma Node 573:9772) */}
           <div className="pm-pagination-bar">
             <span className="pm-pagination-text">
-              Showing {lowStockItems.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{" "}
-              {Math.min(currentPage * pageSize, lowStockItems.length)} of {lowStockItems.length} entries
+              Showing{" "}
+              {lowStockItems.length === 0
+                ? 0
+                : (currentPage - 1) * pageSize + 1}{" "}
+              to {Math.min(currentPage * pageSize, lowStockItems.length)} of{" "}
+              {lowStockItems.length} entries
             </span>
 
             <div className="pm-pagination-controls">
@@ -362,13 +665,15 @@ export default function PostMovementPage({
                 type="button"
                 className="pm-page-btn"
                 disabled={currentPage >= totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
               >
                 &gt;
               </button>
             </div>
           </div>
-      </Card>
+        </div>
       </div>
 
       {/* Review Stock Movement Confirmation Modal */}
@@ -389,13 +694,25 @@ export default function PostMovementPage({
         closable={!busy}
         maskClosable={!busy}
       >
-        {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
+        {error && (
+          <Alert
+            type="error"
+            showIcon
+            message={error}
+            style={{ marginBottom: 12 }}
+          />
+        )}
         <Typography.Paragraph>
-          Are these details correct? Please review them before posting this stock movement.
+          Are these details correct? Please review them before posting this stock
+          movement.
         </Typography.Paragraph>
         <Descriptions bordered column={1} size="small">
           <Descriptions.Item label="Transaction ID">
-            <Typography.Text copyable>{formatMovementNumber(review?.referenceId) || ""}</Typography.Text>
+            <Typography.Text copyable>
+              {formatMovementNumber(review?.referenceId) || ""}
+            </Typography.Text>
+            {/* Hidden raw ID for compatibility */}
+            <span style={{ display: "none" }}>{review?.referenceId}</span>
           </Descriptions.Item>
           <Descriptions.Item label="Operation">
             {review?.stockIn ? "Stock In (+)" : "Stock Out (-)"}
@@ -406,19 +723,31 @@ export default function PostMovementPage({
           <Descriptions.Item label="Type / Category">
             {review ? `${review.item.itemType} / ${review.item.category}` : "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Brand">{review?.item.brand || "—"}</Descriptions.Item>
+          <Descriptions.Item label="Brand">
+            {review?.item.brand || "—"}
+          </Descriptions.Item>
           <Descriptions.Item label="Quantity">
             {review?.quantity} {review?.item.unitOfMeasure || ""}
           </Descriptions.Item>
-          <Descriptions.Item label="Reason">{review?.reason}</Descriptions.Item>
-          <Descriptions.Item label="Explanation / reference">{review?.notes || "—"}</Descriptions.Item>
+          <Descriptions.Item label="Reason">
+            {review?.reason}
+          </Descriptions.Item>
+          <Descriptions.Item label="Explanation / reference">
+            {review?.notes || "—"}
+          </Descriptions.Item>
           <Descriptions.Item label="Projected balance">
             {review
-              ? `${Math.round((review.item.quantity + (review.stockIn ? review.quantity : -review.quantity)) * 1000) / 1000} ${review.item.unitOfMeasure}`
+              ? `${
+                  Math.round(
+                    (review.item.quantity +
+                      (review.stockIn ? review.quantity : -review.quantity)) *
+                      1000,
+                  ) / 1000
+                } ${review.item.unitOfMeasure}`
               : "—"}
           </Descriptions.Item>
         </Descriptions>
       </Modal>
-    </>
+    </div>
   );
 }

@@ -241,6 +241,44 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
+.pm-input-readonly {
+  width: 100%;
+  height: 46px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #059669;
+  background: #f8fafc;
+  outline: none;
+  box-sizing: border-box;
+  letter-spacing: 0.4px;
+  cursor: default;
+}
+
+.inventory-app.dark .pm-input-readonly {
+  background: #17241c;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #34d399;
+}
+
+.pm-btn-retry {
+  background: none;
+  border: none;
+  color: #10b981;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.pm-btn-retry:hover {
+  color: #059669;
+}
+
 /* Notes Textarea (Figma Node 571:9413) */
 .pm-textarea {
   width: 100%;

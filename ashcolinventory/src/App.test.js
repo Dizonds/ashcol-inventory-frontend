@@ -128,6 +128,7 @@ test("failed movement preserves entered data so it can be corrected", async () =
     screen.getByLabelText("Receipt, transfer reference, or explanation"),
     { target: { value: "Receipt 100" } },
   );
+  await waitFor(() => expect(screen.getByRole("button", { name: "Confirm & Post" })).toBeEnabled());
   fireEvent.click(screen.getByRole("button", { name: "Confirm & Post" }));
   expect(await screen.findByText("STI0001")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Yes, Confirm & Post" }));
