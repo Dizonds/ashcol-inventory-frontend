@@ -19,6 +19,7 @@ import SettingsPage from "./components/SettingsPage";
 import CompatibilityLookupPage from "./components/CompatibilityLookupPage";
 import SuppliersPage from "./components/SuppliersPage";
 import ServiceVansPage from "./components/ServiceVansPage";
+import JobOrdersPage from "./components/JobOrdersPage";
 import { DEMO_SERVICE_VEHICLES } from "./data/demoServiceVehicles";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -73,6 +74,14 @@ export default function App() {
   function removeDemoVehicle(id) {
     setDemoServiceVans((current) => current.filter((van) => van.id !== id));
     setNotice({ type: "success", text: "Service vehicle deleted." });
+  }
+  function accountUpdated(updated, previous) {
+    const renameDriver = (van) => van.driverId === updated.id ||
+      (!van.driverId && [previous.fullName, `${previous.fullName} (${previous.role})`].includes(van.driverName))
+      ? { ...van, driverName: updated.fullName } : van;
+    setServiceVans((current) => current.map(renameDriver));
+    setDemoServiceVans((current) => current.map(renameDriver));
+    if (updated.id === user.id) setUser(updated);
   }
   // The main inventory view is the fixed Taguig warehouse for every role.
   // Employee-specific van access is handled inside Service Vehicles.
@@ -281,6 +290,8 @@ export default function App() {
                 isDark={isDark}
                 setIsDark={setIsDark}
                 logout={logout}
+                save={save}
+                onProfileUpdate={(updated) => accountUpdated(updated, user)}
                 pendingCount={requests.filter((r) => r.status === "PENDING").length}
               />
 
@@ -404,9 +415,13 @@ export default function App() {
                             items={items}
                             requests={requests}
                             user={user}
+                            serviceVans={serviceVans}
                             branchId={branchId}
                             save={save}
                           />
+                        )}
+                        {page === "job_orders" && (
+                          <JobOrdersPage user={user} serviceVans={serviceVans} refresh={refresh} />
                         )}
                         {page === "post_movement" && canManage && (
                           <PostMovementPage
@@ -426,6 +441,7 @@ export default function App() {
                         {page === "user_management" && user.role === "ADMIN" && (
                           <SettingsPage
                             section="users"
+                            onUserUpdate={accountUpdated}
                             user={user}
                             save={save}
                             refresh={refresh}

@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useId } from "react";
 import { Tooltip, Modal, Table } from "antd";
 import "./StockActivityChart.css";
+import { formatRequestNumber, formatMovementNumber, formatJobNumber } from "../utils/formatters";
+
+const TIMEFRAME_OPTIONS = [7, 14, 30, 90];
 
 // Helper to format Date or date string to YYYY-MM-DD
 function toDateKey(value) {
@@ -23,36 +26,17 @@ function toDateKey(value) {
   return "";
 }
 
-// Generate smooth cubic Bezier path from a sequence of points
-function buildSmoothSpline(points) {
-  if (!points || points.length === 0) return "";
-  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-  if (points.length === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
-
-  let path = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = i > 0 ? points[i - 1] : points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = i < points.length - 2 ? points[i + 2] : p2;
-
-    const cp1x = p1.x + (p2.x - p0.x) * 0.18;
-    const cp1y = p1.y + (p2.y - p0.y) * 0.18;
-    const cp2x = p2.x - (p3.x - p1.x) * 0.18;
-    const cp2y = p2.y - (p3.y - p1.y) * 0.18;
-
-    path += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+// Connect daily values with straight line segments.
+function buildLinePath(points) {
+  if (!points?.length) return "";
+  // Empty trailing dates are not a new stock reading; end at recorded activity.
+  let lastRecordedIndex = points.length - 1;
+  while (lastRecordedIndex >= 0 && points[lastRecordedIndex].day.movements.length === 0) {
+    lastRecordedIndex -= 1;
   }
-  return path;
-}
-
-// Build closed area path for gradients
-function buildAreaPath(points, baselineY) {
-  if (!points || points.length === 0) return "";
-  const spline = buildSmoothSpline(points);
-  const firstX = points[0].x.toFixed(1);
-  const lastX = points[points.length - 1].x.toFixed(1);
-  return `${spline} L ${lastX} ${baselineY.toFixed(1)} L ${firstX} ${baselineY.toFixed(1)} Z`;
+  return points.slice(0, lastRecordedIndex + 1).map((point, index) =>
+    `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`
+  ).join(" ");
 }
 
 // Smart nice tick calculator
@@ -81,13 +65,18 @@ function calculateNiceTicks(maxValue, targetTickCount = 5) {
 export default function StockActivityChart({ movementHistory = [], historyReady = true, initialView = null, onViewSave, isExpanded = false, onExpandedChange }) {
   const [selectedTimeframe, setSelectedTimeframe] = useState(initialView?.selectedTimeframe ?? 7);
   const [visibleDays, setVisibleDays] = useState(initialView?.visibleDays ?? 7);
+  // Reflect the current horizontal zoom without changing its stable vertical scale.
+  const activeTimeframe = TIMEFRAME_OPTIONS.reduce((closest, days) =>
+    Math.abs(days - visibleDays) < Math.abs(closest - visibleDays) ? days : closest
+  );
   const [panDays, setPanDays] = useState(initialView?.panDays ?? 0);
   const [yZoom, setYZoom] = useState(initialView?.yZoom ?? 1);
   const [quantityFloor, setQuantityFloor] = useState(initialView?.quantityFloor ?? 0);
   const [fittedScale, setFittedScale] = useState(initialView?.fittedScale ?? null);
-  const [chartMode, setChartMode] = useState(initialView?.chartMode ?? "area"); // 'area' | 'bar'
+  const [chartMode, setChartMode] = useState(initialView?.chartMode === "bar" ? "bar" : "line");
   const [showStockIn, setShowStockIn] = useState(initialView?.showStockIn ?? true);
   const [showStockOut, setShowStockOut] = useState(initialView?.showStockOut ?? true);
+  const [showBalance, setShowBalance] = useState(initialView?.showBalance ?? true);
   const [hoverIndex, setHoverIndex] = useState(null);
   const [hoverY, setHoverY] = useState(null);
   const [hoverX, setHoverX] = useState(null);
@@ -105,10 +94,11 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   liveViewRef.current = { visibleDays, panDays, yZoom };
   const chartId = useId().replace(/:/g, "");
   const dragRef = useRef(null);
+  const suppressBarClickRef = useRef(false);
   const savedViewRef = useRef(null);
   savedViewRef.current = {
     selectedTimeframe, visibleDays, panDays, yZoom, quantityFloor,
-    fittedScale, chartMode, showStockIn, showStockOut,
+    fittedScale, chartMode, showStockIn, showStockOut, showBalance,
   };
   // The app owns this snapshot, so leaving the dashboard does not reset the view.
   // Saving only on departure avoids rerendering the dashboard during each drag.
@@ -162,7 +152,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    // Extra edge samples keep curves continuous while moving between days.
+    // Extra edge samples keep lines continuous while moving between days.
     for (let i = rangeDays; i >= -1; i--) {
       const d = new Date(
         now.getFullYear(),
@@ -240,7 +230,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     ...seriesData.map((d) => {
       const inVal = showStockIn ? d.stockIn : 0;
       const outVal = showStockOut ? d.stockOut : 0;
-      return Math.max(inVal, outVal);
+      return Math.max(inVal, outVal, showBalance ? Math.abs(d.stockIn - d.stockOut) : 0);
     })
   );
 
@@ -265,20 +255,21 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     });
     let peak = 1;
     totals.forEach((day) => {
-      peak = Math.max(peak, showStockIn ? day.stockIn : 0, showStockOut ? day.stockOut : 0);
+      peak = Math.max(peak, showStockIn ? day.stockIn : 0, showStockOut ? day.stockOut : 0, showBalance ? Math.abs(day.stockIn - day.stockOut) : 0);
     });
     return calculateNiceTicks(peak * 1.12).maxTick;
-  }, [movementHistory, selectedTimeframe, showStockIn, showStockOut]);
+  }, [movementHistory, selectedTimeframe, showStockIn, showStockOut, showBalance]);
   const autoScale = fittedScale ?? timeframeScale;
-  const maxTick = autoScale / yZoom;
+  const maxTick = (autoScale / yZoom) * (showBalance ? 2 : 1);
+  const axisFloor = quantityFloor - (showBalance ? maxTick / 2 : 0);
   const tickStep = calculateNiceTicks(maxTick, isExpanded ? 6 : 5).ticks[1] || maxTick;
-  const firstTick = Math.ceil(quantityFloor / tickStep) * tickStep;
+  const firstTick = Math.ceil(axisFloor / tickStep) * tickStep;
   const ticks = Array.from({ length: Math.ceil(maxTick / tickStep) + 1 }, (_, index) => firstTick + index * tickStep)
-    .filter((tick) => tick <= quantityFloor + maxTick);
+    .filter((tick) => tick <= axisFloor + maxTick);
 
   const getY = useCallback(
-    (val) => baselineY - ((Math.max(0, val) - quantityFloor) / maxTick) * plotHeight,
-    [baselineY, maxTick, plotHeight, quantityFloor]
+    (val) => baselineY - ((val - axisFloor) / maxTick) * plotHeight,
+    [baselineY, maxTick, plotHeight, axisFloor]
   );
 
   // Coordinate arrays for lines
@@ -305,6 +296,13 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
       return { x, y, val: day.stockOut, day };
     });
   }, [seriesData, getY, getPointX]);
+
+  const pointsBalance = useMemo(() => seriesData.map((day, idx) => ({
+    x: getPointX(idx),
+    y: getY(day.stockIn - day.stockOut),
+    val: day.stockIn - day.stockOut,
+    day,
+  })), [seriesData, getY, getPointX]);
 
   // Handle pointer tracking
   const handleMouseMove = (e) => {
@@ -342,6 +340,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     if (e.pointerType === "mouse" && e.button !== 0) return;
     stopZoomAnimation();
     const targetPoint = e.target.closest?.("[data-stock-point]");
+    suppressBarClickRef.current = false;
     dragRef.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -378,7 +377,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     );
     setPanDays(nextPan);
     // Move the quantity camera without changing the spacing between values.
-    // Zero is the lower bound; dragging back down cannot reveal negatives.
+    // Keep the camera bounded to its default lower edge, including net losses.
     const verticalDrag = (e.clientY - dragRef.current.startY) / plotHeight;
     setQuantityFloor(Math.max(0, dragRef.current.startFloor + verticalDrag * dragRef.current.quantitySpan));
   };
@@ -449,6 +448,19 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     };
   }, []);
 
+  // Bring the expanded card into view after the dashboard layout updates.
+  useEffect(() => {
+    if (!isExpanded) return;
+    const frame = requestAnimationFrame(() => {
+      containerRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isExpanded]);
+
   useEffect(() => {
     if (!isExpanded) return;
     if (zoomFrameRef.current !== null) cancelAnimationFrame(zoomFrameRef.current);
@@ -465,7 +477,8 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
 
   const resetView = () => {
     stopZoomAnimation();
-    setVisibleDays(selectedTimeframe);
+    setSelectedTimeframe(activeTimeframe);
+    setVisibleDays(activeTimeframe);
     setPanDays(0);
     setYZoom(1);
     setQuantityFloor(0);
@@ -479,13 +492,14 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     e.currentTarget.releasePointerCapture?.(drag.pointerId);
     dragRef.current = null;
     setIsDragging(false);
+    suppressBarClickRef.current = e.type !== "pointerup" || Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) >= 5;
     if (e.type === "pointerup" && drag.pointDay && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 5) {
       setSelectedDay(drag.pointDay);
     }
   };
 
   const renderPoint = (point, index, direction) => {
-    if (point.val <= 0 || point.x < margin.left || point.x > margin.left + plotWidth || point.y < margin.top || point.y > baselineY) return null;
+    if ((direction === "balance" ? point.day.movements.length === 0 : point.val <= 0) || point.x < margin.left || point.x > margin.left + plotWidth || point.y < margin.top || point.y > baselineY) return null;
     return (
       <g
         key={`${direction}-point-${point.day.key}`}
@@ -493,7 +507,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
         data-stock-point={index}
         role="button"
         tabIndex={0}
-        aria-label={`View ${direction === "in" ? "Stock In" : "Stock Out"} details for ${point.day.fullLabel}`}
+        aria-label={`View ${direction === "balance" ? "Net Balance" : direction === "in" ? "Stock In" : "Stock Out"} details for ${point.day.fullLabel}`}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -503,8 +517,8 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
           }
         }}
       >
-        <circle cx={point.x} cy={point.y} r="10" fill="transparent" />
-        <circle cx={point.x} cy={point.y} r="3.5" fill="#ffffff" stroke={direction === "in" ? "#10b981" : "#f59e0b"} strokeWidth="2" className="stock-dot" />
+        <circle cx={point.x} cy={point.y} r={direction === "balance" ? 4 : 10} fill="transparent" />
+        <circle cx={point.x} cy={point.y} r="3.5" fill="#ffffff" stroke={direction === "balance" ? "#8b5cf6" : direction === "in" ? "#10b981" : "#f59e0b"} strokeWidth="2" className="stock-dot" />
       </g>
     );
   };
@@ -512,15 +526,21 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   const movementColumns = [
     { title: "Time", width: 160, render: (_, entry) => entry.createdAt ? new Date(entry.createdAt).toLocaleString("en-PH", { timeZone: "Asia/Manila", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : entry.date || "Not recorded" },
     { title: "SKU / Item", width: 220, render: (_, entry) => <div className="chart-movement-item"><strong>{entry.sku || "No SKU"}</strong><span>{entry.itemName || "Inventory item"}</span></div> },
+    { title: "Type / Category", width: 160, align: "center", render: (_, entry) => (
+      <div className="table-type-cat">
+        <span className="table-type-label">{entry.itemType || "—"}</span>
+        <span className="table-cat-label">{entry.category || ""}</span>
+      </div>
+    ) },
+    { title: "Brand", dataIndex: "brand", width: 120, align: "center", render: (value) => value || "—" },
     { title: "Movement", dataIndex: "movementType", width: 160, render: (value) => String(value || "Movement").replace(/_/g, " ") },
     { title: "Quantity", width: 120, render: (_, entry) => {
       const delta = Number(entry.quantityDelta) || 0;
       return <strong className={delta > 0 ? "chart-movement-in" : delta < 0 ? "chart-movement-out" : ""}>{delta > 0 ? "+" : ""}{delta.toLocaleString()} {entry.unitOfMeasure || "units"}</strong>;
     } },
     { title: "Stock balance", width: 130, render: (_, entry) => entry.beforeQuantity == null || entry.afterQuantity == null ? "Not recorded" : `${entry.beforeQuantity.toLocaleString()} → ${entry.afterQuantity.toLocaleString()}` },
-    { title: "Reference / Work order", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{entry.referenceId || "No reference"}</span>{entry.workOrderId && <span>{entry.workOrderId}</span>}</div> },
+    { title: "Reference / Work order", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{formatMovementNumber(formatRequestNumber(entry.requestNumber || entry.referenceId)) || "No reference"}</span>{entry.workOrderId && <span>{entry.jobOrderId ? formatJobNumber(entry.workOrderId) : formatRequestNumber(entry.workOrderId)}</span>}</div> },
     { title: "Processed by", dataIndex: "performedByName", width: 160, render: (value) => value || "Not recorded" },
-    { title: "Location", dataIndex: "branchId", width: 150, render: (value) => value === "LOCAL-WAREHOUSE" ? "Taguig Warehouse" : value || "Not recorded" },
     { title: "Remarks", dataIndex: "reason", width: 250, render: (value) => value || "No remarks" },
   ];
 
@@ -528,6 +548,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   const detailDay = activeDay || seriesData[seriesData.length - 2];
   const activeStockInPoint = hoverIndex !== null ? pointsStockIn[hoverIndex] : null;
   const activeStockOutPoint = hoverIndex !== null ? pointsStockOut[hoverIndex] : null;
+  const activeBalancePoint = hoverIndex !== null ? pointsBalance[hoverIndex] : null;
 
   // Determine label step for X axis so dates do not crowd
   const labelStep = Math.max(1, Math.ceil(80 / dayWidth));
@@ -589,47 +610,30 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
         </div>
 
         <div className="stock-header-controls">
-          {/* Chart Type Toggle */}
           <div className="stock-mode-toggle" role="group" aria-label="Chart display type">
-            <button
-              type="button"
-              className={chartMode === "area" ? "active" : ""}
-              onClick={() => setChartMode("area")}
-              title="Smooth Line & Area View"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M3 18C8 10 12 14 21 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span>Curve</span>
-            </button>
-            <button
-              type="button"
-              className={chartMode === "bar" ? "active" : ""}
-              onClick={() => setChartMode("bar")}
-              title="Grouped Column Bars View"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <rect x="4" y="9" width="4" height="12" rx="1" fill="currentColor" />
-                <rect x="11" y="4" width="4" height="17" rx="1" fill="currentColor" />
-                <rect x="18" y="12" width="4" height="9" rx="1" fill="currentColor" />
-              </svg>
-              <span>Bars</span>
-            </button>
+            {[{ value: "line", label: "Line" }, { value: "bar", label: "Bar" }].map((mode) => (
+              <button
+                key={mode.value}
+                type="button"
+                className={chartMode === mode.value ? "active" : ""}
+                aria-pressed={chartMode === mode.value}
+                onClick={() => {
+                  stopZoomAnimation();
+                  setChartMode(mode.value);
+                  setHoverIndex(null);
+                  setHoverY(null);
+                }}
+              >{mode.label}</button>
+            ))}
           </div>
-
           {/* Date Range Selector */}
           <div className="stock-range-pill" role="group" aria-label="Date range selector">
-            {[7, 14, 30, 90].map((days) => (
+            {TIMEFRAME_OPTIONS.map((days) => (
               <button
                 type="button"
                 key={days}
-                className={selectedTimeframe === days ? "active" : ""}
-                aria-pressed={selectedTimeframe === days}
+                className={activeTimeframe === days ? "active" : ""}
+                aria-pressed={activeTimeframe === days}
                 onClick={() => {
                   stopZoomAnimation();
                   setSelectedTimeframe(days);
@@ -742,6 +746,16 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             <span className="legend-indicator stock-out-indicator" />
             <span>Stock Out</span>
           </button>
+          <button
+            type="button"
+            className={`stock-legend-item ${showBalance ? "active" : "disabled"}`}
+            onClick={() => setShowBalance((value) => !value)}
+            aria-pressed={showBalance}
+            title="Daily net balance: Stock In minus Stock Out"
+          >
+            <span className="legend-indicator stock-balance-indicator" />
+            <span>Net Balance</span>
+          </button>
         </div>
       </div>
 
@@ -751,7 +765,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
         className={`stock-chart-viewport ${isDragging ? "is-dragging" : ""}`}
         tabIndex={0}
         role="region"
-        aria-label="Interactive stock chart. Drag horizontally to browse dates and vertically to pan the quantity camera. Zero is the lower boundary. Arrow keys browse dates. Plus and minus zoom. Home resets the view."
+        aria-label="Interactive stock chart with daily net balance. Drag horizontally to browse dates and vertically to pan quantities. Negative balances indicate more stock out than in. Arrow keys browse dates. Plus and minus zoom. Home resets the view."
         onKeyDown={(event) => {
           if (event.target !== event.currentTarget) return;
           stopZoomAnimation();
@@ -789,25 +803,26 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             <clipPath id={`${chartId}-plot`}>
               <rect x={margin.left} y={margin.top} width={plotWidth} height={plotHeight} />
             </clipPath>
-            {/* Soft Emerald Area Gradient */}
-            <linearGradient id="emeraldAreaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.32" />
-              <stop offset="60%" stopColor="#10b981" stopOpacity="0.08" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0.00" />
-            </linearGradient>
-
-            {/* Warm Amber Area Gradient */}
-            <linearGradient id="amberAreaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.28" />
-              <stop offset="60%" stopColor="#f59e0b" stopOpacity="0.06" />
-              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.00" />
-            </linearGradient>
-
-            {/* Subtle glow filter */}
-            <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.25" />
-            </filter>
           </defs>
+
+          {/* Date grid stays aligned with the chart while panning and zooming. */}
+          <g aria-hidden="true" pointerEvents="none" clipPath={`url(#${chartId}-plot)`}>
+            {seriesData.map((day, index) => {
+              if (index % labelStep !== 0) return null;
+              const x = getPointX(index);
+              if (x < margin.left || x > margin.left + plotWidth) return null;
+              return (
+                <line
+                  key={`date-grid-${day.key}`}
+                  x1={x}
+                  y1={margin.top}
+                  x2={x}
+                  y2={baselineY}
+                  className="stock-grid-line"
+                />
+              );
+            })}
+          </g>
 
           {/* Y-Axis Horizontal Grid Lines and Labels */}
           {ticks.map((tick) => {
@@ -851,30 +866,15 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             className="stock-axis-line"
           />
 
-          {/* MODE A: AREA & SMOOTH CURVE LINES */}
+          {/* Stock movement lines */}
           <g clipPath={`url(#${chartId}-plot)`}>
-          {chartMode === "area" && (
-            <>
-              {/* Area Fills */}
-              {showStockIn && (
+          {showBalance && (
+            <line x1={margin.left} y1={getY(0)} x2={margin.left + plotWidth} y2={getY(0)} className="stock-baseline" strokeDasharray="4 4" />
+          )}
+              {/* Line Strokes */}
+              {chartMode === "line" && showStockIn && (
                 <path
-                  d={buildAreaPath(pointsStockIn, getY(0))}
-                  fill="url(#emeraldAreaGradient)"
-                  className="stock-area-fill"
-                />
-              )}
-              {showStockOut && (
-                <path
-                  d={buildAreaPath(pointsStockOut, getY(0))}
-                  fill="url(#amberAreaGradient)"
-                  className="stock-area-fill"
-                />
-              )}
-
-              {/* Curve Strokes */}
-              {showStockIn && (
-                <path
-                  d={buildSmoothSpline(pointsStockIn)}
+                  d={buildLinePath(pointsStockIn)}
                   fill="none"
                   stroke="#10b981"
                   strokeWidth="2.5"
@@ -883,9 +883,9 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
                   className="stock-curve stock-in-curve"
                 />
               )}
-              {showStockOut && (
+              {chartMode === "line" && showStockOut && (
                 <path
-                  d={buildSmoothSpline(pointsStockOut)}
+                  d={buildLinePath(pointsStockOut)}
                   fill="none"
                   stroke="#f59e0b"
                   strokeWidth="2.5"
@@ -896,77 +896,67 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
               )}
 
               {/* Small discrete points along the lines */}
-              {visibleDays <= 90 && showStockIn && pointsStockIn.map((point, index) => renderPoint(point, index, "in"))}
-              {visibleDays <= 90 && showStockOut && pointsStockOut.map((point, index) => renderPoint(point, index, "out"))}
-            </>
-          )}
+              {chartMode === "line" && visibleDays <= 90 && showStockIn && pointsStockIn.map((point, index) => renderPoint(point, index, "in"))}
+              {chartMode === "line" && visibleDays <= 90 && showStockOut && pointsStockOut.map((point, index) => renderPoint(point, index, "out"))}
 
-          {/* MODE B: GROUPED BARS */}
-          {chartMode === "bar" && (
-            <g className="stock-bars-group">
-              {seriesData.map((day, idx) => {
-                const slotW = dayWidth;
-                const cx = getPointX(idx);
-                const barW = Math.min(18, Math.max(4, slotW * 0.35));
-                const inHeight = Math.max(0, (day.stockIn / maxTick) * plotHeight);
-                const outHeight = Math.max(0, (day.stockOut / maxTick) * plotHeight);
-                const isHovered = hoverIndex === idx;
+          {chartMode === "bar" && seriesData.map((day, index) => {
+            const bars = [
+              ...(showStockIn ? [{ label: "Stock In", value: day.stockIn, color: "#10b981" }] : []),
+              ...(showStockOut ? [{ label: "Stock Out", value: day.stockOut, color: "#f59e0b" }] : []),
+              ...(showBalance ? [{ label: "Net Balance", value: day.stockIn - day.stockOut, color: "#8b5cf6", opacity: 0.4 }] : []),
+            ];
+            const width = Math.min(18, dayWidth * 0.75 / Math.max(1, bars.length));
+            return bars.map((bar, barIndex) => bar.value !== 0 && (
+              <rect
+                key={`${day.key}-${bar.label}`}
+                x={getPointX(index) + (barIndex - bars.length / 2) * width + 1}
+                y={Math.min(getY(0), getY(bar.value))}
+                width={Math.max(0.5, width - 2)}
+                height={Math.abs(getY(bar.value) - getY(0))}
+                fill={bar.color}
+                opacity={bar.opacity ?? 1}
+                rx="2"
+                className="stock-bar"
+                data-stock-point={index}
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${bar.label} details for ${day.fullLabel}`}
+                onClick={() => {
+                  if (!suppressBarClickRef.current) {
+                    stopZoomAnimation();
+                    setSelectedDay(day);
+                  }
+                  suppressBarClickRef.current = false;
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    stopZoomAnimation();
+                    setSelectedDay(day);
+                  }
+                }}
+              />
+            ));
+          })}
 
-                return (
-                  <g key={`bar-group-${idx}`}>
-                    {/* Hover column background highlight */}
-                    {isHovered && (
-                      <rect
-                        x={cx - slotW * 0.45}
-                        y={margin.top}
-                        width={slotW * 0.9}
-                        height={plotHeight}
-                        fill="currentColor"
-                        className="bar-hover-bg"
-                        rx="4"
-                      />
-                    )}
-
-                    {/* Stock In Bar (Green) */}
-                    {showStockIn && inHeight > 0 && (
-                      <rect
-                        x={cx - barW - 1.5}
-                        y={getY(day.stockIn)}
-                        width={barW}
-                        height={inHeight}
-                        rx="3"
-                        fill="#10b981"
-                        className="stock-bar in-bar"
-                      />
-                    )}
-
-                    {/* Stock Out Bar (Amber) */}
-                    {showStockOut && outHeight > 0 && (
-                      <rect
-                        x={cx + 1.5}
-                        y={getY(day.stockOut)}
-                        width={barW}
-                        height={outHeight}
-                        rx="3"
-                        fill="#f59e0b"
-                        className="stock-bar out-bar"
-                      />
-                    )}
-
-                    {/* Baseline indicator when both are 0 */}
-                    {day.stockIn === 0 && day.stockOut === 0 && (
-                      <rect
-                        x={cx - 5}
-                        y={getY(0) - 1}
-                        width={10}
-                        height={2}
-                        rx="1"
-                        className="zero-indicator"
-                      />
-                    )}
-                  </g>
-                );
-              })}
+          {/* Daily net balance line */}
+          {chartMode === "line" && showBalance && (
+            <g opacity="0.4">
+              <path
+                d={buildLinePath(pointsBalance)}
+                fill="none"
+                stroke="#8b5cf6"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="stock-curve stock-balance-curve"
+                pointerEvents="none"
+              />
+              {visibleDays <= 90 && pointsBalance.map((point, index) => renderPoint(point, index, "balance"))}
+              {activeBalancePoint && (
+                <circle cx={activeBalancePoint.x} cy={activeBalancePoint.y} r="5" fill="#8b5cf6" stroke="#ffffff" strokeWidth="2" pointerEvents="none" />
+              )}
             </g>
           )}
 
@@ -992,8 +982,8 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
                 />
               )}
 
-              {/* Enhanced active dot on curve */}
-              {chartMode === "area" && showStockIn && (
+              {/* Enhanced active dot on line */}
+              {chartMode === "line" && showStockIn && (
                 <g>
                   <circle
                     cx={activeStockInPoint.x}
@@ -1012,7 +1002,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
                 </g>
               )}
 
-              {chartMode === "area" && showStockOut && activeStockOutPoint && (
+              {chartMode === "line" && showStockOut && activeStockOutPoint && (
                 <g>
                   <circle
                     cx={activeStockOutPoint.x}
@@ -1064,7 +1054,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             <g className="stock-crosshair-labels">
               <rect x={0} y={hoverY - 10} width={margin.left - 3} height={20} rx={3} />
               <text x={(margin.left - 3) / 2} y={hoverY + 4} textAnchor="middle">
-                {(quantityFloor + (baselineY - hoverY) / plotHeight * maxTick).toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                {(axisFloor + (baselineY - hoverY) / plotHeight * maxTick).toLocaleString(undefined, { maximumFractionDigits: 1 })}
               </text>
               <rect x={Math.max(margin.left, Math.min(containerWidth - 100, hoverX - 42))} y={baselineY + 5} width={84} height={24} rx={4} />
               <text x={Math.max(margin.left, Math.min(containerWidth - 100, hoverX - 42)) + 42} y={baselineY + 21} textAnchor="middle">
@@ -1149,7 +1139,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
               dataSource={[...selectedDay.movements].sort((a, b) => (new Date(b.createdAt || b.date).getTime() || 0) - (new Date(a.createdAt || a.date).getTime() || 0))}
               rowKey={(entry) => entry.id || entry._id || `${entry.referenceId}-${entry.sku}-${entry.movementType}`}
               size="small"
-              scroll={{ x: 1630, y: 400 }}
+              scroll={{ x: 1760, y: 400 }}
               pagination={{ pageSize: 8, showSizeChanger: false, hideOnSinglePage: true }}
             />
           </>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Table,
@@ -12,12 +12,16 @@ import {
   Typography,
   Space,
   Popconfirm,
+  Checkbox,
+  Descriptions,
 } from "antd";
+import { EyeOutlined } from "@ant-design/icons";
 import { api, errorMessage } from "../api";
+import { formatRequestNumber } from "../utils/formatters";
 
 const isContinuousUnit = (unit) =>
   ["METER", "FOOT", "KG", "LITER"].includes(unit);
-const requestNumber = (entry) => entry.requestNumber || entry.workOrderId || entry.id;
+const requestNumber = (entry) => formatRequestNumber(entry.requestNumber || entry.workOrderId || entry.id);
 const formatDate = (value) => new Date(value).toLocaleString("en-PH", { timeZone: "Asia/Manila" });
 const requestHistory = (entry) => entry.history?.length ? entry.history : [
   { status: "PENDING", performedByName: entry.requestedByName, at: entry.createdAt },
@@ -29,6 +33,7 @@ export default function RequestsPage({
   items,
   requests,
   user,
+  serviceVans = [],
   branchId,
   save,
 }) {
@@ -45,6 +50,31 @@ export default function RequestsPage({
   const [decisionReason, setDecisionReason] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [deleting, setDeleting] = useState(null);
+  const [viewing, setViewing] = useState(null);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deletedEntries, setDeletedEntries] = useState([]);
+  const canManage = ["ADMIN", "MANAGER"].includes(user.role);
+  const assignedVan = serviceVans.find((van) => !van.isDemo && (van.driverId
+    ? String(van.driverId) === String(user.id)
+    : [user.fullName, `${user.fullName} (${user.role})`].includes(van.driverName)));
+  const ownsRequest = (entry) => String(entry.requestedBy) === String(user.id);
+  useEffect(() => {
+    if (!showDeleted) return;
+    let active = true;
+    api("get", "/requests", null, { branchId, includeDeleted: true })
+      .then(({ data }) => { if (active) setDeletedEntries(data.filter((entry) => entry.deletedAt)); })
+      .catch((err) => { if (active) setError(errorMessage(err)); });
+    return () => { active = false; };
+  }, [showDeleted, branchId, requests]);
+  function deleteRequest() {
+    if (!deleting || busy) return;
+    setBusy(true); setError("");
+    save("delete", `/requests/${deleting.id}`, { branchId }, `Request ${requestNumber(deleting)} deleted.`)
+      .then(() => setDeleting(null))
+      .catch((err) => setError(errorMessage(err)))
+      .finally(() => setBusy(false));
+  }
   const activeItems = items.filter((item) => !item.archived);
   const itemTypes = [...new Set(activeItems.map((item) => item.itemType).filter(Boolean))].sort();
   const brands = [...new Set(activeItems
@@ -55,6 +85,7 @@ export default function RequestsPage({
     : [];
   const selectedItem = filteredItems.find((item) => item.id === productId);
   function newRequest() {
+    if (!assignedVan) return;
     setBusy(true);
     setError("");
     api("get", "/requests/reference")
@@ -72,14 +103,14 @@ export default function RequestsPage({
   }
   function submit(event) {
     event.preventDefault();
-    if (!reference || !selectedItem || busy) return;
+    if (!reference || !selectedItem || !assignedVan || busy) return;
     setBusy(true);
     setError("");
     save(
       "post",
       "/requests",
       { branchId, productId, requestId: reference.id, quantityNeeded: quantity, notes },
-      `Material request ${reference.requestNumber} submitted.`,
+      `Material request ${formatRequestNumber(reference.requestNumber)} submitted.`,
     )
       .then(() => {
         setOpen(false);
@@ -112,19 +143,23 @@ export default function RequestsPage({
       <Typography.Title level={3}>Material Requests</Typography.Title>
       <Typography.Paragraph type="secondary">
         Request → Approve → Fulfill. Approval does not reserve stock;
-        fulfillment checks availability and deducts it once. Search a request ID
+        fulfillment transfers available warehouse stock into the technician's assigned vehicle once. Search a request ID
         to see its status and history.
       </Typography.Paragraph>
-      {error && (
+      {user.role === "EMPLOYEE" && !assignedVan && <Alert type="warning" showIcon
+        title="You need an assigned service vehicle before requesting materials. Ask your admin or manager to assign one."
+        style={{ marginBottom: 16 }} />}
+      {error && !deleting && (
         <Alert type="error" title={error} style={{ marginBottom: 16 }} />
       )}
       <Card
-        title="Warehouse requests"
+        title={user.role === "EMPLOYEE" ? "My requests" : "Warehouse requests"}
         extra={
           user.role === "EMPLOYEE" && (
             <Button
               type="primary"
               loading={busy}
+              disabled={!assignedVan}
               onClick={newRequest}
             >
               New Request
@@ -153,10 +188,11 @@ export default function RequestsPage({
         />
         <Table
           rowKey="id"
-          dataSource={requests.filter(
-            (entry) => (filter === "ALL" || entry.status === filter) &&
+          dataSource={[...requests, ...(showDeleted ? deletedEntries : [])].filter(
+            (entry) => (user.role !== "EMPLOYEE" || ownsRequest(entry)) &&
+              (filter === "ALL" || entry.status === filter) &&
               [requestNumber(entry), entry.id, entry.workOrderId, entry.sku, entry.itemName, entry.brand, entry.itemType, entry.requestedByName]
-                .some((value) => String(value || "").toLowerCase().includes(search.trim().toLowerCase())),
+                .some((value) => String(value || "").toLowerCase().includes(formatRequestNumber(search.trim()).toLowerCase())),
           )}
           scroll={{ x: 1300 }}
           pagination={{ defaultPageSize: 10 }}
@@ -210,9 +246,10 @@ export default function RequestsPage({
                 `${entry.quantityNeeded} ${entry.unitOfMeasure}`,
             },
             { title: "Requested by", dataIndex: "requestedByName" },
+            { title: "Receiving vehicle", dataIndex: "destinationVanName", render: (value) => value || "Not recorded" },
             {
               title: "Status",
-              render: (_, entry) => (
+              render: (_, entry) => entry.deletedAt ? <Tag>Deleted ({entry.status.toLowerCase()})</Tag> : (
                 <Tag
                   color={
                     {
@@ -229,10 +266,16 @@ export default function RequestsPage({
             },
             {
               title: "Actions",
-              render: (_, entry) =>
-                user.role !== "EMPLOYEE" && (
+              render: (_, entry) => (
+                <Space wrap>
+                  {entry.status === "DENIED" && (
+                    <Button icon={<EyeOutlined />} aria-label={`View denied request ${requestNumber(entry)}`}
+                      title="View request details and denial reason" onClick={() => setViewing(entry)} />
+                  )}
+                {(canManage || (user.role === "EMPLOYEE" && ownsRequest(entry) && entry.status === "PENDING")) && !entry.deletedAt && (
                   <Space wrap>
-                    {entry.status === "PENDING" && (
+                    <Button danger disabled={busy} onClick={() => { setError(""); setDeleting(entry); }}>Delete</Button>
+                    {canManage && entry.status === "PENDING" && (
                       <Button
                         disabled={busy}
                         onClick={() => transition(entry, "APPROVED")}
@@ -240,7 +283,7 @@ export default function RequestsPage({
                         Approve
                       </Button>
                     )}
-                    {["PENDING", "APPROVED"].includes(entry.status) && (
+                    {canManage && ["PENDING", "APPROVED"].includes(entry.status) && (
                       <Button
                         disabled={busy}
                         danger
@@ -252,9 +295,10 @@ export default function RequestsPage({
                         Deny
                       </Button>
                     )}
-                    {entry.status === "APPROVED" && (
+                    {canManage && entry.status === "APPROVED" && (
                       <Popconfirm
-                        title="Issue these materials and deduct stock?"
+                        title="Transfer these materials to the technician's vehicle?"
+                        description={entry.destinationVanName ? `Receiving vehicle: ${entry.destinationVanName}` : "The technician must have an assigned vehicle."}
                         onConfirm={() => transition(entry, "FULFILLED")}
                       >
                         <Button type="primary" disabled={busy}>
@@ -263,11 +307,47 @@ export default function RequestsPage({
                       </Popconfirm>
                     )}
                   </Space>
-                ),
+                )}
+                </Space>
+              ),
             },
           ]}
         />
+        <Checkbox checked={showDeleted} onChange={(event) => setShowDeleted(event.target.checked)} style={{ marginTop: 16 }}>
+          Show deleted requests
+        </Checkbox>
       </Card>
+      <Modal title="Denied request details" open={Boolean(viewing)} onCancel={() => setViewing(null)}
+        footer={<Button onClick={() => setViewing(null)}>Close</Button>}>
+        {viewing && (
+          <>
+            <Descriptions column={1} size="small" bordered items={[
+              { key: "id", label: "Request ID", children: requestNumber(viewing) },
+              { key: "status", label: "Status", children: <Tag color="red">DENIED</Tag> },
+              { key: "item", label: "Item", children: viewing.itemName },
+              { key: "sku", label: "SKU", children: viewing.sku },
+              { key: "type", label: "Type / Category", children: [viewing.itemType, viewing.category].filter(Boolean).join(" / ") || "Not specified" },
+              { key: "brand", label: "Brand", children: viewing.brand || "Not specified" },
+              { key: "quantity", label: "Quantity", children: `${viewing.quantityNeeded} ${viewing.unitOfMeasure}` },
+              { key: "requester", label: "Requested by", children: viewing.requestedByName },
+              { key: "requested", label: "Requested at", children: formatDate(viewing.createdAt) },
+              { key: "notes", label: "Notes", children: <span style={{ whiteSpace: "pre-wrap" }}>{viewing.notes || "None"}</span> },
+              { key: "reviewer", label: "Denied by", children: viewing.reviewedByName || "Not recorded" },
+              { key: "reviewed", label: "Denied at", children: viewing.reviewedAt ? formatDate(viewing.reviewedAt) : "Not recorded" },
+            ]} />
+            <Typography.Title level={5}>Denial reason</Typography.Title>
+            <Typography.Paragraph style={{ whiteSpace: "pre-wrap" }}>
+              {viewing.decisionReason || "No denial reason recorded."}
+            </Typography.Paragraph>
+          </>
+        )}
+      </Modal>
+      <Modal title="Delete Material Request" open={Boolean(deleting)} onOk={deleteRequest}
+        onCancel={() => !busy && setDeleting(null)} okText="Delete Request"
+        okButtonProps={{ danger: true }} cancelButtonProps={{ disabled: busy }} confirmLoading={busy} closable={!busy} maskClosable={!busy}>
+        <Typography.Paragraph>Delete {deleting ? requestNumber(deleting) : ""} from the request list? Stock balances and ledger entries will stay unchanged. Its history remains available under Show deleted requests.</Typography.Paragraph>
+        {error && <Alert type="error" showIcon title={error} />}
+      </Modal>
       <Modal
         title="New material request"
         open={user.role === "EMPLOYEE" && open}
@@ -276,6 +356,7 @@ export default function RequestsPage({
       >
         {error && <Alert type="error" title={error} />}
         <form onSubmit={submit}>
+          <label className="field">Receiving vehicle<Input readOnly value={assignedVan?.name || "No vehicle assigned"} /></label>
           <label className="field">
             Item Type
             <Select
@@ -334,7 +415,7 @@ export default function RequestsPage({
             Request ID
             <Input
               readOnly
-              value={reference?.requestNumber || ""}
+              value={formatRequestNumber(reference?.requestNumber) || ""}
             />
           </label>
           <label className="field">
@@ -360,7 +441,7 @@ export default function RequestsPage({
             htmlType="submit"
             type="primary"
             loading={busy}
-            disabled={!selectedItem || !reference}
+            disabled={!selectedItem || !reference || !assignedVan}
           >
             Submit request
           </Button>

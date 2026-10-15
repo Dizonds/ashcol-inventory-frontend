@@ -11,12 +11,14 @@ import {
   Select,
 } from "antd";
 import { api, errorMessage } from "../api";
+import { formatJobNumber } from "../utils/formatters";
 import "./ServiceVansPage.css";
 
 // Vehicle Images matching Figma
 import vanL300 from "../assets/vehicles/van_l300.jpg";
 import vanSuv from "../assets/vehicles/van_suv.jpg";
 import vanPickup from "../assets/vehicles/van_pickup.jpg";
+const VEHICLE_TYPES = ["Cab Chassis", "Cargo Van", "Pickup", "Hatchback", "Micro SUV"];
 
 export default function ServiceVansPage({
   serviceVans = [],
@@ -51,16 +53,48 @@ export default function ServiceVansPage({
   // Consume / Work Order Modal state
   const [consumeItem, setConsumeItem] = useState(null);
   const [consumeQty, setConsumeQty] = useState(1);
-  const [consumeWorkOrder, setConsumeWorkOrder] = useState("");
+  const [consumeJobOrderId, setConsumeJobOrderId] = useState("");
+  const [consumeJobs, setConsumeJobs] = useState([]);
+  const [consumeUsageId, setConsumeUsageId] = useState("");
   const [consumeNotes, setConsumeNotes] = useState("");
   const [consumeBusy, setConsumeBusy] = useState(false);
   const [consumeError, setConsumeError] = useState("");
+  const [consumeTicketLoading, setConsumeTicketLoading] = useState(false);
+  const [consumeTicketAttempt, setConsumeTicketAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!consumeItem || !selectedVanId) return;
+    let active = true;
+    setConsumeTicketLoading(true);
+    setConsumeUsageId("");
+    setConsumeJobs([]);
+    setConsumeJobOrderId("");
+    setConsumeError("");
+    Promise.all([
+      api("post", `/service-vans/${selectedVanId}/usage-ticket`),
+      api("get", "/job-orders", null, { vanId: selectedVanId, status: "OPEN", current: "true" }),
+    ])
+      .then(([{ data }, jobs]) => {
+        if (!active) return;
+        setConsumeJobs(jobs.data);
+        setConsumeJobOrderId(jobs.data[0]?.id || "");
+        if (typeof data?.usageId !== "string" || !/^USE\d{4,}$/.test(data.usageId)) {
+          setConsumeError("A usage ID could not be generated. Please try again.");
+          return;
+        }
+        setConsumeUsageId(data.usageId);
+      })
+      .catch((err) => { if (active) setConsumeError(errorMessage(err)); })
+      .finally(() => { if (active) setConsumeTicketLoading(false); });
+    return () => { active = false; };
+  }, [consumeItem, selectedVanId, consumeTicketAttempt]);
 
   // New Van Modal state
   const [newVanModal, setNewVanModal] = useState(false);
   const [newVanId, setNewVanId] = useState("");
   const [newVanName, setNewVanName] = useState("");
   const [newVanPlate, setNewVanPlate] = useState("");
+  const [newVanType, setNewVanType] = useState("");
   const [newVanDriver, setNewVanDriver] = useState("");
   const [newVanBusy, setNewVanBusy] = useState(false);
   const [newVanError, setNewVanError] = useState("");
@@ -118,6 +152,7 @@ export default function ServiceVansPage({
     let active = true;
 
     localServiceVans.forEach((van) => {
+      if (van.isDemo) return;
       api("get", "/products", null, { branchId: van.id })
         .then((res) => {
           if (!active) return;
@@ -241,6 +276,9 @@ export default function ServiceVansPage({
   // Map vehicle image dynamically
   function getVehicleImage(van, index) {
     if (!van) return vanPickup;
+    if (["Cab Chassis", "Cargo Van"].includes(van.vehicleType)) return vanL300;
+    if (van.vehicleType === "Pickup") return vanPickup;
+    if (["Hatchback", "Micro SUV"].includes(van.vehicleType)) return vanSuv;
     const images = [vanL300, vanSuv, vanPickup];
     const vanNumber = Number(String(van.id).replace(/\D/g, "")) || (index + 1);
     return images[(vanNumber - 1) % 3];
@@ -467,20 +505,20 @@ export default function ServiceVansPage({
             </div>
 
             {/* Filter Dropdown */}
-            <select
+            {viewMode === "list" && <select
               className="sv-filter-select"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filter vehicles by status"
             >
-              <option value="ALL">Select Vehicle (All)</option>
+              <option value="ALL">All Statuses</option>
               <option value="ON_FIELD">On Field</option>
               <option value="AVAILABLE">Available at Base</option>
               <option value="MAINTENANCE">Under Maintenance</option>
-            </select>
+            </select>}
 
             {/* Add Vehicles Button */}
-            {canManage && (
+            {isAdmin && (
               <button
                 type="button"
                 className="sv-btn-add"
@@ -495,6 +533,7 @@ export default function ServiceVansPage({
                   setNewVanId(`VAN-${String(nextNumber).padStart(2, "0")}`);
                   setNewVanName("");
                   setNewVanPlate("");
+                  setNewVanType("");
                   setNewVanDriver("");
                   setNewVanError("");
                   setNewVanModal(true);
@@ -610,7 +649,7 @@ export default function ServiceVansPage({
                   : isMaint
                     ? "Under Maintenance"
                     : "Available at Base";
-                const loadedCount = vanItemCounts[van.id] ?? (van.id === "VAN-01" ? 1 : 0);
+                  const loadedCount = vanItemCounts[van.id] ?? 0;
                 const vehicleImg = getVehicleImage(van, index);
 
                 return (
@@ -626,7 +665,7 @@ export default function ServiceVansPage({
 
                         {/* Name, Plate, Van ID */}
                         <p className="sv-card-name">{van.name || "Service Vehicle"}</p>
-                        <h4 className="sv-card-plate">{van.plateNumber || "NCD-1982"}</h4>
+                        <h4 className="sv-card-plate">{van.plateNumber || "No plate number"}</h4>
                         <p className="sv-card-van-id">Van ID: {van.id}</p>
                       </div>
 
@@ -645,8 +684,8 @@ export default function ServiceVansPage({
                       {/* Driver */}
                       <div className="sv-shelf-col">
                         <span className="sv-shelf-label">Driver</span>
-                        <span className="sv-shelf-value" title={van.driverName || "Juan Dela Cruz"}>
-                          {van.driverName || "Juan Dela Cruz"}
+                        <span className="sv-shelf-value" title={van.driverName || "No Driver Assigned"}>
+                          {van.driverName || "No Driver Assigned"}
                         </span>
                       </div>
 
@@ -739,6 +778,10 @@ export default function ServiceVansPage({
           {/* Vehicle Details Card (Figma Node 488:6041) */}
           <div className="sv-details-card">
             <div className="sv-details-left">
+              <div className="sv-field-box">
+                <span className="sv-field-label">Vehicle Type</span>
+                <div className="sv-field-input-box">{currentVan.vehicleType || "Not specified"}</div>
+              </div>
               {/* Status Dropdown Pill */}
               <div className="sv-status-dropdown-wrap">
                 <select
@@ -761,7 +804,7 @@ export default function ServiceVansPage({
                 <div className="sv-field-box">
                   <span className="sv-field-label">Plate Number</span>
                   <div className="sv-field-input-box">
-                    {currentVan.plateNumber || "NCD-1982"}
+                    {currentVan.plateNumber || "No plate number"}
                   </div>
                 </div>
 
@@ -808,7 +851,7 @@ export default function ServiceVansPage({
                     </select>
                   ) : (
                     <div className="sv-field-input-box">
-                      {currentVan.driverName || "Juan Dela Cruz"}
+                      {currentVan.driverName || "No Driver Assigned"}
                     </div>
                   )}
                 </div>
@@ -895,7 +938,8 @@ export default function ServiceVansPage({
                                 onClick={() => {
                                   setConsumeItem(item);
                                   setConsumeQty(1);
-                                  setConsumeWorkOrder("");
+                                  setConsumeJobOrderId("");
+                                  setConsumeUsageId("");
                                   setConsumeNotes("");
                                   setConsumeError("");
                                 }}
@@ -1094,6 +1138,7 @@ export default function ServiceVansPage({
           <form
             onSubmit={(event) => {
               event.preventDefault();
+              if (consumeBusy || consumeTicketLoading || !consumeUsageId || !consumeJobOrderId) return;
               setConsumeBusy(true);
               setConsumeError("");
               save(
@@ -1102,7 +1147,8 @@ export default function ServiceVansPage({
                 {
                   productId: consumeItem.id || consumeItem._id,
                   quantity: consumeQty,
-                  workOrderId: consumeWorkOrder,
+                  usageId: consumeUsageId,
+                  jobOrderId: consumeJobOrderId,
                   notes: consumeNotes,
                 },
                 "Material usage recorded successfully.",
@@ -1137,14 +1183,33 @@ export default function ServiceVansPage({
               Available in van: {consumeItem.quantity} {consumeItem.unitOfMeasure}
             </Typography.Text>
             <div className="sv-modal-field" style={{ marginTop: 12 }}>
-              <label>Job / Work Order ID</label>
+              <label>Usage ID</label>
               <Input
-                required
-                value={consumeWorkOrder}
-                onChange={(event) => setConsumeWorkOrder(event.target.value)}
-                placeholder="e.g. JOB-2026-001"
+                readOnly
+                value={consumeUsageId}
+                placeholder={consumeTicketLoading ? "Generating usage ID..." : "Usage ID unavailable"}
+                aria-label="Usage ID"
                 style={{ marginTop: 4 }}
               />
+              {!consumeTicketLoading && !consumeUsageId && (
+                <button type="button" className="sv-btn-back" onClick={() => setConsumeTicketAttempt((attempt) => attempt + 1)}>
+                  Retry Usage ID
+                </button>
+              )}
+            </div>
+            <div className="sv-modal-field">
+              <label>Current Job Order</label>
+              <Input
+                readOnly
+                value={consumeJobs[0] ? `${formatJobNumber(consumeJobs[0].jobNumber)} · ${consumeJobs[0].title}` : ""}
+                placeholder={consumeTicketLoading ? "Loading current assignment..." : "No current job assigned"}
+                aria-label="Current Job Order"
+                style={{ marginTop: 4 }}
+              />
+              {!consumeTicketLoading && consumeJobs.length === 0 && (
+                <Typography.Paragraph type="secondary">No current job assigned. Ask your admin or manager to assign a job from Job Orders.</Typography.Paragraph>
+              )}
+              {consumeJobOrderId && <Typography.Paragraph type="secondary">Customer: {consumeJobs[0]?.customerName} · Service location: {consumeJobs[0]?.location}</Typography.Paragraph>}
             </div>
             <div className="sv-modal-field">
               <label>Quantity Used ({consumeItem.unitOfMeasure})</label>
@@ -1183,8 +1248,10 @@ export default function ServiceVansPage({
                 className="sv-btn-add"
                 disabled={
                   consumeBusy ||
+                  consumeTicketLoading ||
                   consumeQty <= 0 ||
-                  !consumeWorkOrder.trim() ||
+                  !consumeUsageId ||
+                  !consumeJobOrderId ||
                   !consumeNotes.trim()
                 }
               >
@@ -1206,6 +1273,7 @@ export default function ServiceVansPage({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (!newVanType) { setNewVanError("Select a vehicle type."); return; }
             setNewVanBusy(true);
             setNewVanError("");
             const driver = usersList.find((u) => (u.id || u._id) === newVanDriver);
@@ -1216,6 +1284,7 @@ export default function ServiceVansPage({
                 id: newVanId.trim(),
                 name: newVanName.trim(),
                 plateNumber: newVanPlate.trim(),
+                vehicleType: newVanType,
                 driverId: newVanDriver,
                 driverName: driver ? driver.fullName : "",
                 status: "AVAILABLE",
@@ -1258,6 +1327,12 @@ export default function ServiceVansPage({
             />
           </div>
           <div className="sv-modal-field">
+            <label>Vehicle Type</label>
+            <Select aria-label="New vehicle type" placeholder="Select vehicle type" value={newVanType || undefined}
+              disabled={newVanBusy} onChange={setNewVanType}
+              options={VEHICLE_TYPES.map((value) => ({ value, label: value }))} style={{ width: "100%", marginTop: 4 }} />
+          </div>
+          <div className="sv-modal-field">
             <label>Vehicle Plate Number</label>
             <Input
               placeholder="e.g. NCD-1982"
@@ -1291,7 +1366,7 @@ export default function ServiceVansPage({
             <button
               type="submit"
               className="sv-btn-add"
-              disabled={newVanBusy || !newVanId.trim() || !newVanName.trim()}
+              disabled={newVanBusy || !newVanId.trim() || !newVanName.trim() || !newVanType}
             >
               {newVanBusy ? "Registering..." : "Register Vehicle"}
             </button>

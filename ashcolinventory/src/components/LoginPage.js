@@ -14,8 +14,11 @@ export default function LoginPage({ onLogin, initialError }) {
 
   const defaultAccounts = [
     { fullName: "Admin Master", role: "ADMIN", email: "hatdog@hat.com", password: "hatdog@hat.com" },
-    { fullName: "Warehouse Manager", role: "MANAGER", email: "manager@ashcol.com", password: "hatdog@hat.com" },
-    { fullName: "Field Technician", role: "EMPLOYEE", email: "technician@ashcol.com", password: "hatdog@hat.com" },
+    { fullName: "Miguel Reyes", role: "MANAGER", email: "manager@ashcol.com", password: "hatdog@hat.com" },
+    { fullName: "Adrian Santos", role: "EMPLOYEE", email: "technician@ashcol.com", password: "hatdog@hat.com" },
+    { fullName: "Carlo Navarro", role: "EMPLOYEE", email: "technician2@ashcol.com", password: "hatdog@hat.com" },
+    { fullName: "Joshua Cruz", role: "EMPLOYEE", email: "technician3@ashcol.com", password: "hatdog@hat.com" },
+    { fullName: "Rafael Garcia", role: "EMPLOYEE", email: "technician4@ashcol.com", password: "hatdog@hat.com" },
   ];
 
   const [demoAccounts] = useState(() => {
