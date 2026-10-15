@@ -12,6 +12,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
   const canManage = user.role !== "EMPLOYEE";
   const [jobs, setJobs] = useState([]);
   const [technicians, setTechnicians] = useState([]);
+  const [fleetVehicles, setFleetVehicles] = useState(serviceVans);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -28,19 +29,22 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
     setLoading(true);
     setError("");
     try {
-      const [{ data }, accounts] = await Promise.all([
+      const [{ data }, accounts, fleet] = await Promise.all([
         api("get", "/job-orders"), canManage ? api("get", "/users") : Promise.resolve({ data: [] }),
+        canManage ? api("get", "/service-vans") : Promise.resolve({ data: [] }),
       ]);
       setJobs(data);
       setTechnicians(accounts.data.filter((account) => account.role === "EMPLOYEE"));
+      if (canManage) setFleetVehicles(fleet.data);
     } catch (err) { setError(errorMessage(err)); }
     finally { setLoading(false); }
   }, [canManage]);
   useEffect(() => { load(); }, [load, refresh]);
+  useEffect(() => { setFleetVehicles(serviceVans); }, [serviceVans]);
 
   const assignedTechnician = (van) => technicians.find((tech) => van?.driverId
     ? tech.id === van.driverId : [tech.fullName, `${tech.fullName} (${tech.role})`].includes(van?.driverName));
-  const vehicles = serviceVans.filter((van) => !van.isDemo);
+  const vehicles = fleetVehicles.filter((van) => !van.isDemo);
   const selectedVan = vehicles.find((van) => van.id === draft.vanId);
   const technician = assignedTechnician(selectedVan);
   const updateDraft = (field, value) => setDraft((current) => ({ ...current, [field]: value }));
@@ -108,7 +112,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
     <div className="job-orders-heading">
       <div><Typography.Title level={3}>Job Orders</Typography.Title>
         <Typography.Paragraph type="secondary">{canManage ? "Create service work, set each technician's current job and review materials used." : "Your manager-assigned current job, queued work and material usage history."}</Typography.Paragraph></div>
-      {canManage && <Button type="primary" onClick={() => { setEditing(null); setDraft(emptyDraft); setError(""); setCreating(true); }}>Create Job Order</Button>}
+      {canManage && <Button type="primary" onClick={() => { setEditing(null); setDraft(emptyDraft); setError(""); setCreating(true); load(); }}>Create Job Order</Button>}
     </div>
     {error && !creating && <Alert type="error" title={error} showIcon action={<Button onClick={load}>Retry</Button>} />}
     <Card>

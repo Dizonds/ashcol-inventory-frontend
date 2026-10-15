@@ -11,12 +11,29 @@ const job = { id: "job-1", jobNumber: "JOB0001", title: "AC installation", custo
   location: "Taguig office", technicianName: technician.fullName, assignedTechnicianId: technician.id,
   vanId: van.id, vanName: van.name, status: "OPEN" };
 
+test("job creation reloads saved vehicles when the parent fleet list is stale", async () => {
+  let fleet = [van];
+  api.mockImplementation((method, path) => Promise.resolve({ data:
+    path === "/users" ? [technician] : path === "/service-vans" ? fleet : [],
+  }));
+  render(<StyleProvider mock="server"><JobOrdersPage user={{ role: "ADMIN" }} serviceVans={[van]} /></StyleProvider>);
+  await waitFor(() => expect(api).toHaveBeenCalledWith("get", "/service-vans"));
+  fleet = [van, { ...van, id: "VAN-4", name: "Newly registered vehicle" },
+    { ...van, id: "DEMO-VAN-1", name: "Design placeholder", isDemo: true }];
+  fireEvent.click(screen.getByRole("button", { name: "Create Job Order" }));
+  await waitFor(() => expect(api.mock.calls.filter(([, path]) => path === "/service-vans")).toHaveLength(2));
+  fireEvent.mouseDown(screen.getByRole("combobox", { name: "Job service vehicle" }));
+  expect(await screen.findByText("Newly registered vehicle", { selector: ".ant-select-item-option-content" })).toBeInTheDocument();
+  expect(screen.queryByText("Design placeholder")).not.toBeInTheDocument();
+}, 15000);
+
 test("a manager creates an assigned job and can review the materials consumed", async () => {
   let jobs = [];
   api.mockImplementation((method, path) => {
     if (method === "post") { jobs = [job]; return Promise.resolve({ data: job }); }
     if (method === "patch") { jobs = [{ ...job, isCurrent: true }]; return Promise.resolve({ data: jobs[0] }); }
     if (path === "/users") return Promise.resolve({ data: [technician] });
+    if (path === "/service-vans") return Promise.resolve({ data: [van] });
     if (path === "/job-orders/job-1") return Promise.resolve({ data: { ...job, movements: [{
       id: "usage-1", referenceId: "USE0001", sku: "PIPE", itemName: "Copper pipe", quantityDelta: -2,
       unitOfMeasure: "METER", performedByName: technician.fullName, createdAt: new Date().toISOString(), reason: "Office installation",
@@ -63,7 +80,7 @@ test.each(["MANAGER", "ADMIN"])("%s can edit a job and change its technician wit
   let jobs = [{ ...job, isCurrent: true }];
   api.mockImplementation((method, path, data) => {
     if (method === "patch") { jobs = [{ ...jobs[0], ...data, technicianName: nextTech.fullName, vanName: nextVan.name }]; return Promise.resolve({ data: jobs[0] }); }
-    return Promise.resolve({ data: path === "/users" ? [technician, nextTech] : jobs });
+    return Promise.resolve({ data: path === "/users" ? [technician, nextTech] : path === "/service-vans" ? [van, nextVan] : jobs });
   });
   render(<StyleProvider mock="server"><JobOrdersPage user={{ role }} serviceVans={[van, nextVan]} /></StyleProvider>);
   fireEvent.click(await screen.findByRole("button", { name: "Edit", exact: true }));
