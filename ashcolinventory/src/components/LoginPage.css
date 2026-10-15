@@ -237,61 +237,6 @@
   cursor: not-allowed;
 }
 
-.login-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  gap: 15px;
-  margin: 22px 0 16px;
-}
-
-.login-divider-line {
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.login-divider-text {
-  font-family: 'Urbanist', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.55);
-  letter-spacing: -0.32px;
-  text-transform: lowercase;
-}
-
-.login-google-btn {
-  width: 100%;
-  height: 56px;
-  box-sizing: border-box;
-  border-radius: 32px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-family: 'Urbanist', sans-serif;
-  font-size: 16px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.85);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.login-google-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.24);
-  color: #ffffff;
-}
-
-.login-google-icon {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-}
-
 .login-admin-note {
   font-family: 'Inter', sans-serif;
   font-size: 14px;
@@ -299,55 +244,6 @@
   color: #b8b8b8;
   margin: 20px 0 0;
   text-align: center;
-}
-
-/* Demo accounts assistant */
-.login-demo-section {
-  width: 100%;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.login-demo-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.login-demo-chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.login-demo-chip {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  color: rgba(255, 255, 255, 0.75);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.login-demo-chip:hover {
-  background: rgba(58, 180, 74, 0.16);
-  border-color: rgba(58, 180, 74, 0.4);
-  color: #ffffff;
 }
 
 @media (max-width: 640px) {

@@ -1,11 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Modal,
   Descriptions,
   Typography,
+  Button,
+  Card,
+  Input,
+  InputNumber,
+  Radio,
+  Select,
+  Space,
+  Statistic,
 } from "antd";
 import { api, errorMessage } from "../api";
+import { formatMovementNumber } from "../utils/formatters";
+import "./PostMovementPage.css";
 
 const isContinuousUnit = (unit) =>
   ["METER", "FOOT", "KG", "LITER"].includes(unit);
@@ -25,14 +35,12 @@ export default function PostMovementPage({
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState("Supplier Delivery / Restock");
   const [notes, setNotes] = useState("");
-  const [referenceId, setReferenceId] = useState("");
-  const [ticketLoading, setTicketLoading] = useState(true);
-  const [ticketVersion, setTicketVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
   const [review, setReview] = useState(null);
-  const activeItems = items.filter((item) => !item.archived);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
   const itemTypes = [...new Set(activeItems.map((item) => item.itemType).filter(Boolean))].sort();
   const brands = [...new Set(activeItems.filter((item) => item.itemType === itemType)
     .map((item) => item.brand).filter(Boolean))].sort();
@@ -48,6 +56,20 @@ export default function PostMovementPage({
       return firstRatio - secondRatio || first.name.localeCompare(second.name);
     });
   const depletedCount = lowStockItems.filter((item) => item.quantity === 0).length;
+  const totalPages = Math.max(1, Math.ceil(lowStockItems.length / pageSize));
+  const visibleLowStockItems = lowStockItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    const item = activeItems.find((entry) => entry.id === preselectedItemId);
+    if (!item) return;
+    setItemType(item.itemType || "");
+    setBrand(item.brand || "");
+    setProductId(item.id);
+  }, [activeItems, preselectedItemId]);
 
   function selectRestockItem(item) {
     if (busy || reviewOpen) return;
@@ -68,19 +90,17 @@ export default function PostMovementPage({
         "Unused Material Return",
         "Defective / RMA Replacement Return",
         "Audit Correction (Surplus)",
-        "Service Van Return",
       ]
     : [
         "Client Installation / Site Project",
         "Parts Sale",
         "Damaged / Defective Write-off",
         "Audit Correction (Shortage)",
-        "Service Van Stock Dispatch",
       ];
 
   function submit(event) {
     event.preventDefault();
-    if (busy || reviewOpen || ticketLoading || !referenceId) return;
+    if (busy || reviewOpen) return;
     setError("");
     if (!selected || !quantity || quantity <= 0) {
       setError("Select an item and enter a positive quantity.");
@@ -125,8 +145,6 @@ export default function PostMovementPage({
         setBrand("");
         setQuantity(1);
         setNotes("");
-        setReferenceId("");
-        setTicketVersion((version) => version + 1);
         setReviewOpen(false);
         setReview(null);
       })
@@ -291,6 +309,27 @@ export default function PostMovementPage({
             </Button>
           </div>
 
+        </form>
+      </Card>
+      <Card className="post-movement-low-stock-card" title="Low-stock items">
+          <Typography.Paragraph type="secondary">
+            {depletedCount} depleted items. Select Restock to fill in the movement form.
+          </Typography.Paragraph>
+          <div className="pm-table-container">
+            <table className="pm-table">
+              <thead><tr><th>Item</th><th>Quantity</th><th>Action</th></tr></thead>
+              <tbody>
+                {visibleLowStockItems.map((item) => (
+                  <tr key={item.id} className={productId === item.id ? "pm-row-selected" : ""}>
+                    <td>{item.name}<small className="pm-td-sku-sub">{item.sku}</small></td>
+                    <td>{item.quantity} {item.unitOfMeasure}</td>
+                    <td><Button disabled={busy || reviewOpen} onClick={() => selectRestockItem(item)}>Restock</Button></td>
+                  </tr>
+                ))}
+                {!lowStockItems.length && <tr><td colSpan={3}>No low-stock items.</td></tr>}
+              </tbody>
+            </table>
+          </div>
           {/* Pagination Bar (Figma Node 573:9772) */}
           <div className="pm-pagination-bar">
             <span className="pm-pagination-text">
@@ -329,7 +368,7 @@ export default function PostMovementPage({
               </button>
             </div>
           </div>
-        </div>
+      </Card>
       </div>
 
       {/* Review Stock Movement Confirmation Modal */}
@@ -380,6 +419,6 @@ export default function PostMovementPage({
           </Descriptions.Item>
         </Descriptions>
       </Modal>
-    </div>
+    </>
   );
 }
