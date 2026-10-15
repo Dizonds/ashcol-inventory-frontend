@@ -11,6 +11,7 @@ import {
   Select,
 } from "antd";
 import { api, errorMessage } from "../api";
+import { formatJobNumber } from "../utils/formatters";
 import "./ServiceVansPage.css";
 
 // Vehicle Images matching Figma
@@ -52,10 +53,41 @@ export default function ServiceVansPage({
   // Consume / Work Order Modal state
   const [consumeItem, setConsumeItem] = useState(null);
   const [consumeQty, setConsumeQty] = useState(1);
-  const [consumeWorkOrder, setConsumeWorkOrder] = useState("");
+  const [consumeJobOrderId, setConsumeJobOrderId] = useState("");
+  const [consumeJobs, setConsumeJobs] = useState([]);
+  const [consumeUsageId, setConsumeUsageId] = useState("");
   const [consumeNotes, setConsumeNotes] = useState("");
   const [consumeBusy, setConsumeBusy] = useState(false);
   const [consumeError, setConsumeError] = useState("");
+  const [consumeTicketLoading, setConsumeTicketLoading] = useState(false);
+  const [consumeTicketAttempt, setConsumeTicketAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!consumeItem || !selectedVanId) return;
+    let active = true;
+    setConsumeTicketLoading(true);
+    setConsumeUsageId("");
+    setConsumeJobs([]);
+    setConsumeJobOrderId("");
+    setConsumeError("");
+    Promise.all([
+      api("post", `/service-vans/${selectedVanId}/usage-ticket`),
+      api("get", "/job-orders", null, { vanId: selectedVanId, status: "OPEN", current: "true" }),
+    ])
+      .then(([{ data }, jobs]) => {
+        if (!active) return;
+        setConsumeJobs(jobs.data);
+        setConsumeJobOrderId(jobs.data[0]?.id || "");
+        if (typeof data?.usageId !== "string" || !/^USE\d{4,}$/.test(data.usageId)) {
+          setConsumeError("A usage ID could not be generated. Please try again.");
+          return;
+        }
+        setConsumeUsageId(data.usageId);
+      })
+      .catch((err) => { if (active) setConsumeError(errorMessage(err)); })
+      .finally(() => { if (active) setConsumeTicketLoading(false); });
+    return () => { active = false; };
+  }, [consumeItem, selectedVanId, consumeTicketAttempt]);
 
   // New Van Modal state
   const [newVanModal, setNewVanModal] = useState(false);
@@ -906,7 +938,8 @@ export default function ServiceVansPage({
                                 onClick={() => {
                                   setConsumeItem(item);
                                   setConsumeQty(1);
-                                  setConsumeWorkOrder("");
+                                  setConsumeJobOrderId("");
+                                  setConsumeUsageId("");
                                   setConsumeNotes("");
                                   setConsumeError("");
                                 }}
@@ -1105,6 +1138,7 @@ export default function ServiceVansPage({
           <form
             onSubmit={(event) => {
               event.preventDefault();
+              if (consumeBusy || consumeTicketLoading || !consumeUsageId || !consumeJobOrderId) return;
               setConsumeBusy(true);
               setConsumeError("");
               save(
@@ -1113,7 +1147,8 @@ export default function ServiceVansPage({
                 {
                   productId: consumeItem.id || consumeItem._id,
                   quantity: consumeQty,
-                  workOrderId: consumeWorkOrder,
+                  usageId: consumeUsageId,
+                  jobOrderId: consumeJobOrderId,
                   notes: consumeNotes,
                 },
                 "Material usage recorded successfully.",
@@ -1148,14 +1183,33 @@ export default function ServiceVansPage({
               Available in van: {consumeItem.quantity} {consumeItem.unitOfMeasure}
             </Typography.Text>
             <div className="sv-modal-field" style={{ marginTop: 12 }}>
-              <label>Job / Work Order ID</label>
+              <label>Usage ID</label>
               <Input
-                required
-                value={consumeWorkOrder}
-                onChange={(event) => setConsumeWorkOrder(event.target.value)}
-                placeholder="e.g. JOB-2026-001"
+                readOnly
+                value={consumeUsageId}
+                placeholder={consumeTicketLoading ? "Generating usage ID..." : "Usage ID unavailable"}
+                aria-label="Usage ID"
                 style={{ marginTop: 4 }}
               />
+              {!consumeTicketLoading && !consumeUsageId && (
+                <button type="button" className="sv-btn-back" onClick={() => setConsumeTicketAttempt((attempt) => attempt + 1)}>
+                  Retry Usage ID
+                </button>
+              )}
+            </div>
+            <div className="sv-modal-field">
+              <label>Current Job Order</label>
+              <Input
+                readOnly
+                value={consumeJobs[0] ? `${formatJobNumber(consumeJobs[0].jobNumber)} · ${consumeJobs[0].title}` : ""}
+                placeholder={consumeTicketLoading ? "Loading current assignment..." : "No current job assigned"}
+                aria-label="Current Job Order"
+                style={{ marginTop: 4 }}
+              />
+              {!consumeTicketLoading && consumeJobs.length === 0 && (
+                <Typography.Paragraph type="secondary">No current job assigned. Ask your admin or manager to assign a job from Job Orders.</Typography.Paragraph>
+              )}
+              {consumeJobOrderId && <Typography.Paragraph type="secondary">Customer: {consumeJobs[0]?.customerName} · Service location: {consumeJobs[0]?.location}</Typography.Paragraph>}
             </div>
             <div className="sv-modal-field">
               <label>Quantity Used ({consumeItem.unitOfMeasure})</label>
@@ -1194,8 +1248,10 @@ export default function ServiceVansPage({
                 className="sv-btn-add"
                 disabled={
                   consumeBusy ||
+                  consumeTicketLoading ||
                   consumeQty <= 0 ||
-                  !consumeWorkOrder.trim() ||
+                  !consumeUsageId ||
+                  !consumeJobOrderId ||
                   !consumeNotes.trim()
                 }
               >

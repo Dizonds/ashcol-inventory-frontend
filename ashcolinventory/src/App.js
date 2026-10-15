@@ -19,6 +19,7 @@ import SettingsPage from "./components/SettingsPage";
 import CompatibilityLookupPage from "./components/CompatibilityLookupPage";
 import SuppliersPage from "./components/SuppliersPage";
 import ServiceVansPage from "./components/ServiceVansPage";
+import JobOrdersPage from "./components/JobOrdersPage";
 import { DEMO_SERVICE_VEHICLES } from "./data/demoServiceVehicles";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -414,9 +415,13 @@ export default function App() {
                             items={items}
                             requests={requests}
                             user={user}
+                            serviceVans={serviceVans}
                             branchId={branchId}
                             save={save}
                           />
+                        )}
+                        {page === "job_orders" && (
+                          <JobOrdersPage user={user} serviceVans={serviceVans} refresh={refresh} />
                         )}
                         {page === "post_movement" && canManage && (
                           <PostMovementPage

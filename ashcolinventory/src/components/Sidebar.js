@@ -217,6 +217,7 @@ export default function Sidebar({
     ...(canManage ? [{ id: "post_movement", label: "Post Movement", icon: <PostMovementIcon />, nodeId: "488:5011" }] : []),
     { id: "movements", label: "Stock Ledger", icon: <StockLedgerIcon />, nodeId: "488:5028" },
     { id: "service_vehicles", label: "Service Vehicles", icon: <ServiceVehiclesIcon />, nodeId: "488:5013" },
+    { id: "job_orders", label: "Job Orders", icon: <RequestsIcon /> },
     { id: "compatibility", label: "Model Matching", icon: <ModelMatchingIcon />, nodeId: "488:5016" },
     { id: "suppliers", label: "Suppliers & Vendors", icon: <SuppliersIcon />, nodeId: "488:5018" },
   ];

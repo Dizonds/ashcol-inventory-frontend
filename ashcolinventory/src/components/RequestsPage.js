@@ -33,6 +33,7 @@ export default function RequestsPage({
   items,
   requests,
   user,
+  serviceVans = [],
   branchId,
   save,
 }) {
@@ -54,6 +55,9 @@ export default function RequestsPage({
   const [showDeleted, setShowDeleted] = useState(false);
   const [deletedEntries, setDeletedEntries] = useState([]);
   const canManage = ["ADMIN", "MANAGER"].includes(user.role);
+  const assignedVan = serviceVans.find((van) => !van.isDemo && (van.driverId
+    ? String(van.driverId) === String(user.id)
+    : [user.fullName, `${user.fullName} (${user.role})`].includes(van.driverName)));
   const ownsRequest = (entry) => String(entry.requestedBy) === String(user.id);
   useEffect(() => {
     if (!showDeleted) return;
@@ -81,6 +85,7 @@ export default function RequestsPage({
     : [];
   const selectedItem = filteredItems.find((item) => item.id === productId);
   function newRequest() {
+    if (!assignedVan) return;
     setBusy(true);
     setError("");
     api("get", "/requests/reference")
@@ -98,7 +103,7 @@ export default function RequestsPage({
   }
   function submit(event) {
     event.preventDefault();
-    if (!reference || !selectedItem || busy) return;
+    if (!reference || !selectedItem || !assignedVan || busy) return;
     setBusy(true);
     setError("");
     save(
@@ -138,9 +143,12 @@ export default function RequestsPage({
       <Typography.Title level={3}>Material Requests</Typography.Title>
       <Typography.Paragraph type="secondary">
         Request → Approve → Fulfill. Approval does not reserve stock;
-        fulfillment checks availability and deducts it once. Search a request ID
+        fulfillment transfers available warehouse stock into the technician's assigned vehicle once. Search a request ID
         to see its status and history.
       </Typography.Paragraph>
+      {user.role === "EMPLOYEE" && !assignedVan && <Alert type="warning" showIcon
+        title="You need an assigned service vehicle before requesting materials. Ask your admin or manager to assign one."
+        style={{ marginBottom: 16 }} />}
       {error && !deleting && (
         <Alert type="error" title={error} style={{ marginBottom: 16 }} />
       )}
@@ -151,6 +159,7 @@ export default function RequestsPage({
             <Button
               type="primary"
               loading={busy}
+              disabled={!assignedVan}
               onClick={newRequest}
             >
               New Request
@@ -237,6 +246,7 @@ export default function RequestsPage({
                 `${entry.quantityNeeded} ${entry.unitOfMeasure}`,
             },
             { title: "Requested by", dataIndex: "requestedByName" },
+            { title: "Receiving vehicle", dataIndex: "destinationVanName", render: (value) => value || "Not recorded" },
             {
               title: "Status",
               render: (_, entry) => entry.deletedAt ? <Tag>Deleted ({entry.status.toLowerCase()})</Tag> : (
@@ -287,7 +297,8 @@ export default function RequestsPage({
                     )}
                     {canManage && entry.status === "APPROVED" && (
                       <Popconfirm
-                        title="Issue these materials and deduct stock?"
+                        title="Transfer these materials to the technician's vehicle?"
+                        description={entry.destinationVanName ? `Receiving vehicle: ${entry.destinationVanName}` : "The technician must have an assigned vehicle."}
                         onConfirm={() => transition(entry, "FULFILLED")}
                       >
                         <Button type="primary" disabled={busy}>
@@ -345,6 +356,7 @@ export default function RequestsPage({
       >
         {error && <Alert type="error" title={error} />}
         <form onSubmit={submit}>
+          <label className="field">Receiving vehicle<Input readOnly value={assignedVan?.name || "No vehicle assigned"} /></label>
           <label className="field">
             Item Type
             <Select
@@ -429,7 +441,7 @@ export default function RequestsPage({
             htmlType="submit"
             type="primary"
             loading={busy}
-            disabled={!selectedItem || !reference}
+            disabled={!selectedItem || !reference || !assignedVan}
           >
             Submit request
           </Button>

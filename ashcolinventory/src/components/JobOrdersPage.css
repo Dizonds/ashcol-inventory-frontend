@@ -1,0 +1,9 @@
+.job-orders-page { display: flex; flex-direction: column; gap: 18px; }
+.job-orders-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.job-orders-heading h3 { margin: 0 0 6px; }
+.job-orders-heading .ant-typography { margin-bottom: 0; }
+.job-orders-filters { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.job-orders-filters .ant-input-search { flex: 1; min-width: 220px; }
+.job-orders-filters .ant-select { min-width: 160px; }
+.job-order-form { display: flex; flex-direction: column; gap: 14px; }
+.job-orders-form-actions { justify-content: flex-end; width: 100%; }

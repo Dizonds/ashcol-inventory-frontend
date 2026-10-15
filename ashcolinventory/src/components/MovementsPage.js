@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Spin, Alert, Dropdown } from "antd";
 import { api, errorMessage } from "../api";
-import { formatRequestNumber } from "../utils/formatters";
+import { formatRequestNumber, formatMovementNumber, formatJobNumber } from "../utils/formatters";
 import "./MovementsPage.css";
 
 /* --- EXACT SVG ICONS MATCHING FIGMA NODE 488:7823 --- */
@@ -142,7 +142,7 @@ export default function MovementsPage({ branchId, refresh }) {
     let active = true;
     setLoading(true);
     setError("");
-    api("get", "/movements", null, { branchId, page, pageSize, search: search.trim().replace(/^REQ\s*-?\s*(\d+)$/i, "REQ$1"), type, sort: sortBy })
+    api("get", "/movements", null, { branchId, page, pageSize, search: search.trim().replace(/^(REQ|STI|STO|JOB|USE)\s*-?\s*(\d+)$/i, (_, prefix, digits) => `${prefix.toUpperCase()}${digits}`), type, sort: sortBy })
       .then(({ data }) => {
         if (active) {
           setRows(data.items || []);
@@ -385,13 +385,14 @@ export default function MovementsPage({ branchId, refresh }) {
                   <th style={{ width: "10%" }} data-node-id="458:15987">STOCK BALANCE</th>
                   <th style={{ width: "9%" }} data-node-id="458:16003">PROCESSED BY</th>
                   <th style={{ width: "7%" }} data-node-id="459:16250">REFERENCE ID</th>
+                  <th style={{ width: "9%" }}>JOB ORDER</th>
                   <th style={{ width: "9%" }} data-node-id="459:16271">REMARKS</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && !loading ? (
                   <tr>
-                    <td colSpan={10} className="stock-ledger-empty">
+                    <td colSpan={11} className="stock-ledger-empty">
                       No stock movement transactions found matching your criteria.
                     </td>
                   </tr>
@@ -458,9 +459,10 @@ export default function MovementsPage({ branchId, refresh }) {
                         {/* REFERENCE ID */}
                         <td>
                           <span className="ledger-cell-ref">
-                            {formatRequestNumber(entry.requestNumber || entry.referenceId) || "—"}
+                            {formatMovementNumber(formatRequestNumber(entry.requestNumber || entry.referenceId)) || "—"}
                           </span>
                         </td>
+                        <td>{entry.jobOrderId ? formatJobNumber(entry.workOrderId) : "—"}</td>
 
                         {/* REMARKS */}
                         <td className="ledger-cell-remarks">

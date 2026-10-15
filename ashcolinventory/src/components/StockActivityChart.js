@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useId } from "react";
 import { Tooltip, Modal, Table } from "antd";
 import "./StockActivityChart.css";
-import { formatRequestNumber } from "../utils/formatters";
+import { formatRequestNumber, formatMovementNumber, formatJobNumber } from "../utils/formatters";
 
 const TIMEFRAME_OPTIONS = [7, 14, 30, 90];
 
@@ -539,7 +539,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
       return <strong className={delta > 0 ? "chart-movement-in" : delta < 0 ? "chart-movement-out" : ""}>{delta > 0 ? "+" : ""}{delta.toLocaleString()} {entry.unitOfMeasure || "units"}</strong>;
     } },
     { title: "Stock balance", width: 130, render: (_, entry) => entry.beforeQuantity == null || entry.afterQuantity == null ? "Not recorded" : `${entry.beforeQuantity.toLocaleString()} → ${entry.afterQuantity.toLocaleString()}` },
-    { title: "Reference / Work order", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{formatRequestNumber(entry.requestNumber || entry.referenceId) || "No reference"}</span>{entry.workOrderId && <span>{formatRequestNumber(entry.workOrderId)}</span>}</div> },
+    { title: "Reference / Work order", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{formatMovementNumber(formatRequestNumber(entry.requestNumber || entry.referenceId)) || "No reference"}</span>{entry.workOrderId && <span>{entry.jobOrderId ? formatJobNumber(entry.workOrderId) : formatRequestNumber(entry.workOrderId)}</span>}</div> },
     { title: "Processed by", dataIndex: "performedByName", width: 160, render: (value) => value || "Not recorded" },
     { title: "Remarks", dataIndex: "reason", width: 250, render: (value) => value || "No remarks" },
   ];

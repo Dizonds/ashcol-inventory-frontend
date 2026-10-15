@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Input,
@@ -16,6 +16,7 @@ import {
   Tag,
 } from "antd";
 import { api, errorMessage } from "../api";
+import { formatMovementNumber } from "../utils/formatters";
 
 const isContinuousUnit = (unit) =>
   ["METER", "FOOT", "KG", "LITER"].includes(unit);
@@ -34,10 +35,24 @@ export default function PostMovementPage({
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState("Supplier Delivery / Restock");
   const [notes, setNotes] = useState("");
+  const [referenceId, setReferenceId] = useState("");
+  const [ticketLoading, setTicketLoading] = useState(true);
+  const [ticketVersion, setTicketVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
   const [review, setReview] = useState(null);
+  useEffect(() => {
+    let active = true;
+    setReferenceId("");
+    setTicketLoading(true);
+    setError("");
+    api("post", "/movement-tickets", { movementType: operation })
+      .then(({ data }) => { if (active) setReferenceId(data.referenceId); })
+      .catch((err) => { if (active) setError(errorMessage(err)); })
+      .finally(() => { if (active) setTicketLoading(false); });
+    return () => { active = false; };
+  }, [operation, ticketVersion]);
   const activeItems = items.filter((item) => !item.archived);
   const itemTypes = [...new Set(activeItems.map((item) => item.itemType).filter(Boolean))].sort();
   const brands = [...new Set(activeItems.filter((item) => item.itemType === itemType)
@@ -82,7 +97,7 @@ export default function PostMovementPage({
       ];
   function submit(event) {
     event.preventDefault();
-    if (busy || reviewOpen) return;
+    if (busy || reviewOpen || ticketLoading || !referenceId) return;
     setError("");
     if (!selected || !quantity || quantity <= 0) {
       setError("Select an item and enter a positive quantity.");
@@ -92,15 +107,8 @@ export default function PostMovementPage({
       setError("The requested quantity exceeds available stock.");
       return;
     }
-    const draft = { item: selected, productId, branchId, quantity: Number(quantity), stockIn, reason, notes };
-    setBusy(true);
-    api("post", "/movement-tickets", { movementType: operation })
-      .then(({ data }) => {
-        setReview({ ...draft, referenceId: data.referenceId });
-        setReviewOpen(true);
-      })
-      .catch((err) => setError(errorMessage(err)))
-      .finally(() => setBusy(false));
+    setReview({ item: selected, productId, branchId, quantity: Number(quantity), stockIn, reason, notes, referenceId });
+    setReviewOpen(true);
   }
 
   function confirmPost() {
@@ -119,7 +127,7 @@ export default function PostMovementPage({
       "patch",
       path,
       data,
-      `Stock movement ${review.referenceId} recorded.`,
+      `Stock movement ${formatMovementNumber(review.referenceId)} recorded.`,
     )
       .then(() => {
         setProductId("");
@@ -127,6 +135,8 @@ export default function PostMovementPage({
         setBrand("");
         setQuantity(1);
         setNotes("");
+        setReferenceId("");
+        setTicketVersion((version) => version + 1);
         setReviewOpen(false);
         setReview(null);
       })
@@ -175,6 +185,13 @@ export default function PostMovementPage({
               ]}
             />
           </label>
+          <label className="field">
+            Transaction ID
+            <Input readOnly value={formatMovementNumber(referenceId)} placeholder={ticketLoading ? "Generating transaction ID..." : "Transaction ID unavailable"} />
+          </label>
+          {!ticketLoading && !referenceId && (
+            <Button onClick={() => setTicketVersion((version) => version + 1)}>Retry transaction ID</Button>
+          )}
           <label className="field">
             Item Type
             <Select
@@ -285,7 +302,7 @@ export default function PostMovementPage({
             </Space>
           )}
           <div className="post-movement-submit-row">
-            <Button type="primary" htmlType="submit" loading={busy} disabled={!selected || reviewOpen}>
+            <Button type="primary" htmlType="submit" loading={busy} disabled={!selected || reviewOpen || ticketLoading || !referenceId}>
               Confirm & Post
             </Button>
           </div>
@@ -382,8 +399,8 @@ export default function PostMovementPage({
           Are these details correct? Please review them before posting this stock movement.
         </Typography.Paragraph>
         <Descriptions bordered column={1} size="small">
-          <Descriptions.Item label="Ticket ID">
-            <Typography.Text copyable>{review?.referenceId || ""}</Typography.Text>
+          <Descriptions.Item label="Transaction ID">
+            <Typography.Text copyable>{formatMovementNumber(review?.referenceId) || ""}</Typography.Text>
           </Descriptions.Item>
           <Descriptions.Item label="Operation">
             {review?.stockIn ? "Stock In" : "Stock Out"}

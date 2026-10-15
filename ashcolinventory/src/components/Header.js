@@ -64,6 +64,7 @@ const PAGE_TITLES = {
   post_movement: "Post Movement",
   movements: "Stock Ledger",
   service_vehicles: "Service Vehicles",
+  job_orders: "Job Orders",
   compatibility: "Model Matching",
   suppliers: "Suppliers & Vendors",
   user_management: "User Management",
