@@ -37,6 +37,7 @@
 
 /* Expanded chart stays in the dashboard flow, with other cards below it. */
 .stock-activity-card.is-expanded {
+  scroll-margin-top: 16px;
   overflow: hidden;
   padding: 28px 36px;
 }
@@ -375,6 +376,10 @@
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
 }
 
+.stock-balance-indicator {
+  background: #8b5cf6;
+}
+
 .stock-out-indicator {
   background: #f59e0b;
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
@@ -423,7 +428,6 @@
 .stock-grid-line {
   stroke: var(--chart-grid);
   stroke-width: 1;
-  stroke-dasharray: 4 5;
 }
 
 .stock-baseline {
