@@ -109,18 +109,29 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
   </Space>;
 
   return <div className="job-orders-page">
-    <div className="job-orders-heading">
-      <div><Typography.Title level={3}>Job Orders</Typography.Title>
-        <Typography.Paragraph type="secondary">{canManage ? "Create service work, set each technician's current job and review materials used." : "Your manager-assigned current job, queued work and material usage history."}</Typography.Paragraph></div>
-      {canManage && <Button type="primary" onClick={() => { setEditing(null); setDraft(emptyDraft); setError(""); setCreating(true); load(); }}>Create Job Order</Button>}
-    </div>
     {error && !creating && <Alert type="error" title={error} showIcon action={<Button onClick={load}>Retry</Button>} />}
-    <Card>
-      <div className="job-orders-filters">
-        <Input.Search aria-label="Search job orders" placeholder="Search job, customer, location or technician" value={search} onChange={(event) => setSearch(event.target.value)} allowClear />
-        <Select aria-label="Job status" value={status} onChange={setStatus} options={[{ value: "ALL", label: "All statuses" }, ...["OPEN", "COMPLETED", "CANCELLED"].map((value) => ({ value, label: value[0] + value.slice(1).toLowerCase() }))]} />
-        <Button onClick={load} loading={loading}>Refresh</Button>
+    <Card className="job-orders-card">
+      <div className="job-orders-toolbar">
+        <div className="job-orders-toolbar-left">
+          <div className="job-orders-title-group">
+            <span className="job-orders-title-icon" aria-hidden="true">☷</span>
+            <div>
+              <Typography.Title level={3}>Job Orders</Typography.Title>
+              <Typography.Paragraph type="secondary">{canManage ? "Create service work, assign technicians and review materials used." : "Your assigned work and material usage history."}</Typography.Paragraph>
+            </div>
+          </div>
+          <Input.Search className="job-orders-search" aria-label="Search job orders" placeholder="Search job, customer, location or technician" value={search} onChange={(event) => setSearch(event.target.value)} allowClear />
+        </div>
+        <div className="job-orders-toolbar-right">
+          <Select aria-label="Job status" value={status} onChange={setStatus} options={[{ value: "ALL", label: "All statuses" }, ...["OPEN", "COMPLETED", "CANCELLED"].map((value) => ({ value, label: value[0] + value.slice(1).toLowerCase() }))]} />
+          <Button onClick={load} loading={loading}>Refresh</Button>
+          {canManage && <button type="button" className="job-orders-create-btn" onClick={() => { setEditing(null); setDraft(emptyDraft); setError(""); setCreating(true); load(); }}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></svg>
+            <span>Create Job Order</span>
+          </button>}
+        </div>
       </div>
+      <div className="job-orders-table">
       <Table rowKey="id" loading={loading} dataSource={filtered} scroll={{ x: 1200 }} pagination={{ pageSize: 10 }}
         locale={{ emptyText: <Empty description={canManage ? "No job orders yet. Create one to assign service work." : "No job orders assigned to you yet."} /> }}
         columns={[
@@ -132,6 +143,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
           { title: "Assignment", width: 130, render: (_, job) => job.status === "OPEN" ? <Tag color={job.isCurrent ? "green" : "default"}>{job.isCurrent ? "Current job" : "Queued"}</Tag> : "Finished" },
           { title: "Actions", width: 330, render: (_, job) => jobActions(job) },
         ]} />
+      </div>
     </Card>
 
     <Modal open={creating} title={editing ? `Edit ${formatJobNumber(editing.jobNumber)}` : "Create Job Order"} onCancel={() => { if (!busy) { setCreating(false); setEditing(null); } }} footer={null} maskClosable={!busy}>
