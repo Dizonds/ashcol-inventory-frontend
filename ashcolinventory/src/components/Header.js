@@ -213,10 +213,10 @@ export default function Header({
 
             <div className="header-user-info" data-node-id="488:6940">
               <span className="header-user-name" data-node-id="488:6941">
-                {user?.fullName || "Jenny Wilson"}
+                {user?.fullName || "User"}
               </span>
               <span className="header-user-email" data-node-id="488:6942">
-                {user?.email || "felicia.reid@example.com"}
+                {user?.email || "Email unavailable"}
               </span>
             </div>
 

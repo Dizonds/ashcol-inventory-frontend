@@ -7,7 +7,6 @@ import {
   Select,
   Modal,
   Input,
-  InputNumber,
   Alert,
   Popconfirm,
   Typography,
@@ -18,6 +17,7 @@ import {
 import { BusBoldDuotoneIcon } from "@solar-icons/react";
 import { api, errorMessage } from "../api";
 import { formatMoney } from "../utils/formatters";
+import InventoryNumberInput from "./InventoryNumberInput";
 import "./InventorySection.css";
 
 /* --- FIGMA EXACT SVG ICONS (NODE 488:5029) --- */
@@ -266,7 +266,9 @@ export default function InventorySection({
   branchId,
   save,
   preselectedFilter,
+  refresh,
   onNavigateToPostMovement,
+  isDark = false,
 }) {
   const canManage = user.role !== "EMPLOYEE";
   const [loadVanItem, setLoadVanItem] = useState(null);
@@ -302,7 +304,6 @@ export default function InventorySection({
   const [values, setValues] = useState(emptyItem);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
-  const [newBrand, setNewBrand] = useState("");
   const [suppliersList, setSuppliersList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("item-az");
@@ -363,7 +364,7 @@ export default function InventorySection({
     return () => {
       active = false;
     };
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     if (!archived) return;
@@ -395,6 +396,7 @@ export default function InventorySection({
   }
   function submit(event) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setFormError("");
     const payload = { ...values, branchId };
@@ -496,16 +498,10 @@ export default function InventorySection({
   const categoryMenu = {
     items: [
       { key: "", label: "All Categories" },
-      ...[
-        "Split Type",
-        "Window Type",
-        "Floor Mounted",
-        "Portable",
-        "Compressors",
-        "Refrigerants",
-        "Installation Materials",
-        "Copper Tubing",
-      ].map((c) => ({ key: c, label: c })),
+      ...Array.from(new Set([
+        ...Object.values(categoriesByType).flat(),
+        ...items.map((item) => item.category).filter(Boolean),
+      ])).sort().map((c) => ({ key: c, label: c })),
     ].map((c) => ({
       key: c.key || "all",
       label: c.label,
@@ -605,10 +601,10 @@ export default function InventorySection({
               ? "(Low Stock)"
               : "(On Hand)"}
           </span>
-          {item.reservedQuantity > 0 && (
+          {item.approvedRequestQuantity > 0 && (
             <div>
               <span className="stock-pill reserved">
-                {item.reservedQuantity} {item.unitOfMeasure} (Reserved)
+                {item.approvedRequestQuantity} {item.unitOfMeasure} (Awaiting fulfillment)
               </span>
             </div>
           )}
@@ -635,6 +631,7 @@ export default function InventorySection({
             <button
               type="button"
               className="table-action-btn"
+              aria-label="View specifications"
               onClick={() => setViewing(item)}
             >
               <EyeViewIcon />
@@ -645,6 +642,7 @@ export default function InventorySection({
               <button
                 type="button"
                 className="table-action-btn"
+                aria-label="Edit specifications"
                 onClick={() => open(item)}
               >
                 <PencilEditIcon />
@@ -672,7 +670,7 @@ export default function InventorySection({
               }
             >
               <Tooltip title={archived ? "Restore Item" : "Archive Item"}>
-                <button type="button" className="table-action-btn danger">
+                <button type="button" className="table-action-btn danger" aria-label={archived ? "Restore item" : "Archive item"}>
                   <ArchiveIcon />
                 </button>
               </Tooltip>
@@ -686,6 +684,7 @@ export default function InventorySection({
                 <button
                   type="button"
                   className="table-action-btn van"
+                  aria-label="Add to Service Vehicle"
                   onClick={() => {
                     setLoadVanItem(item);
                     setSelectedVanId(serviceVans[0]?.id || "");
@@ -828,6 +827,7 @@ export default function InventorySection({
                 <button
                   type="button"
                   className={`catalog-icon-btn ${archived ? "active" : ""}`}
+                  aria-label={archived ? "View active catalog items" : "View archived zero-stock items"}
                   data-node-id="488:5091"
                   onClick={() => {
                     setArchived(!archived);
@@ -926,20 +926,33 @@ export default function InventorySection({
 
       <Modal
         title={
-          editing === "new" ? "Register inventory item" : "Edit specifications"
+          <div className="inventory-item-heading">
+            <span className="inventory-item-heading-icon"><QlementineItemsListIcon size={24} /></span>
+            <div>
+              <h2>{editing === "new" ? "Register inventory item" : "Edit specifications"}</h2>
+              <p>{editing === "new" ? "Add item details, starting stock, and pricing." : "Update the item details and pricing."}</p>
+            </div>
+          </div>
         }
+        className={`inventory-item-modal${isDark ? " inventory-item-modal-dark" : ""}`}
         open={Boolean(editing)}
         onCancel={() => !busy && setEditing(null)}
         footer={null}
-        width={700}
+        width={780}
+        centered
+        maskClosable={!busy}
       >
-        {formError && <Alert type="error" title={formError} />}
-        <form onSubmit={submit}>
+        <form className="inventory-item-form" onSubmit={submit}>
+          <div className="inventory-item-body">
+          {formError && <Alert type="error" showIcon message={formError} />}
+          <section className="inventory-item-section" aria-labelledby="inventory-details-heading">
+          <div className="inventory-item-section-heading"><h3 id="inventory-details-heading">Item details</h3><span>Identify and classify your item</span></div>
           <div className="form-grid">
             <label className="field">
               SKU / model
               <Input
                 required
+                placeholder="e.g. AC-CAR-001"
                 maxLength={100}
                 disabled={editing !== "new"}
                 value={values.sku}
@@ -950,6 +963,7 @@ export default function InventorySection({
               Item name
               <Input
                 required
+                placeholder="e.g. Carrier split-type air conditioner"
                 maxLength={200}
                 value={values.name}
                 onChange={(e) => field("name", e.target.value)}
@@ -958,6 +972,7 @@ export default function InventorySection({
             <label className="field">
               Item type
               <Select
+                aria-label="Item type"
                 value={values.itemType}
                 onChange={(value) =>
                   setValues({
@@ -994,6 +1009,7 @@ export default function InventorySection({
             <label className="field">
               Category
               <Select
+                aria-label="Category"
                 value={values.category}
                 onChange={(value) => field("category", value)}
                 options={categories.map((value) => ({ value, label: value }))}
@@ -1002,6 +1018,7 @@ export default function InventorySection({
             <label className="field">
               Brand
               <Select
+                aria-label="Brand"
                 showSearch
                 value={values.brand}
                 onChange={(value) => field("brand", value)}
@@ -1024,13 +1041,12 @@ export default function InventorySection({
               <Select
                 showSearch
                 allowClear
-                placeholder="Select or enter supplier"
+                placeholder="Select a supplier (optional)"
                 value={values.supplier || undefined}
                 onChange={(value) => field("supplier", value || "")}
                 options={Array.from(
                   new Set([
                     ...suppliersList.map((s) => s.name),
-                    ...items.map((it) => it.supplier).filter(Boolean),
                     ...(values.supplier ? [values.supplier] : []),
                   ]),
                 ).map((name) => ({
@@ -1039,8 +1055,18 @@ export default function InventorySection({
                 }))}
               />
             </label>
+            <label className="field">
+              Unit of measure
+              <Select
+                aria-label="Unit of measure"
+                disabled={editing !== "new" || values.itemType === "AC Unit"}
+                value={values.unitOfMeasure}
+                onChange={(value) => field("unitOfMeasure", value)}
+                options={units.map((value) => ({ value, label: value }))}
+              />
+            </label>
             {values.itemType !== "AC Unit" && (
-              <label className="field" style={{ gridColumn: "span 2" }}>
+              <label className="field inventory-item-wide-field">
                 Compatible AC Unit Models / SKUs
                 <Select
                   mode="tags"
@@ -1056,20 +1082,18 @@ export default function InventorySection({
                 />
               </label>
             )}
-            <label className="field">
-              Unit of measure
-              <Select
-                disabled={editing !== "new" || values.itemType === "AC Unit"}
-                value={values.unitOfMeasure}
-                onChange={(value) => field("unitOfMeasure", value)}
-                options={units.map((value) => ({ value, label: value }))}
-              />
-            </label>
+          </div>
+          </section>
+          <section className="inventory-item-section" aria-labelledby="inventory-stock-heading">
+          <div className="inventory-item-section-heading"><h3 id="inventory-stock-heading">Stock & pricing</h3><span>Amounts in Philippine pesos</span></div>
+          <div className="form-grid">
             <label className="field">
               {editing === "new"
                 ? "Opening quantity"
                 : "Current stock (read only)"}
-              <InputNumber
+              <InventoryNumberInput
+                aria-label={editing === "new" ? "Opening quantity" : "Current stock (read only)"}
+                required
                 min={0}
                 step={isContinuousUnit(values.unitOfMeasure) ? 0.1 : 1}
                 precision={isContinuousUnit(values.unitOfMeasure) ? 3 : 0}
@@ -1078,10 +1102,14 @@ export default function InventorySection({
                 onChange={(value) => field("quantity", value)}
                 style={{ width: "100%" }}
               />
+              <small>{isContinuousUnit(values.unitOfMeasure) ? "Up to 3 decimal places allowed." : "Whole numbers only."}</small>
             </label>
             <label className="field">
               Unit cost (PHP)
-              <InputNumber
+              <InventoryNumberInput
+                aria-label="Unit cost (PHP)"
+                required
+                prefix="₱"
                 min={0}
                 precision={2}
                 value={values.unitCost}
@@ -1091,7 +1119,10 @@ export default function InventorySection({
             </label>
             <label className="field">
               Selling price (PHP)
-              <InputNumber
+              <InventoryNumberInput
+                aria-label="Selling price (PHP)"
+                required
+                prefix="₱"
                 min={0}
                 precision={2}
                 value={values.listPrice}
@@ -1101,7 +1132,9 @@ export default function InventorySection({
             </label>
             <label className="field">
               Reorder level (zero allowed)
-              <InputNumber
+              <InventoryNumberInput
+                aria-label="Reorder level"
+                required
                 min={0}
                 step={isContinuousUnit(values.unitOfMeasure) ? 0.1 : 1}
                 precision={isContinuousUnit(values.unitOfMeasure) ? 3 : 0}
@@ -1109,36 +1142,19 @@ export default function InventorySection({
                 onChange={(value) => field("reorderLevel", value)}
                 style={{ width: "100%" }}
               />
+              <small>Low-stock alert threshold. Zero is allowed.</small>
             </label>
           </div>
-          <Button htmlType="submit" type="primary" loading={busy}>
-            Save item
-          </Button>
-        </form>
-        {editing === "new" && (
-          <div className="field">
-            <span>Missing a brand?</span>
-            <Space.Compact>
-              <Input
-                placeholder="New brand name"
-                value={newBrand}
-                onChange={(e) => setNewBrand(e.target.value)}
-              />
-              <Button
-                disabled={!newBrand.trim() || busy}
-                onClick={() => {
-                  setBusy(true);
-                  save("post", "/brands", { name: newBrand }, "Brand added.")
-                    .then(() => setNewBrand(""))
-                    .catch((err) => setFormError(errorMessage(err)))
-                    .finally(() => setBusy(false));
-                }}
-              >
-                Add brand
-              </Button>
-            </Space.Compact>
+          </section>
           </div>
-        )}
+          <div className="inventory-item-footer">
+            <span>{editing === "new" ? "Opening stock is recorded in transaction history." : "Use Post Movement to adjust stock quantities."}</span>
+            <Space>
+              <Button onClick={() => setEditing(null)} disabled={busy}>Cancel</Button>
+              <Button htmlType="submit" type="primary" aria-label="Save item" loading={busy}>Save item</Button>
+            </Space>
+          </div>
+        </form>
       </Modal>
       <Modal
         title="Item specifications"
@@ -1232,6 +1248,7 @@ export default function InventorySection({
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (loadBusy) return;
               setLoadBusy(true);
               setLoadError("");
               save(
@@ -1292,7 +1309,9 @@ export default function InventorySection({
             </label>
             <label className="field" style={{ display: "block", marginBottom: 12 }}>
               Quantity to Load ({loadVanItem.unitOfMeasure})
-              <InputNumber
+              <InventoryNumberInput
+                aria-label="Quantity to load"
+                required
                 min={isContinuousUnit(loadVanItem.unitOfMeasure) ? 0.001 : 1}
                 max={loadVanItem.quantity}
                 step={isContinuousUnit(loadVanItem.unitOfMeasure) ? 0.1 : 1}

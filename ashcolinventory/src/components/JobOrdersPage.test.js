@@ -60,7 +60,7 @@ test("a manager creates an assigned job and can review the materials consumed", 
   await waitFor(() => expect(api).toHaveBeenCalledWith("patch", "/job-orders/job-1/assignment"));
   expect(await screen.findByText("Current job", { exact: true })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "View details" }));
-  expect(await screen.findByText("USE0001")).toBeInTheDocument();
+  expect(await screen.findByText("USE - 0001")).toBeInTheDocument();
   expect(screen.getByText("2 METER")).toBeInTheDocument();
 }, 15000);
 

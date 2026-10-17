@@ -53,6 +53,8 @@
 }
 
 .model-matching-overview-actions {
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -94,6 +96,7 @@
 }
 
 .model-matching-search-input {
+  min-width: 0;
   flex: 1;
   border: none;
   background: transparent;
@@ -145,6 +148,7 @@
 
 /* Model selector trigger button matching Figma Node 488:7625 */
 .model-matching-selector-btn {
+  max-width: 100%;
   height: 48px;
   width: 277px;
   background: #f8f8f8;
@@ -748,3 +752,6 @@
 .inventory-app.dark .model-matching-empty h4 {
   color: #f0f7f3;
 }
+.model-matching-help { color: #64756a; font-size: 12px; margin-top: 6px; }
+.inventory-app.dark .model-matching-help { color: #9cb8a7; }
+.model-matching-metric-value.model-matching-unit-totals { font-size: 24px; overflow-wrap: anywhere; }

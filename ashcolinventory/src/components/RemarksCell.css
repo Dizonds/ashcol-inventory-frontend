@@ -1,0 +1,75 @@
+.remarks-preview {
+  display: block;
+  width: 220px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+}
+
+.remarks-preview:hover {
+  text-decoration-style: solid;
+}
+
+.remarks-preview:focus-visible,
+.remarks-card-close:focus-visible {
+  outline: 2px solid #12a807;
+  outline-offset: 3px;
+}
+
+.remarks-card {
+  width: min(360px, calc(100vw - 64px));
+}
+
+.remarks-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.remarks-card-header h3 {
+  margin: 0;
+  color: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.remarks-card-close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.remarks-card-close:hover {
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.remarks-card-text {
+  max-height: min(320px, 45vh);
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}

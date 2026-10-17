@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Spin, Alert, Dropdown } from "antd";
 import { api, errorMessage } from "../api";
 import { formatRequestNumber, formatMovementNumber, formatJobNumber } from "../utils/formatters";
+import { movementPresentation } from "../utils/movements";
+import RemarksCell from "./RemarksCell";
 import "./MovementsPage.css";
 
 /* --- EXACT SVG ICONS MATCHING FIGMA NODE 488:7823 --- */
@@ -102,12 +104,13 @@ const MOVEMENT_TYPES = [
   { value: "STOCK_OUT", label: "Stock Out" },
   { value: "TRANSFER_OUT", label: "Transfer Out" },
   { value: "TRANSFER_IN", label: "Transfer In" },
+  { value: "RETURNED", label: "Returned" },
   { value: "REQUEST_ISSUE", label: "Material Request Issue" },
-  { value: "JOB_CONSUMPTION", label: "Job Material Used" },
+  { value: "JOB_CONSUMPTION", label: "Material Used" },
   { value: "OPENING", label: "Opening Balance" },
   { value: "DETAILS", label: "Details Update" },
-  { value: "ARCHIVE", label: "Archive" },
-  { value: "RESTORE", label: "Restore" },
+  { value: "ARCHIVE", label: "Archived" },
+  { value: "RESTORE", label: "Restored" },
 ];
 
 const LEDGER_SORTS = [
@@ -142,7 +145,7 @@ export default function MovementsPage({ branchId, refresh }) {
     let active = true;
     setLoading(true);
     setError("");
-    api("get", "/movements", null, { branchId, page, pageSize, search: search.trim().replace(/^(REQ|STI|STO|JOB|USE)\s*-?\s*(\d+)$/i, (_, prefix, digits) => `${prefix.toUpperCase()}${digits}`), type, sort: sortBy })
+    api("get", "/movements", null, { branchId, page, pageSize, search: search.trim().replace(/^(REQ|STI|STO|TRI|TRO|VAN|JOB|USE)\s*-?\s*(\d+)$/i, (_, prefix, digits) => `${prefix.toUpperCase()}${digits}`), type, sort: sortBy })
       .then(({ data }) => {
         if (active) {
           setRows(data.items || []);
@@ -183,29 +186,9 @@ export default function MovementsPage({ branchId, refresh }) {
     }
   };
 
-  // Helper to format movement type badge matching Figma
-  const renderMovementTypeBadge = (rawType) => {
-    const t = String(rawType || "").toUpperCase();
-    if (t.includes("STOCK_IN") || t === "STOCK IN" || t === "OPENING" || t === "RESTORE") {
-      return <span className="movement-badge stock-in">Stock In</span>;
-    }
-    if (t.includes("TRANSFER_OUT") || t === "TRANSFER OUT") {
-      return <span className="movement-badge transfer-out">Transfer Out</span>;
-    }
-    if (
-      t.includes("STOCK_OUT") ||
-      t === "STOCK OUT" ||
-      t.includes("REQUEST") ||
-      t.includes("CONSUMPTION") ||
-      t === "ARCHIVE"
-    ) {
-      return <span className="movement-badge stock-out">Stock Out</span>;
-    }
-    if (t.includes("TRANSFER_IN") || t === "TRANSFER IN") {
-      return <span className="movement-badge transfer-in">Transfer In</span>;
-    }
-    const label = rawType ? rawType.replace(/_/g, " ") : "Movement";
-    return <span className="movement-badge default">{label}</span>;
+  const renderMovementTypeBadge = (entry) => {
+    const { label, tone } = movementPresentation(entry);
+    return <span className={`movement-badge ${tone}`}>{label}</span>;
   };
 
   // Pagination calculation matching Figma
@@ -434,7 +417,12 @@ export default function MovementsPage({ branchId, refresh }) {
 
                         {/* MOVEMENT TYPE */}
                         <td>
-                          {renderMovementTypeBadge(entry.movementType)}
+                          <div className="movement-badges">
+                            {renderMovementTypeBadge(entry)}
+                            {movementPresentation(entry).isVehicle && (
+                              <span className="movement-badge vehicle">Vehicle</span>
+                            )}
+                          </div>
                         </td>
 
                         {/* QUANTITY */}
@@ -459,14 +447,14 @@ export default function MovementsPage({ branchId, refresh }) {
                         {/* REFERENCE ID */}
                         <td>
                           <span className="ledger-cell-ref">
-                            {formatMovementNumber(formatRequestNumber(entry.requestNumber || entry.referenceId)) || "—"}
+                            {formatMovementNumber(entry.vehicleReceiptNumber || entry.transferNumber || formatRequestNumber(entry.requestNumber || entry.referenceId)) || "—"}
                           </span>
                         </td>
                         <td>{entry.jobOrderId ? formatJobNumber(entry.workOrderId) : "—"}</td>
 
                         {/* REMARKS */}
                         <td className="ledger-cell-remarks">
-                          {entry.reason || "—"}
+                          <RemarksCell value={entry.reason} />
                         </td>
                       </tr>
                     );

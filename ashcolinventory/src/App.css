@@ -437,6 +437,28 @@
 /* Table */
 .ant-table-wrapper { border-radius: var(--radius-card) !important; overflow: hidden; }
 .ant-table { background: var(--card-bg) !important; color: var(--text-main) !important; font-family: 'Outfit', sans-serif !important; }
+/* Empty tables should fit their card instead of forcing a data-row scroll width. */
+.main-content .ant-table-empty .ant-table-content {
+  overflow-x: hidden !important;
+}
+.main-content .ant-table-empty table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+}
+.main-content .ant-table-empty col {
+  width: auto !important;
+}
+.main-content .ant-table-empty .ant-table-expanded-row-fixed {
+  /* Avoid the measured placeholder width lagging behind sidebar animation. */
+  width: auto !important;
+  max-width: 100%;
+  margin: 0 !important;
+}
+.main-content .ant-table-empty .ant-table-thead > tr > th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .ant-table-thead > tr > th {
   background: var(--main-bg) !important; color: var(--text-secondary) !important;
   font-weight: 600 !important; font-size: 11px !important;

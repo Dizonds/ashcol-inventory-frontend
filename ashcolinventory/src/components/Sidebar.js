@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Drawer } from "antd";
 import "./Sidebar.css";
 import ashcolLogo from "../assets/ashcolLogoFigma.png";
 
@@ -166,51 +167,21 @@ function UserManagementIcon() {
   );
 }
 
-function MoonIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
-      <path
-        d="M19.75 12.33C18.55 12.97 17.18 13.33 15.73 13.33C11 13.33 7.17 9.5 7.17 4.77C7.17 3.32 7.53 1.95 8.17 0.75C3.92 1.75 0.75 5.57 0.75 10.12C0.75 15.44 5.06 19.75 10.38 19.75C14.93 19.75 18.75 16.58 19.75 12.33Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function SunIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M12 2V4M12 20V22M4 12H2M22 12H20M5.64 5.64L7.05 7.05M16.95 16.95L18.36 18.36M5.64 18.36L7.05 16.95M16.95 7.05L18.36 5.64" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 22" fill="none">
-      <path
-        d="M1.14 2.75C0.75 3.37 0.75 4.16 0.75 5.75V15.75C0.75 17.34 0.75 18.13 1.14 18.75C1.21 18.86 1.29 18.96 1.38 19.06C1.86 19.61 2.63 19.83 4.16 20.26C5.69 20.7 6.46 20.92 7.01 20.59C7.11 20.53 7.2 20.47 7.28 20.39C7.75 19.95 7.75 19.15 7.75 17.55V3.95C7.75 2.35 7.75 1.55 7.28 1.11C7.2 1.03 7.11 0.97 7.01 0.91C6.46 0.58 5.69 0.8 4.16 1.24C2.63 1.67 1.86 1.89 1.38 2.44C1.29 2.54 1.21 2.64 1.14 2.75Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M7.75 2.75H9.77C11.67 2.75 12.62 2.75 13.21 3.34C13.54 3.66 13.69 4.1 13.75 4.75M7.75 18.75H9.77C11.67 18.75 12.62 18.75 13.21 18.16C13.54 17.84 13.69 17.4 13.75 16.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M17.75 10.75H10.75M16.25 8.25L18.75 10.75L16.25 13.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export default function Sidebar({
   page,
   setPage,
   user,
   canManage,
 }) {
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => { setIsMobile(media.matches); setMobileOpen(false); };
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  function navigate(nextPage) { setPage(nextPage); setMobileOpen(false); }
   const operations = [
     { id: "inventory", label: "Inventory Catalog", icon: <InventoryIcon />, nodeId: "488:5002" },
     { id: "requests", label: "Material Requests", icon: <RequestsIcon />, nodeId: "488:5009" },
@@ -226,12 +197,12 @@ export default function Sidebar({
     { id: "user_management", label: "User Management", icon: <UserManagementIcon />, nodeId: "441:3966" },
   ] : [];
 
-  return (
-    <aside className="ashcol-sidebar" data-node-id="488:4982">
+  const navigation = (
+    <aside className="ashcol-sidebar" aria-label="Main navigation" data-node-id="488:4982">
       {/* Dynamic Brand Header */}
       <div
         className="sidebar-brand-header"
-        onClick={() => setPage("dashboard")}
+        onClick={() => navigate("dashboard")}
         title="ASHCOL Smart Stock Tracking"
         data-node-id="488:4985"
       >
@@ -261,7 +232,7 @@ export default function Sidebar({
           <button
             type="button"
             className={`sidebar-item-btn ${page === "dashboard" ? "active" : ""}`}
-            onClick={() => setPage("dashboard")}
+            onClick={() => navigate("dashboard")}
             data-node-id="488:4995"
             title="Overview"
           >
@@ -286,7 +257,7 @@ export default function Sidebar({
               key={item.id}
               type="button"
               className={`sidebar-item-btn ${page === item.id ? "active" : ""}`}
-              onClick={() => setPage(item.id)}
+              onClick={() => navigate(item.id)}
               data-node-id={item.nodeId}
               title={item.label}
             >
@@ -309,7 +280,7 @@ export default function Sidebar({
                   key={item.id}
                   type="button"
                   className={`sidebar-item-btn ${page === item.id ? "active" : ""}`}
-                  onClick={() => setPage(item.id)}
+                  onClick={() => navigate(item.id)}
                   data-node-id={item.nodeId}
                   title={item.label}
                 >
@@ -324,6 +295,17 @@ export default function Sidebar({
 
     </aside>
   );
+  if (!isMobile) return navigation;
+  return <>
+    <button type="button" className="mobile-nav-toggle" aria-label="Open navigation"
+      aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(true)}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+    </button>
+    <Drawer title="Navigation" placement="left" size={280} open={mobileOpen} onClose={() => setMobileOpen(false)}
+      getContainer={false} className="mobile-navigation" styles={{ body: { padding: 0 } }}>
+      <div id="mobile-navigation" style={{ height: "100%" }}>{navigation}</div>
+    </Drawer>
+  </>;
 }
 
 

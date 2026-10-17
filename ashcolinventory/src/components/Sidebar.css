@@ -318,3 +318,23 @@
   transition: opacity 0.25s ease 0.08s, width 0.28s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* On narrow screens navigation overlays the page instead of taking its width. */
+.mobile-nav-toggle { display: none; }
+.mobile-navigation .ashcol-sidebar,
+.mobile-navigation .ashcol-sidebar:hover {
+  width: 100%; min-width: 0; border: 0; box-shadow: none;
+}
+.mobile-navigation .sidebar-brand-header { gap: 12px; }
+.mobile-navigation .sidebar-brand-text { opacity: 1; width: 180px; max-width: 180px; pointer-events: auto; }
+.mobile-navigation .sidebar-item-btn { gap: 16px; }
+.mobile-navigation .sidebar-item-text { opacity: 1; width: 200px; max-width: 200px; pointer-events: auto; }
+.mobile-navigation .sidebar-section-label { height: 28px; opacity: 1; padding: 8px 12px 4px; }
+@media (max-width: 767px) {
+  .mobile-nav-toggle {
+    display: flex; position: absolute; top: 10px; left: 12px; z-index: 10;
+    align-items: center; justify-content: center; width: 38px; height: 38px;
+    color: var(--text-main); background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 8px;
+    cursor: pointer;
+  }
+}
+

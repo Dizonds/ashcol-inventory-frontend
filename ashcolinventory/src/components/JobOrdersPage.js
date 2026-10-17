@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Card, Descriptions, Empty, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography } from "antd";
 import { api, errorMessage } from "../api";
-import { formatJobNumber } from "../utils/formatters";
+import { formatJobNumber, formatMovementNumber } from "../utils/formatters";
 import "./JobOrdersPage.css";
 
 const statusColor = { OPEN: "blue", COMPLETED: "green", CANCELLED: "default" };
@@ -175,7 +175,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
         ]} />
         <Typography.Title level={5}>Materials used</Typography.Title>
         <Table loading={detailsLoading} rowKey="id" size="small" dataSource={viewing.movements || []} scroll={{ x: 750 }} pagination={{ pageSize: 8 }} columns={[
-          { title: "Usage ID", dataIndex: "referenceId", width: 130 },
+          { title: "Usage ID", dataIndex: "referenceId", width: 130, render: formatMovementNumber },
           { title: "Material", render: (_, entry) => <div>{entry.itemName}<div><small>{entry.sku}</small></div></div> },
           { title: "Quantity used", render: (_, entry) => `${Math.abs(entry.quantityDelta)} ${entry.unitOfMeasure}` },
           { title: "Recorded by", dataIndex: "performedByName" }, { title: "Date", dataIndex: "createdAt", render: dateLabel },

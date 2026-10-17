@@ -312,6 +312,18 @@
   color: #38b849;
 }
 
+@media (max-width: 767px) {
+  .ashcol-header { height: auto; min-height: 112px; padding: 14px 16px 12px; flex-wrap: wrap; gap: 10px; }
+  .header-page-title-wrap { flex: 1 1 100%; min-width: 0; padding-left: 44px; }
+  .header-page-title { font-size: 20px; overflow-wrap: anywhere; }
+  .header-right-group { width: 100%; min-width: 0; justify-content: flex-end; gap: 10px; }
+  .header-date-pill, .header-user-info, .header-user-btn > .header-chevron-icon { display: none; }
+  .header-actions-divider { gap: 10px; padding: 0 10px; height: 36px; border-left: 0; }
+  .header-square-btn { width: 36px; height: 36px; }
+  .header-user-btn { padding: 0; gap: 0; }
+  .header-user-avatar-wrap, .header-user-avatar { width: 36px; height: 36px; }
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .header-branch-pill {
@@ -321,7 +333,8 @@
 
 @media (max-width: 1024px) {
   .ashcol-header {
-    padding: 0 16px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   .header-branch-pill {
     display: none;

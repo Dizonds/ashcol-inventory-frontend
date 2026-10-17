@@ -49,6 +49,8 @@
 }
 
 .stock-ledger-toolbar-left {
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   align-items: center;
   gap: 24px;
@@ -63,6 +65,7 @@
 }
 
 .stock-ledger-title-group {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -92,7 +95,7 @@
   line-height: 24px;
   color: #02081a;
   margin: 0;
-  white-space: nowrap;
+  white-space: normal;
   letter-spacing: -0.2px;
 }
 
@@ -136,6 +139,7 @@
 }
 
 .stock-ledger-search-input {
+  min-width: 0;
   flex: 1;
   border: none;
   background: transparent;
@@ -383,6 +387,13 @@
 }
 
 /* Movement Type Pill Badges matching Figma Nodes 459:16356, 459:16382, 459:16361 */
+.movement-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .movement-badge {
   display: inline-flex;
   align-items: center;
@@ -419,6 +430,16 @@
 .movement-badge.default {
   background: #f1f5f9;
   color: #475569;
+}
+
+.movement-badge.vehicle {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.inventory-app.dark .movement-badge.vehicle {
+  background: rgba(109, 40, 217, 0.25);
+  color: #c4b5fd;
 }
 
 .inventory-app.dark .movement-badge.stock-in {
@@ -495,7 +516,7 @@
   font-weight: 400;
   color: #1e1e1e;
   max-width: 320px;
-  word-break: break-word;
+  white-space: nowrap;
 }
 
 .inventory-app.dark .ledger-cell-remarks {
