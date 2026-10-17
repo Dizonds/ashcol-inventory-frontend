@@ -557,7 +557,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
       return <strong className={delta > 0 ? "chart-movement-in" : delta < 0 ? "chart-movement-out" : ""}>{delta > 0 ? "+" : ""}{delta.toLocaleString()} {entry.unitOfMeasure || "units"}</strong>;
     } },
     { title: "Stock balance", width: 130, render: (_, entry) => entry.beforeQuantity == null || entry.afterQuantity == null ? "Not recorded" : `${entry.beforeQuantity.toLocaleString()} → ${entry.afterQuantity.toLocaleString()}` },
-    { title: "Reference / Work order", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{formatMovementNumber(entry.vehicleReceiptNumber || entry.transferNumber || formatRequestNumber(entry.requestNumber || entry.referenceId)) || "No reference"}</span>{entry.workOrderId && entry.workOrderId !== entry.requestNumber && <span>{entry.jobOrderId ? formatJobNumber(entry.workOrderId) : formatRequestNumber(entry.workOrderId)}</span>}</div> },
+    { title: "Reference / Job", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{formatMovementNumber(entry.vehicleReceiptNumber || entry.transferNumber || formatRequestNumber(entry.requestNumber || entry.referenceId)) || "No reference"}</span>{entry.jobNumber && <span>{formatJobNumber(entry.jobNumber)}</span>}{entry.referenceNumber && !entry.jobNumber && <span>{entry.referenceNumber}</span>}</div> },
     { title: "Processed by", dataIndex: "performedByName", width: 160, render: (value) => value || "Not recorded" },
     { title: "Remarks", dataIndex: "reason", width: 250, render: (value) => <RemarksCell value={value} emptyText="No remarks" /> },
   ];

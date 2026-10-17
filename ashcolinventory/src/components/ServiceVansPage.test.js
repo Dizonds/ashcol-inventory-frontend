@@ -45,7 +45,7 @@ test("record usage automatically shows the manager-assigned job without a dropdo
   fireEvent.click(within(dialog).getByRole("button", { name: "Record Usage" }));
   await waitFor(() => expect(save).toHaveBeenCalledWith(
     "post", "/service-vans/VAN-1/consume",
-    { productId: "item-1", quantity: 1, usageId: "USE0001", jobOrderId: "job-1", notes: "Office installation" },
+    { productId: "item-1", quantity: 1, usageId: "USE0001", jobId: "job-1", notes: "Office installation" },
     "Material usage recorded successfully.", undefined, { refresh: false },
   ));
 });
@@ -76,7 +76,7 @@ test("record usage can retry when an ID response is missing", async () => {
   api.mockImplementation((method, path) => {
     if (path.endsWith("/usage-ticket")) {
       attempts += 1;
-      return Promise.resolve({ data: attempts === 1 ? { workOrderId: "JOB0001" } : { usageId: "USE0002" } });
+      return Promise.resolve({ data: attempts === 1 ? {} : { usageId: "USE0002" } });
     }
     return Promise.resolve({ data: path === "/job-orders" ? [] : [item] });
   });
@@ -182,5 +182,5 @@ test.each([
     "patch", "/products/item-1/stock", expect.objectContaining({ referenceId: rawId, delta }),
     `Stock movement ${displayedId} recorded.`,
   ));
-  expect(save.mock.calls[0][2]).not.toHaveProperty("workOrderId");
+  expect(save.mock.calls[0][2]).not.toHaveProperty("jobId");
 });

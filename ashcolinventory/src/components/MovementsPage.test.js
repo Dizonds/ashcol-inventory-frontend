@@ -35,7 +35,7 @@ test("ledger shows a single VAN receipt for request deliveries and searches it",
 
 test("technician usage displays Material Used and a formatted searchable USE reference", async () => {
   api.mockResolvedValue({ data: { items: [
-    { id: "usage", createdAt: new Date().toISOString(), branchId: "VAN-01", sku: "PIPE", itemName: "Copper pipe", unitOfMeasure: "PCS", movementType: "JOB_CONSUMPTION", quantityDelta: -2, beforeQuantity: 3, afterQuantity: 1, referenceId: "USE0003", jobOrderId: "job-id", workOrderId: "JOB0001" },
+    { id: "usage", createdAt: new Date().toISOString(), branchId: "VAN-01", sku: "PIPE", itemName: "Copper pipe", unitOfMeasure: "PCS", movementType: "JOB_CONSUMPTION", quantityDelta: -2, beforeQuantity: 3, afterQuantity: 1, referenceId: "USE0003", jobId: "job-id", jobNumber: "JOB0001" },
   ], total: 1 } });
   render(<StyleProvider mock="server"><MovementsPage branchId="VAN-01" /></StyleProvider>);
   expect(await screen.findByText("USE - 0003")).toBeInTheDocument();

@@ -22,7 +22,7 @@ import "./RequestsPage.css";
 
 const isContinuousUnit = (unit) =>
   ["METER", "FOOT", "KG", "LITER"].includes(unit);
-const requestNumber = (entry) => formatRequestNumber(entry.requestNumber || entry.workOrderId || entry.id);
+const requestNumber = (entry) => formatRequestNumber(entry.requestNumber || entry.id);
 const formatDate = (value) => new Date(value).toLocaleString("en-PH", { timeZone: "Asia/Manila" });
 const requestHistory = (entry) => entry.history?.length ? entry.history : [
   { status: "PENDING", performedByName: entry.requestedByName, at: entry.createdAt },
@@ -186,7 +186,7 @@ export default function RequestsPage({
           dataSource={[...requests, ...(showDeleted ? deletedEntries : [])].filter(
             (entry) => (user.role !== "EMPLOYEE" || ownsRequest(entry)) &&
               (filter === "ALL" || entry.status === filter) &&
-              [requestNumber(entry), entry.id, entry.workOrderId, entry.sku, entry.itemName, entry.brand, entry.itemType, entry.requestedByName]
+              [requestNumber(entry), entry.id, entry.jobNumber, entry.sku, entry.itemName, entry.brand, entry.itemType, entry.requestedByName]
                 .some((value) => String(value || "").toLowerCase().includes(formatRequestNumber(search.trim()).toLowerCase())),
           )}
           scroll={{ x: 1300 }}

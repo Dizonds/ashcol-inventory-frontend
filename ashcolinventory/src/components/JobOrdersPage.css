@@ -19,6 +19,8 @@
 .job-orders-table { width: 100%; overflow-x: auto; border-radius: 8px; }
 .job-orders-table .ant-table-thead > tr > th { background: #f5f8f6; color: #202923; font-weight: 600; }
 .job-orders-table .ant-table-tbody > tr > td { vertical-align: middle; }
+.job-orders-actions { flex-wrap: nowrap; }
+.job-orders-action-btn.ant-btn { width: 32px; min-width: 32px; height: 32px; padding: 0; border-radius: 8px; font-size: 16px; }
 .job-order-form { display: flex; flex-direction: column; gap: 14px; }
 .job-orders-form-actions { justify-content: flex-end; width: 100%; }
 .inventory-app.dark .job-orders-card.ant-card { background: #142018; border-color: rgba(255, 255, 255, .08); box-shadow: 0 4px 24px rgba(0, 0, 0, .35); }

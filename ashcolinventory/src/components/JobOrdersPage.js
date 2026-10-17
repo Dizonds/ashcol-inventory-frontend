@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Alert, Button, Card, Descriptions, Empty, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography } from "antd";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, Button, Card, Descriptions, Empty, Input, Modal, Popconfirm, Select, Space, Table, Tag, Tooltip, Typography } from "antd";
 import { api, errorMessage } from "../api";
 import { formatJobNumber, formatMovementNumber } from "../utils/formatters";
 import "./JobOrdersPage.css";
@@ -7,6 +7,21 @@ import "./JobOrdersPage.css";
 const statusColor = { OPEN: "blue", COMPLETED: "green", CANCELLED: "default" };
 const emptyDraft = { title: "", customerName: "", location: "", description: "", vanId: "", assignedTechnicianId: "" };
 const dateLabel = (value) => value ? new Date(value).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "—";
+
+const actionIconPaths = {
+  view: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z M9 12a3 3 0 1 0 6 0 3 3 0 1 0-6 0",
+  edit: "m16 3 5 5-12 12-6 1 1-6Z M14 5l5 5",
+  assign: "m3 3 19 9-19 9 4-9-4-9Z M7 12h15",
+  complete: "m5 12 4 4L19 6",
+  cancel: "m6 6 12 12 M6 18 18 6",
+  archive: "M3 4h18v4H3Z M5 8v12h14V8 M9 12h6",
+  restore: "M4 4v6h6 M4 10a8 8 0 1 1 1 8",
+  refresh: "M20 4v6h-6 M20 10a8 8 0 1 0-1 8",
+  list: "M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01",
+};
+function JobActionIcon({ name }) {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={actionIconPaths[name]} /></svg>;
+}
 
 export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
   const canManage = user.role !== "EMPLOYEE";
@@ -17,6 +32,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
+  const [archived, setArchived] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState(emptyDraft);
@@ -24,21 +40,24 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
   const [viewing, setViewing] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState("");
+  const loadSequence = useRef(0);
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setLoading(true);
     setError("");
     try {
       const [{ data }, accounts, fleet] = await Promise.all([
-        api("get", "/job-orders"), canManage ? api("get", "/users") : Promise.resolve({ data: [] }),
+        api("get", "/job-orders", null, { archived }), canManage ? api("get", "/users") : Promise.resolve({ data: [] }),
         canManage ? api("get", "/service-vans") : Promise.resolve({ data: [] }),
       ]);
+      if (sequence !== loadSequence.current) return;
       setJobs(data);
       setTechnicians(accounts.data.filter((account) => account.role === "EMPLOYEE"));
       if (canManage) setFleetVehicles(fleet.data);
-    } catch (err) { setError(errorMessage(err)); }
-    finally { setLoading(false); }
-  }, [canManage]);
+    } catch (err) { if (sequence === loadSequence.current) setError(errorMessage(err)); }
+    finally { if (sequence === loadSequence.current) setLoading(false); }
+  }, [canManage, archived]);
   useEffect(() => { load(); }, [load, refresh]);
   useEffect(() => { setFleetVehicles(serviceVans); }, [serviceVans]);
 
@@ -88,28 +107,48 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
     } catch (err) { setError(errorMessage(err)); }
     finally { setBusy(false); }
   }
+  async function archiveJob(job) {
+    if (busy) return;
+    setBusy(true); setError("");
+    try {
+      if (archived) await api("post", `/job-orders/${job.id}/restore`);
+      else await api("delete", `/job-orders/${job.id}`);
+      await load();
+    } catch (err) { setError(errorMessage(err)); }
+    finally { setBusy(false); }
+  }
   const filtered = jobs.filter((job) => (status === "ALL" || job.status === status) &&
     [job.jobNumber, formatJobNumber(job.jobNumber), job.title, job.customerName, job.location, job.technicianName, job.vanName]
       .some((value) => String(value).toLowerCase().includes(search.trim().toLowerCase())));
-  const jobActions = (job) => <Space wrap>
-    <Button size="small" onClick={() => view(job)}>View details</Button>
-    {job.status === "OPEN" && <>
-      {canManage && <Button size="small" disabled={busy} onClick={() => editJob(job)}>Edit</Button>}
+  const jobActions = (job) => <Space size={8} className="job-orders-actions">
+    <Tooltip title="View details"><Button className="job-orders-action-btn" aria-label="View details" icon={<JobActionIcon name="view" />} onClick={() => view(job)} /></Tooltip>
+    {!archived && job.status === "OPEN" && <>
+      {canManage && <Tooltip title="Edit"><Button className="job-orders-action-btn" aria-label="Edit" icon={<JobActionIcon name="edit" />} disabled={busy} onClick={() => editJob(job)} /></Tooltip>}
       {canManage && !job.isCurrent && <Popconfirm title={`Assign ${formatJobNumber(job.jobNumber)} to ${job.technicianName}?`} description="This becomes their current job. Any previous current job returns to the queue." onConfirm={() => assignJob(job)}>
-        <Button size="small" type="primary" disabled={busy}>Assign job</Button>
+        <Tooltip title="Assign job"><Button className="job-orders-action-btn" aria-label="Assign job" icon={<JobActionIcon name="assign" />} type="primary" disabled={busy} /></Tooltip>
       </Popconfirm>}
       {(canManage || job.isCurrent) &&
       <Popconfirm title={`Complete ${formatJobNumber(job.jobNumber)}?`} description="No more materials can be recorded for a completed job." onConfirm={() => closeJob(job, "COMPLETED")}>
-        <Button size="small" disabled={busy}>Complete</Button>
+        <Tooltip title="Complete"><Button className="job-orders-action-btn" aria-label="Complete" icon={<JobActionIcon name="complete" />} disabled={busy} /></Tooltip>
       </Popconfirm>}
       {canManage && <Popconfirm title="Cancel this job?" description="Existing material usage stays in the history." onConfirm={() => closeJob(job, "CANCELLED")}>
-        <Button size="small" danger disabled={busy}>Cancel job</Button>
+        <Tooltip title="Cancel job"><Button className="job-orders-action-btn" aria-label="Cancel job" icon={<JobActionIcon name="cancel" />} danger disabled={busy} /></Tooltip>
       </Popconfirm>}
     </>}
+    {canManage && (archived || ["COMPLETED", "CANCELLED"].includes(job.status)) &&
+      <Popconfirm title={archived ? "Restore this job order?" : "Archive this job order?"}
+        description={archived ? "The job returns to the active list with its existing status and history." : "The job moves to Archived Jobs. Its details and material usage are kept."}
+        onConfirm={() => archiveJob(job)}>
+        <Tooltip title={archived ? "Restore job" : "Archive job"}><Button className="job-orders-action-btn"
+          aria-label={archived ? "Restore job" : "Archive job"} icon={<JobActionIcon name={archived ? "restore" : "archive"} />} disabled={busy} /></Tooltip>
+      </Popconfirm>}
   </Space>;
 
   return <div className="job-orders-page">
     {error && !creating && <Alert type="error" title={error} showIcon action={<Button onClick={load}>Retry</Button>} />}
+    {archived && <Alert type="info" title="Archived Jobs" description={canManage
+      ? "Archived jobs keep their details and material usage history. Restore a job to return it to the active list."
+      : "Your archived jobs keep their details and material usage history. An admin or manager can restore them."} showIcon />}
     <Card className="job-orders-card">
       <div className="job-orders-toolbar">
         <div className="job-orders-toolbar-left">
@@ -117,8 +156,12 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
         </div>
         <div className="job-orders-toolbar-right">
           <Select aria-label="Job status" value={status} onChange={setStatus} options={[{ value: "ALL", label: "All statuses" }, ...["OPEN", "COMPLETED", "CANCELLED"].map((value) => ({ value, label: value[0] + value.slice(1).toLowerCase() }))]} />
-          <Button onClick={load} loading={loading}>Refresh</Button>
-          {canManage && <button type="button" className="job-orders-create-btn" onClick={() => { setEditing(null); setDraft(emptyDraft); setError(""); setCreating(true); load(); }}>
+          <Tooltip title="Refresh"><Button className="job-orders-action-btn" aria-label="Refresh" icon={<JobActionIcon name="refresh" />} onClick={load} loading={loading} /></Tooltip>
+          <Tooltip title={archived ? "View active jobs" : "View archived jobs"}><Button className="job-orders-action-btn"
+            aria-label={archived ? "View active jobs" : "View archived jobs"} aria-pressed={archived}
+            type={archived ? "primary" : "default"} icon={<JobActionIcon name={archived ? "list" : "archive"} />}
+            disabled={busy} onClick={() => { ++loadSequence.current; setJobs([]); setArchived(!archived); setSearch(""); setStatus("ALL"); }} /></Tooltip>
+          {canManage && !archived && <button type="button" className="job-orders-create-btn" onClick={() => { setEditing(null); setDraft(emptyDraft); setError(""); setCreating(true); load(); }}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></svg>
             <span>Create Job Order</span>
           </button>}
@@ -126,7 +169,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
       </div>
       <div className="job-orders-table">
       <Table rowKey="id" loading={loading} dataSource={filtered} scroll={{ x: 1200 }} pagination={{ pageSize: 10 }}
-        locale={{ emptyText: <Empty description={canManage ? "No job orders yet. Create one to assign service work." : "No job orders assigned to you yet."} /> }}
+        locale={{ emptyText: <Empty description={archived ? "No archived job orders." : canManage ? "No job orders yet. Create one to assign service work." : "No job orders assigned to you yet."} /> }}
         columns={[
           { title: "Job ID", width: 140, render: (_, job) => <Typography.Text copyable>{formatJobNumber(job.jobNumber)}</Typography.Text> },
           { title: "Service job", width: 230, render: (_, job) => <div><strong>{job.title}</strong><div>{job.customerName}</div><small>{job.location}</small></div> },
@@ -134,7 +177,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
           { title: "Vehicle", dataIndex: "vanName", width: 160 },
           { title: "Status", dataIndex: "status", width: 120, render: (value) => <Tag color={statusColor[value]}>{value}</Tag> },
           { title: "Assignment", width: 130, render: (_, job) => job.status === "OPEN" ? <Tag color={job.isCurrent ? "green" : "default"}>{job.isCurrent ? "Current job" : "Queued"}</Tag> : "Finished" },
-          { title: "Actions", width: 330, render: (_, job) => jobActions(job) },
+          { title: "Actions", width: 220, render: (_, job) => jobActions(job) },
         ]} />
       </div>
     </Card>

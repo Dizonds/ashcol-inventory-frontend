@@ -74,6 +74,65 @@ test("technicians see their assigned job list without job creation controls", as
   expect(api).not.toHaveBeenCalledWith("get", "/users");
 });
 
+test.each(["ADMIN", "MANAGER"])("%s archives a closed job, reviews its history, and restores it without reopening it", async (role) => {
+  let saved = { ...job, status: "COMPLETED", archived: false };
+  api.mockImplementation((method, path, data, params) => {
+    if (method === "delete") { saved = { ...saved, archived: true }; return Promise.resolve({ data: saved }); }
+    if (method === "post") { saved = { ...saved, archived: false }; return Promise.resolve({ data: saved }); }
+    if (path === "/users") return Promise.resolve({ data: [technician] });
+    if (path === "/service-vans") return Promise.resolve({ data: [van] });
+    if (path === "/job-orders/job-1") return Promise.resolve({ data: { ...saved, movements: [] } });
+    return Promise.resolve({ data: saved.archived === Boolean(params?.archived) ? [saved] : [] });
+  });
+  render(<StyleProvider mock="server"><JobOrdersPage user={{ role }} serviceVans={[van]} /></StyleProvider>);
+  const archive = await screen.findByRole("button", { name: "Archive job", exact: true });
+  expect(archive.textContent).toBe("");
+  expect(screen.queryByRole("button", { name: "Edit", exact: true })).not.toBeInTheDocument();
+  fireEvent.click(archive);
+  fireEvent.click(await screen.findByRole("button", { name: "OK", exact: true }));
+  await waitFor(() => expect(screen.queryByText("JOB - 0001")).not.toBeInTheDocument());
+  expect(api).toHaveBeenCalledWith("delete", "/job-orders/job-1");
+  fireEvent.click(screen.getByRole("button", { name: "View archived jobs" }));
+  expect(await screen.findByText("JOB - 0001")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Create Job Order" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "View details" }));
+  expect(await screen.findByText("No material usage recorded for this job yet.")).toBeInTheDocument();
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Restore job", exact: true }));
+  fireEvent.click(await screen.findByRole("button", { name: "OK", exact: true }));
+  await waitFor(() => expect(screen.queryByText("JOB - 0001")).not.toBeInTheDocument());
+  expect(api).toHaveBeenCalledWith("post", "/job-orders/job-1/restore");
+  fireEvent.click(screen.getByRole("button", { name: "View active jobs" }));
+  expect(await screen.findByText("JOB - 0001")).toBeInTheDocument();
+  expect(within(screen.getByText("JOB - 0001").closest("tr")).getByText("COMPLETED")).toBeInTheDocument();
+}, 15000);
+
+test("technicians can read archived jobs but cannot archive or restore, and open jobs cannot be archived", async () => {
+  api.mockImplementation((method, path, data, params) => Promise.resolve({ data:
+    [{ ...job, status: params?.archived ? "CANCELLED" : "OPEN", archived: Boolean(params?.archived), isCurrent: !params?.archived }],
+  }));
+  render(<StyleProvider mock="server"><JobOrdersPage user={technician} serviceVans={[van]} /></StyleProvider>);
+  expect(await screen.findByRole("button", { name: "Complete", exact: true })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Archive job", exact: true })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "View archived jobs" }));
+  expect(await screen.findByText("CANCELLED")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Restore job", exact: true })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Complete", exact: true })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "View details" })).toBeInTheDocument();
+});
+
+test("an archive failure keeps the job visible and displays the server error", async () => {
+  api.mockImplementation((method, path) => {
+    if (method === "delete") return Promise.reject(new Error("The job could not be archived."));
+    return Promise.resolve({ data: path === "/users" ? [technician] : path === "/service-vans" ? [van] : [{ ...job, status: "CANCELLED" }] });
+  });
+  render(<StyleProvider mock="server"><JobOrdersPage user={{ role: "ADMIN" }} serviceVans={[van]} /></StyleProvider>);
+  fireEvent.click(await screen.findByRole("button", { name: "Archive job", exact: true }));
+  fireEvent.click(await screen.findByRole("button", { name: "OK", exact: true }));
+  expect(await screen.findByText("The job could not be archived.")).toBeInTheDocument();
+  expect(screen.getByText("JOB - 0001")).toBeInTheDocument();
+});
+
 test.each(["MANAGER", "ADMIN"])("%s can edit a job and change its technician with the matching vehicle", async (role) => {
   const nextTech = { id: "tech-2", fullName: "Next Technician", role: "EMPLOYEE" };
   const nextVan = { id: "VAN-2", name: "Next Van", driverId: nextTech.id };

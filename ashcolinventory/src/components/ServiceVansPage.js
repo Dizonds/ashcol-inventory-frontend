@@ -1180,7 +1180,7 @@ export default function ServiceVansPage({
                   productId: consumeItem.id || consumeItem._id,
                   quantity: consumeQty,
                   usageId: consumeUsageId,
-                  jobOrderId: consumeJobOrderId,
+                  jobId: consumeJobOrderId,
                   notes: consumeNotes,
                 },
                 "Material usage recorded successfully.",

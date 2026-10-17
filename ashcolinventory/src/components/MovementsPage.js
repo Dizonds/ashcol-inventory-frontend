@@ -450,7 +450,7 @@ export default function MovementsPage({ branchId, refresh }) {
                             {formatMovementNumber(entry.vehicleReceiptNumber || entry.transferNumber || formatRequestNumber(entry.requestNumber || entry.referenceId)) || "—"}
                           </span>
                         </td>
-                        <td>{entry.jobOrderId ? formatJobNumber(entry.workOrderId) : "—"}</td>
+                        <td>{entry.jobId ? formatJobNumber(entry.jobNumber) : "—"}</td>
 
                         {/* REMARKS */}
                         <td className="ledger-cell-remarks">
