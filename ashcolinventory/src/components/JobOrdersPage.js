@@ -113,13 +113,6 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
     <Card className="job-orders-card">
       <div className="job-orders-toolbar">
         <div className="job-orders-toolbar-left">
-          <div className="job-orders-title-group">
-            <span className="job-orders-title-icon" aria-hidden="true">☷</span>
-            <div>
-              <Typography.Title level={3}>Job Orders</Typography.Title>
-              <Typography.Paragraph type="secondary">{canManage ? "Create service work, assign technicians and review materials used." : "Your assigned work and material usage history."}</Typography.Paragraph>
-            </div>
-          </div>
           <Input.Search className="job-orders-search" aria-label="Search job orders" placeholder="Search job, customer, location or technician" value={search} onChange={(event) => setSearch(event.target.value)} allowClear />
         </div>
         <div className="job-orders-toolbar-right">

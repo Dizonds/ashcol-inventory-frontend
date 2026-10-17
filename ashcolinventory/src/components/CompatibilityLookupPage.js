@@ -395,12 +395,8 @@ export default function CompatibilityLookupPage({ items = [], onNavigateToItem, 
 
   return (
     <div className={`model-matching-container ${isDark ? "dark" : ""}`}>
-      {/* ====================================================================
-          1. MODEL MATCHING OVERVIEW CARD
-          ==================================================================== */}
+      {/* Search and model selection controls */}
       <div className="model-matching-overview-card">
-        <div><h2 className="model-matching-overview-title">Model Matching Overview</h2><p className="model-matching-help">Matches use the compatible models saved in each item's specifications.</p></div>
-
         <div className="model-matching-overview-actions">
           {/* Inset Search Box (Node 488:7622) */}
           <div className="model-matching-search-box">

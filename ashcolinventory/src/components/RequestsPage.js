@@ -142,53 +142,46 @@ export default function RequestsPage({
   }
   return (
     <>
-      <Typography.Title level={3}>Material Requests</Typography.Title>
-      <Typography.Paragraph type="secondary">
-        Request → Approve → Fulfill. Approval does not reserve stock;
-        fulfillment transfers available warehouse stock into the technician's assigned vehicle once. Search a request ID
-        to see its status and history.
-      </Typography.Paragraph>
       {user.role === "EMPLOYEE" && !assignedVan && <Alert type="warning" showIcon
         title="You need an assigned service vehicle before requesting materials. Ask your admin or manager to assign one."
         style={{ marginBottom: 16 }} />}
       {error && !deleting && !open && (
         <Alert type="error" title={error} style={{ marginBottom: 16 }} />
       )}
-      <Card
-        title={user.role === "EMPLOYEE" ? "My requests" : "Warehouse requests"}
-        extra={
-          user.role === "EMPLOYEE" && (
-            <Button
-              type="primary"
-              loading={busy}
-              disabled={!assignedVan}
-              onClick={newRequest}
-            >
-              New Request
-            </Button>
-          )
-        }
-      >
-        <Input
-          aria-label="Search requests"
-          placeholder="Search request ID, item, or requester"
-          allowClear
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setFilter("ALL");
-          }}
-          style={{ maxWidth: 480, marginBottom: 16, marginRight: 12 }}
-        />
-        <Select
-          value={filter}
-          onChange={setFilter}
-          style={{ width: 180, marginBottom: 16 }}
-          options={["ALL", "PENDING", "APPROVED", "DENIED", "FULFILLED"].map(
-            (value) => ({ value, label: value }),
-          )}
-        />
+      <Card className="requests-list-card">
+        <div className="requests-toolbar">
+          <div className="requests-toolbar-left">
+            <h2 className="requests-list-title">{user.role === "EMPLOYEE" ? "My requests" : "Warehouse requests"}</h2>
+            <Input.Search
+              aria-label="Search requests"
+              placeholder="Search request ID, item, or requester"
+              allowClear
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setFilter("ALL");
+              }}
+            />
+          </div>
+          <div className="requests-toolbar-right">
+            <Select
+              aria-label="Filter requests by status"
+              value={filter}
+              onChange={setFilter}
+              options={["ALL", "PENDING", "APPROVED", "DENIED", "FULFILLED"].map(
+                (value) => ({ value, label: value === "ALL" ? "All statuses" : value }),
+              )}
+            />
+            {user.role === "EMPLOYEE" && (
+              <button type="button" className="requests-new-button" disabled={!assignedVan || busy} onClick={newRequest}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 6a1 1 0 0 0-2 0v5H6a1 1 0 0 0 0 2h5v5a1 1 0 0 0 2 0v-5h5a1 1 0 0 0 0-2h-5V6Z" /></svg>
+                <span>New Request</span>
+              </button>
+            )}
+          </div>
+        </div>
         <Table
+          className="requests-table"
           rowKey="id"
           dataSource={[...requests, ...(showDeleted ? deletedEntries : [])].filter(
             (entry) => (user.role !== "EMPLOYEE" || ownsRequest(entry)) &&

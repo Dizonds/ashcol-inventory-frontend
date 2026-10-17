@@ -122,11 +122,6 @@ export default function SettingsPage({ section = "branches", save, refresh, user
   if (section === "users") {
   return (
       <>
-        <Typography.Title level={3}>User Management</Typography.Title>
-        <Typography.Paragraph type="secondary">
-          Create and review authenticated inventory accounts. Assign the least-privileged
-          role; all accounts automatically use the Taguig warehouse.
-        </Typography.Paragraph>
         {!activeModule && <div className="user-management-actions" aria-label="User management actions">
           <Button className="user-management-action" onClick={() => setActiveModule("create")}>
             <span className="user-management-action-icon">+</span>
