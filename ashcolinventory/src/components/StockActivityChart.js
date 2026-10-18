@@ -1177,6 +1177,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
         width={1100}
         zIndex={1200}
         className="stock-movement-modal"
+        maskClosable={false}
       >
         {selectedDay && (
           <>

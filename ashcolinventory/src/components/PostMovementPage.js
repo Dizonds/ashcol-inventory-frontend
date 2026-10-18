@@ -710,7 +710,6 @@ export default function PostMovementPage({
         okButtonProps={{ disabled: !review, "aria-label": "Yes, Confirm & Post" }}
         cancelButtonProps={{ disabled: busy }}
         closable={!busy}
-        maskClosable={!busy}
       >
         {error && (
           <Alert

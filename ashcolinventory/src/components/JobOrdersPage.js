@@ -182,7 +182,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
       </div>
     </Card>
 
-    <Modal open={creating} title={editing ? `Edit ${formatJobNumber(editing.jobNumber)}` : "Create Job Order"} onCancel={() => { if (!busy) { setCreating(false); setEditing(null); } }} footer={null} maskClosable={!busy}>
+    <Modal open={creating} title={editing ? `Edit ${formatJobNumber(editing.jobNumber)}` : "Create Job Order"} onCancel={() => { if (!busy) { setCreating(false); setEditing(null); } }} footer={null} maskClosable={false}>
       {error && <Alert type="error" title={error} showIcon />}
       <Typography.Paragraph type="secondary">{editing
         ? editing.isCurrent ? "Saving transfers this current job to the selected technician and vehicle. Their previous current job returns to the queue." : "Update the job details and technician. This job stays queued until you assign it."
@@ -209,7 +209,7 @@ export default function JobOrdersPage({ user, serviceVans = [], refresh }) {
       </form>
     </Modal>
 
-    <Modal open={Boolean(viewing)} title={viewing ? `${formatJobNumber(viewing.jobNumber)} · ${viewing.title}` : "Job details"} onCancel={() => setViewing(null)} footer={null} width={1000}>
+    <Modal open={Boolean(viewing)} title={viewing ? `${formatJobNumber(viewing.jobNumber)} · ${viewing.title}` : "Job details"} onCancel={() => setViewing(null)} footer={null} width={1000} maskClosable={false}>
       {viewing && <>
         {detailsError && <Alert type="error" title={detailsError} showIcon />}
         <Descriptions bordered size="small" column={{ xs: 1, sm: 2 }} items={[

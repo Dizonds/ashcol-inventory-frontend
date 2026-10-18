@@ -313,7 +313,7 @@ export default function RequestsPage({
         </Checkbox>
       </Card>
       <Modal title="Denied request details" open={Boolean(viewing)} onCancel={() => setViewing(null)}
-        footer={<Button onClick={() => setViewing(null)}>Close</Button>}>
+        footer={<Button onClick={() => setViewing(null)}>Close</Button>} maskClosable={false}>
         {viewing && (
           <>
             <Descriptions column={1} size="small" bordered items={[
@@ -339,7 +339,7 @@ export default function RequestsPage({
       </Modal>
       <Modal title="Delete Material Request" open={Boolean(deleting)} onOk={deleteRequest}
         onCancel={() => !busy && setDeleting(null)} okText="Delete Request"
-        okButtonProps={{ danger: true }} cancelButtonProps={{ disabled: busy }} confirmLoading={busy} closable={!busy} maskClosable={!busy}>
+        okButtonProps={{ danger: true }} cancelButtonProps={{ disabled: busy }} confirmLoading={busy} closable={!busy} maskClosable={false}>
         <Typography.Paragraph>Delete {deleting ? requestNumber(deleting) : ""} from the request list? Stock balances and ledger entries will stay unchanged. Its history remains available under Show deleted requests.</Typography.Paragraph>
         {error && <Alert type="error" showIcon title={error} />}
       </Modal>
@@ -366,6 +366,7 @@ export default function RequestsPage({
         closable={!busy}
         maskClosable={!busy}
         footer={null}
+        maskClosable={false}
       >
         <form className="material-request-form" onSubmit={submit}>
           <div className="material-request-content">
@@ -505,6 +506,7 @@ export default function RequestsPage({
         onOk={() => transition(denying, "DENIED")}
         confirmLoading={busy}
         okButtonProps={{ disabled: !decisionReason.trim() }}
+        maskClosable={false}
       >
         {error && <Alert type="error" title={error} />}
         <Input.TextArea

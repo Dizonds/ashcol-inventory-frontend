@@ -477,6 +477,7 @@ export default function App() {
                             user={user}
                             save={save}
                             refresh={refresh}
+                            isDark={isDark}
                           />
                         )}
                         </div>}

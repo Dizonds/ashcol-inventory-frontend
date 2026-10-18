@@ -938,15 +938,10 @@ export default function InventorySection({
         open={Boolean(editing)}
         onCancel={() => !busy && setEditing(null)}
         footer={null}
-        width={780}
-        centered
-        maskClosable={!busy}
+        width={700}
       >
-        <form className="inventory-item-form" onSubmit={submit}>
-          <div className="inventory-item-body">
-          {formError && <Alert type="error" showIcon message={formError} />}
-          <section className="inventory-item-section" aria-labelledby="inventory-details-heading">
-          <div className="inventory-item-section-heading"><h3 id="inventory-details-heading">Item details</h3><span>Identify and classify your item</span></div>
+        {formError && <Alert type="error" title={formError} />}
+        <form onSubmit={submit}>
           <div className="form-grid">
             <label className="field">
               SKU / model
@@ -1161,6 +1156,7 @@ export default function InventorySection({
         open={Boolean(viewing)}
         onCancel={() => setViewing(null)}
         footer={null}
+        maskClosable={false}
       >
         {viewing && (
           <Descriptions
@@ -1243,6 +1239,7 @@ export default function InventorySection({
         onCancel={() => setLoadVanItem(null)}
         footer={null}
         destroyOnClose
+        maskClosable={false}
       >
         {loadVanItem && (
           <form
