@@ -1124,6 +1124,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
         width={1100}
         zIndex={1200}
         className="stock-movement-modal"
+        maskClosable={false}
       >
         {selectedDay && (
           <>

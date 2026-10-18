@@ -932,6 +932,7 @@ export default function InventorySection({
         onCancel={() => !busy && setEditing(null)}
         footer={null}
         width={700}
+        maskClosable={false}
       >
         {formError && <Alert type="error" title={formError} />}
         <form onSubmit={submit}>
@@ -1145,6 +1146,7 @@ export default function InventorySection({
         open={Boolean(viewing)}
         onCancel={() => setViewing(null)}
         footer={null}
+        maskClosable={false}
       >
         {viewing && (
           <Descriptions
@@ -1227,6 +1229,7 @@ export default function InventorySection({
         onCancel={() => setLoadVanItem(null)}
         footer={null}
         destroyOnClose
+        maskClosable={false}
       >
         {loadVanItem && (
           <form

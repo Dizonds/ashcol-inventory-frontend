@@ -1007,6 +1007,7 @@ export default function ServiceVansPage({
         onCancel={() => setUnloadItem(null)}
         footer={null}
         destroyOnClose
+        maskClosable={false}
       >
         {unloadItem && (
           <form
@@ -1133,6 +1134,7 @@ export default function ServiceVansPage({
         onCancel={() => setConsumeItem(null)}
         footer={null}
         destroyOnClose
+        maskClosable={false}
       >
         {consumeItem && (
           <form
@@ -1269,6 +1271,7 @@ export default function ServiceVansPage({
         onCancel={() => setNewVanModal(false)}
         footer={null}
         destroyOnClose
+        maskClosable={false}
       >
         <form
           onSubmit={(e) => {
@@ -1381,6 +1384,7 @@ export default function ServiceVansPage({
         onCancel={() => setEditVanModal(false)}
         footer={null}
         destroyOnClose
+        maskClosable={false}
       >
         {editingVan && (
           <form onSubmit={handleEditVanSubmit}>
@@ -1467,7 +1471,7 @@ export default function ServiceVansPage({
         cancelButtonProps={{ disabled: deleteBusy }}
         confirmLoading={deleteBusy}
         closable={!deleteBusy}
-        maskClosable={!deleteBusy}
+        maskClosable={false}
       >
         {deleteBlocked ? (
           <Alert

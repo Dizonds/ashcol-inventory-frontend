@@ -574,6 +574,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
         footer={null}
         destroyOnClose
         width={560}
+        maskClosable={false}
       >
         {formError && (
           <Alert
@@ -680,6 +681,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
         onCancel={() => setViewModalOpen(false)}
         footer={null}
         width={540}
+        maskClosable={false}
       >
         {selectedSupplier && (
           <div className="supplier-detail-card">

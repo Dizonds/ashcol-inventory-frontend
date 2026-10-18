@@ -36,7 +36,7 @@ export default function AccountEditor({ account, administrative = false, current
   }
   return <Modal open title={administrative ? "Edit User Account" : "Edit My Profile"}
     onCancel={() => !busy && onClose()} onOk={() => document.getElementById("account-editor-form").requestSubmit()}
-    okText="Save Changes" confirmLoading={busy} cancelButtonProps={{ disabled: busy }} closable={!busy} maskClosable={!busy}>
+    okText="Save Changes" confirmLoading={busy} cancelButtonProps={{ disabled: busy }} closable={!busy} maskClosable={false}>
     {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
     <form id="account-editor-form" onSubmit={submit}>
       <div className="form-grid">

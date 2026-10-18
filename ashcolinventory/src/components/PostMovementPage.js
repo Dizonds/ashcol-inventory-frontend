@@ -689,6 +689,7 @@ export default function PostMovementPage({
         okButtonProps={{ disabled: !review }}
         cancelButtonProps={{ disabled: busy }}
         closable={!busy}
+        maskClosable={false}
       >
         {error && (
           <Alert
