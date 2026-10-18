@@ -38,6 +38,7 @@ const item = {
   reorderLevel: 0,
 };
 beforeEach(() => {
+  window.history.replaceState(null, "", "/");
   sessionStorage.clear();
   localStorage.clear();
   jest.clearAllMocks();
@@ -48,6 +49,7 @@ test("opens on real login rather than a default manager account", () => {
   expect(screen.getByRole("button", { name: "Sign In" })).toBeInTheDocument();
   expect(screen.queryByText("Branches & Accounts")).not.toBeInTheDocument();
   expect(api).not.toHaveBeenCalled();
+  expect(window.location.pathname).toBe("/Login");
 });
 
 test("rejected login keeps the user signed out and shows the error", async () => {

@@ -24,7 +24,7 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import NotificationStack from "./components/NotificationStack";
 import useLiveUpdates from "./hooks/useLiveUpdates";
-import { allowedPage, PAGE_STORAGE_KEY } from "./utils/navigation";
+import { allowedPage, PAGE_STORAGE_KEY, PAGE_PATHS, pageFromPath, initialPage } from "./utils/navigation";
 import "./App.css";
 
 const TAGUIG_WAREHOUSE = {
@@ -55,7 +55,14 @@ function InventoryLoadingState() {
 export default function App() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
-  const [page, setPage] = useState(() => sessionStorage.getItem(PAGE_STORAGE_KEY) || "dashboard");
+  const [page, setPage] = useState(initialPage);
+  function navigatePage(nextPage) {
+    const destination = allowedPage(nextPage, user?.role);
+    if (window.location.pathname !== PAGE_PATHS[destination]) {
+      window.history.pushState(null, "", PAGE_PATHS[destination]);
+    }
+    setPage(destination);
+  }
   const [serviceVans, setServiceVans] = useState([]);
   function accountUpdated(updated, previous) {
     const renameDriver = (van) => van.driverId === updated.id ||
@@ -111,11 +118,31 @@ export default function App() {
   useLiveUpdates(user?.id, refreshData, endSession);
 
   useEffect(() => {
-    if (!user) return;
+    if (checking) return;
+    if (!user) {
+      window.history.replaceState(null, "", "/Login");
+      return;
+    }
     const nextPage = allowedPage(page, user.role);
     if (nextPage !== page) setPage(nextPage);
-    else sessionStorage.setItem(PAGE_STORAGE_KEY, page);
-  }, [page, user]);
+    sessionStorage.setItem(PAGE_STORAGE_KEY, nextPage);
+    if (window.location.pathname !== PAGE_PATHS[nextPage]) {
+      window.history.replaceState(null, "", PAGE_PATHS[nextPage]);
+    }
+  }, [page, user, checking]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const destination = allowedPage(pageFromPath(window.location.pathname) || "dashboard", user?.role);
+      setPage(destination);
+      if (!checking) {
+        const path = user ? PAGE_PATHS[destination] : "/Login";
+        if (window.location.pathname !== path) window.history.replaceState(null, "", path);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [user, checking]);
 
   // Keep page 100% full screen without shrinking html viewport
   useEffect(() => {
@@ -276,7 +303,7 @@ export default function App() {
             onLogin={(account) => {
               setError("");
               setUser(account);
-              setPage("dashboard");
+              setPage(allowedPage(page, account.role));
             }}
           />
 
@@ -286,7 +313,7 @@ export default function App() {
             {/* SIDEBAR */}
             <Sidebar
               page={page}
-              setPage={setPage}
+              setPage={navigatePage}
               user={user}
               canManage={canManage}
             />
@@ -337,7 +364,7 @@ export default function App() {
                       <InventoryLoadingState />
                     ) : (
                       <>
-                        <div hidden={page !== "dashboard"} aria-hidden={page !== "dashboard"}>
+                        {canManage && <div hidden={page !== "dashboard"} aria-hidden={page !== "dashboard"}>
                           <DashboardPage
                             items={items}
                             requests={requests}
@@ -348,14 +375,14 @@ export default function App() {
                             onStockChartViewSave={setStockChartView}
                             onRestockItem={(id) => {
                               setTargetId(id);
-                              setPage("post_movement");
+                              navigatePage("post_movement");
                             }}
                             onNavigateToInventoryWithFilter={(filter) => {
                               setInventoryFilter(filter);
-                              setPage("inventory");
+                              navigatePage("inventory");
                             }}
                           />
-                        </div>
+                        </div>}
                         {page !== "dashboard" && <div className="page-transition" key={`${page}-${branchId}`}>
                         {page === "inventory" && (
                           <InventorySection
@@ -382,7 +409,7 @@ export default function App() {
                             preselectedFilter={inventoryFilter}
                             onNavigateToPostMovement={() => {
                               setTargetId("");
-                              setPage("post_movement");
+                              navigatePage("post_movement");
                             }}
                           />
                         )}
@@ -398,11 +425,11 @@ export default function App() {
                         {page === "compatibility" && (
                           <CompatibilityLookupPage
                             items={items}
-                            onNavigateToItem={() => setPage("inventory")}
+                            onNavigateToItem={() => navigatePage("inventory")}
                             isDark={isDark}
                           />
                         )}
-                        {page === "suppliers" && (
+                        {page === "suppliers" && canManage && (
                           <SuppliersPage
                             user={user}
                             brands={brands}

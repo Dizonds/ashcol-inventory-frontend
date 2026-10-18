@@ -190,7 +190,7 @@ export default function Sidebar({
     { id: "service_vehicles", label: "Service Vehicles", icon: <ServiceVehiclesIcon />, nodeId: "488:5013" },
     { id: "job_orders", label: "Job Orders", icon: <RequestsIcon /> },
     { id: "compatibility", label: "Model Matching", icon: <ModelMatchingIcon />, nodeId: "488:5016" },
-    { id: "suppliers", label: "Suppliers & Vendors", icon: <SuppliersIcon />, nodeId: "488:5018" },
+    ...(canManage ? [{ id: "suppliers", label: "Suppliers & Vendors", icon: <SuppliersIcon />, nodeId: "488:5018" }] : []),
   ];
 
   const adminOther = user && user.role === "ADMIN" ? [
@@ -202,7 +202,7 @@ export default function Sidebar({
       {/* Dynamic Brand Header */}
       <div
         className="sidebar-brand-header"
-        onClick={() => navigate("dashboard")}
+        onClick={() => navigate(canManage ? "dashboard" : "inventory")}
         title="ASHCOL Smart Stock Tracking"
         data-node-id="488:4985"
       >
@@ -225,7 +225,7 @@ export default function Sidebar({
 
       <div className="sidebar-nav-container">
         {/* Main Menu Section */}
-        <div className="sidebar-section">
+        {canManage && <><div className="sidebar-section">
           <div className="sidebar-section-label" data-node-id="488:4992">
             Main Menu
           </div>
@@ -245,7 +245,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <div className="sidebar-divider" data-node-id="488:4984" />
+        <div className="sidebar-divider" data-node-id="488:4984" /></>}
 
         {/* Operations Section */}
         <div className="sidebar-section">

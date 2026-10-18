@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { api, errorMessage } from "../api";
 import "./LoginPage.css";
-import loginBg from "../assets/loginBgFigma.png";
+import loginBg from "../assets/loginWarehouse.png";
 import ashcolLogo from "../assets/ashcolLogoFigma.png";
 
 export default function LoginPage({ onLogin, initialError }) {
@@ -36,7 +36,7 @@ export default function LoginPage({ onLogin, initialError }) {
       {/* Background with Dark Overlay */}
       <img
         src={loginBg}
-        alt="Ashcol Fleet and Logistics Background"
+        alt="Air conditioning warehouse background"
         className="login-bg-media"
       />
       <div className="login-bg-overlay" aria-hidden="true" />
