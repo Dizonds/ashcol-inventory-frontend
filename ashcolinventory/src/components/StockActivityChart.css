@@ -405,7 +405,7 @@
   display: block;
   width: 100%;
   overflow: visible;
-  cursor: crosshair;
+  cursor: inherit;
   pointer-events: none;
 }
 
@@ -467,17 +467,13 @@
 }
 
 .stock-dot {
-  cursor: pointer;
+  opacity: 0;
+  cursor: inherit;
   transition: r 0.15s ease;
 }
 
-.stock-dot:hover {
-  r: 5.5;
-}
-
-.stock-point-target { pointer-events: all; cursor: pointer; outline: none; }
-.stock-point-target:hover .stock-dot,
-.stock-point-target:focus-visible .stock-dot { r: 5.5; stroke-width: 3; }
+.stock-point-target { pointer-events: all; cursor: inherit; outline: none; }
+.stock-point-target:focus-visible .stock-dot { opacity: 1; r: 5.5; stroke-width: 3; }
 .chart-movement-item { display: flex; flex-direction: column; gap: 4px; }
 .chart-movement-item span { overflow-wrap: anywhere; }
 .chart-movement-summary { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 18px 0 12px; font-variant-numeric: tabular-nums; }
@@ -485,7 +481,7 @@
 .chart-movement-out { color: #d97706; }
 
 .stock-bar {
-  cursor: pointer;
+  cursor: inherit;
   pointer-events: all;
   transition: opacity 0.2s ease;
 }
@@ -824,3 +820,5 @@
     padding-top: 6px;
   }
 }
+.stock-unit-filter { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 12px; }
+.stock-unit-filter select { padding: 8px 10px; border: 1px solid var(--border-light); border-radius: 9px; color: var(--text-main); background: var(--card-bg); font: inherit; }

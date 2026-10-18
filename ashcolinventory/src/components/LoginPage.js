@@ -3,7 +3,6 @@ import { api, errorMessage } from "../api";
 import "./LoginPage.css";
 import loginBg from "../assets/loginBgFigma.png";
 import ashcolLogo from "../assets/ashcolLogoFigma.png";
-import googleIcon from "../assets/googleIcon.svg";
 
 export default function LoginPage({ onLogin, initialError }) {
   const [email, setEmail] = useState("");
@@ -11,27 +10,6 @@ export default function LoginPage({ onLogin, initialError }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-
-  const defaultAccounts = [
-    { fullName: "Admin Master", role: "ADMIN", email: "hatdog@hat.com", password: "hatdog@hat.com" },
-    { fullName: "Miguel Reyes", role: "MANAGER", email: "manager@ashcol.com", password: "hatdog@hat.com" },
-    { fullName: "Adrian Santos", role: "EMPLOYEE", email: "technician@ashcol.com", password: "hatdog@hat.com" },
-    { fullName: "Carlo Navarro", role: "EMPLOYEE", email: "technician2@ashcol.com", password: "hatdog@hat.com" },
-    { fullName: "Joshua Cruz", role: "EMPLOYEE", email: "technician3@ashcol.com", password: "hatdog@hat.com" },
-    { fullName: "Rafael Garcia", role: "EMPLOYEE", email: "technician4@ashcol.com", password: "hatdog@hat.com" },
-  ];
-
-  const [demoAccounts] = useState(() => {
-    try {
-      const local = JSON.parse(localStorage.getItem("ashcol_demo_users") || "[]");
-      const map = new Map();
-      defaultAccounts.forEach((a) => map.set(a.email, a));
-      local.forEach((a) => map.set(a.email, a));
-      return Array.from(map.values());
-    } catch (e) {
-      return defaultAccounts;
-    }
-  });
 
   function submit(event) {
     event.preventDefault();
@@ -164,71 +142,12 @@ export default function LoginPage({ onLogin, initialError }) {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="login-divider" data-node-id="432:7660">
-          <div className="login-divider-line" />
-          <span className="login-divider-text">or</span>
-          <div className="login-divider-line" />
-        </div>
-
-        {/* Google Continue Button */}
-        <button
-          type="button"
-          className="login-google-btn"
-          onClick={() => {
-            setError("Google sign-in is not configured yet. Please sign in with your email and password.");
-          }}
-          data-node-id="432:7665"
-        >
-          <img src={googleIcon} alt="Google" className="login-google-icon" />
-          <span>Continue with Google</span>
-        </button>
-
         {/* Admin note */}
         <p className="login-admin-note" data-node-id="432:7672">
           For account access, contact your administrator.
         </p>
 
-        {/* Quick Demo Access (Helpful for testing credentials) */}
-        <div className="login-demo-section">
-          <span className="login-demo-title">Quick Demo Fill:</span>
-          <div className="login-demo-chips">
-            {demoAccounts.map((acc) => {
-              const icon =
-                acc.role === "ADMIN" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                ) : acc.role === "MANAGER" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                );
-              return (
-                <button
-                  key={acc.email}
-                  type="button"
-                  className="login-demo-chip"
-                  onClick={() => {
-                    setEmail(acc.email);
-                    setPassword(acc.password || "hatdog@hat.com");
-                  }}
-                >
-                  {icon}
-                  <span>{acc.fullName.split(" ")[0]} ({acc.role})</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+
       </div>
     </div>
   );

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Modal,
   Input,
-  InputNumber,
   Checkbox,
   Space,
   Typography,
@@ -11,14 +10,19 @@ import {
   Select,
 } from "antd";
 import { api, errorMessage } from "../api";
-import { formatJobNumber } from "../utils/formatters";
+import { formatJobNumber, formatMovementNumber } from "../utils/formatters";
+import InventoryNumberInput from "./InventoryNumberInput";
 import "./ServiceVansPage.css";
 
 // Vehicle Images matching Figma
 import vanL300 from "../assets/vehicles/van_l300.jpg";
 import vanSuv from "../assets/vehicles/van_suv.jpg";
 import vanPickup from "../assets/vehicles/van_pickup.jpg";
-const VEHICLE_TYPES = ["Cab Chassis", "Cargo Van", "Pickup", "Hatchback", "Micro SUV"];
+const VEHICLE_TYPES = [
+  { value: "Cargo Van", label: "Cargo Van / L300", image: vanL300 },
+  { value: "Pickup", label: "Pickup", image: vanPickup },
+  { value: "SUV", label: "SUV", image: vanSuv },
+];
 
 export default function ServiceVansPage({
   serviceVans = [],
@@ -60,24 +64,31 @@ export default function ServiceVansPage({
   const [consumeBusy, setConsumeBusy] = useState(false);
   const [consumeError, setConsumeError] = useState("");
   const [consumeTicketLoading, setConsumeTicketLoading] = useState(false);
+  const [consumeJobsLoading, setConsumeJobsLoading] = useState(false);
   const [consumeTicketAttempt, setConsumeTicketAttempt] = useState(0);
+  const [consumeSubmitted, setConsumeSubmitted] = useState(false);
+
+  const consumeValidation = {
+    usageId: !consumeUsageId ? "Generate a usage ID before recording materials." : "",
+    jobOrder: !consumeJobOrderId ? "A current job order is required. Ask your admin or manager to assign one." : "",
+    quantity: consumeQty == null || !Number.isFinite(Number(consumeQty)) || Number(consumeQty) <= 0
+      ? "Enter a quantity greater than zero."
+      : Number(consumeQty) > Number(consumeItem?.quantity)
+        ? "Quantity used cannot exceed the available stock."
+        : "",
+    notes: !consumeNotes.trim() ? "Describe where the material was used." : "",
+  };
+  const consumeFieldErrors = consumeSubmitted ? consumeValidation : {};
 
   useEffect(() => {
     if (!consumeItem || !selectedVanId) return;
     let active = true;
     setConsumeTicketLoading(true);
     setConsumeUsageId("");
-    setConsumeJobs([]);
-    setConsumeJobOrderId("");
     setConsumeError("");
-    Promise.all([
-      api("post", `/service-vans/${selectedVanId}/usage-ticket`),
-      api("get", "/job-orders", null, { vanId: selectedVanId, status: "OPEN", current: "true" }),
-    ])
-      .then(([{ data }, jobs]) => {
+    api("post", `/service-vans/${selectedVanId}/usage-ticket`)
+      .then(({ data }) => {
         if (!active) return;
-        setConsumeJobs(jobs.data);
-        setConsumeJobOrderId(jobs.data[0]?.id || "");
         if (typeof data?.usageId !== "string" || !/^USE\d{4,}$/.test(data.usageId)) {
           setConsumeError("A usage ID could not be generated. Please try again.");
           return;
@@ -88,6 +99,27 @@ export default function ServiceVansPage({
       .finally(() => { if (active) setConsumeTicketLoading(false); });
     return () => { active = false; };
   }, [consumeItem, selectedVanId, consumeTicketAttempt]);
+
+  // Refresh the assignment in an open form without replacing its usage ticket or draft.
+  useEffect(() => {
+    if (!consumeItem || !selectedVanId) return;
+    let active = true;
+    setConsumeJobsLoading(true);
+    api("get", "/job-orders", null, { vanId: selectedVanId, status: "OPEN", current: "true" })
+      .then(({ data }) => {
+        if (!active) return;
+        setConsumeJobs(data);
+        setConsumeJobOrderId(data[0]?.id || "");
+      })
+      .catch((err) => {
+        if (!active) return;
+        setConsumeJobs([]);
+        setConsumeJobOrderId("");
+        setConsumeError(errorMessage(err));
+      })
+      .finally(() => { if (active) setConsumeJobsLoading(false); });
+    return () => { active = false; };
+  }, [consumeItem, selectedVanId, consumeTicketAttempt, refresh]);
 
   // New Van Modal state
   const [newVanModal, setNewVanModal] = useState(false);
@@ -123,6 +155,9 @@ export default function ServiceVansPage({
   const isAdmin = user?.role === "ADMIN";
 
   const currentVan = localServiceVans.find((v) => v.id === selectedVanId);
+  useEffect(() => {
+    if (viewMode === "details" && !currentVan) setViewMode("list");
+  }, [viewMode, currentVan]);
   const selectedVanIsDemo = Boolean(currentVan?.isDemo);
   const deleteTarget = localServiceVans.find((van) => van.id === deleteVan?.id) || deleteVan;
   const deleteBlocked = deleteTarget && (
@@ -226,7 +261,7 @@ export default function ServiceVansPage({
     return () => {
       active = false;
     };
-  }, [canManage]);
+  }, [canManage, refresh]);
 
   const assignedVehicles = localServiceVans.filter((van) => van.id !== selectedVanId);
   const currentDriverMatches = (candidate) => {
@@ -274,14 +309,9 @@ export default function ServiceVansPage({
       ];
 
   // Map vehicle image dynamically
-  function getVehicleImage(van, index) {
-    if (!van) return vanPickup;
-    if (["Cab Chassis", "Cargo Van"].includes(van.vehicleType)) return vanL300;
-    if (van.vehicleType === "Pickup") return vanPickup;
-    if (["Hatchback", "Micro SUV"].includes(van.vehicleType)) return vanSuv;
-    const images = [vanL300, vanSuv, vanPickup];
-    const vanNumber = Number(String(van.id).replace(/\D/g, "")) || (index + 1);
-    return images[(vanNumber - 1) % 3];
+  function getVehicleImage(van) {
+    const type = { "Cab Chassis": "Cargo Van", Hatchback: "SUV", "Micro SUV": "SUV" }[van?.vehicleType] || van?.vehicleType;
+    return VEHICLE_TYPES.find((vehicle) => vehicle.value === type)?.image || vanL300;
   }
 
   // Calculate Overview KPIs
@@ -444,18 +474,14 @@ export default function ServiceVansPage({
       status: editVanStatus,
     };
 
-    const updateDriverPromise = editingVan.isDemo
-      ? Promise.resolve()
-      : save("patch", `/service-vans/${editingVan.id}/driver`, { driverId: editVanDriver || "" }, "", undefined, { refresh: false });
+    const update = editingVan.isDemo
+      ? Promise.resolve({ ...editingVan, ...updatedData })
+      : save("patch", `/service-vans/${editingVan.id}`, updatedData, "Vehicle details updated.", undefined, { refresh: false });
 
-    const updateStatusPromise = editingVan.isDemo
-      ? Promise.resolve()
-      : save("patch", `/service-vans/${editingVan.id}/status`, { status: editVanStatus }, "", undefined, { refresh: false });
-
-    Promise.all([updateDriverPromise, updateStatusPromise])
-      .then(() => {
+    update.then((updated) => {
+        if (editingVan.isDemo) updateDemoVehicle?.({ ...editingVan, ...updatedData });
         setLocalServiceVans((current) =>
-          current.map((v) => (v.id === editingVan.id ? { ...v, ...updatedData } : v)),
+          current.map((v) => (v.id === editingVan.id ? { ...v, ...updated } : v)),
         );
         setEditVanModal(false);
       })
@@ -539,9 +565,8 @@ export default function ServiceVansPage({
                   setNewVanModal(true);
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M13 6a1 1 0 0 0-2 0v5H6a1 1 0 0 0 0 2h5v5a1 1 0 0 0 2 0v-5h5a1 1 0 0 0 0-2h-5V6Z" fill="currentColor" />
                 </svg>
                 <span>Add Vehicles</span>
               </button>
@@ -650,7 +675,7 @@ export default function ServiceVansPage({
                     ? "Under Maintenance"
                     : "Available at Base";
                   const loadedCount = vanItemCounts[van.id] ?? 0;
-                const vehicleImg = getVehicleImage(van, index);
+                const vehicleImg = getVehicleImage(van);
 
                 return (
                   <div key={van.id} className="sv-card">
@@ -877,7 +902,7 @@ export default function ServiceVansPage({
             {/* Right Side Vehicle Hero Image (Figma Node 488:7465) */}
             <div className="sv-details-hero-wrap">
               <img
-                src={getVehicleImage(currentVan, 2)}
+                src={getVehicleImage(currentVan)}
                 alt={currentVan.name || currentVan.id}
                 className="sv-details-hero-img"
               />
@@ -942,6 +967,7 @@ export default function ServiceVansPage({
                                   setConsumeUsageId("");
                                   setConsumeNotes("");
                                   setConsumeError("");
+                                  setConsumeSubmitted(false);
                                 }}
                               >
                                 Record Usage
@@ -1013,6 +1039,7 @@ export default function ServiceVansPage({
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (unloadBusy) return;
               setUnloadBusy(true);
               setUnloadError("");
               save(
@@ -1081,7 +1108,9 @@ export default function ServiceVansPage({
             )}
             <div className="sv-modal-field">
               <label>Quantity to Return ({unloadItem.unitOfMeasure})</label>
-              <InputNumber
+              <InventoryNumberInput
+                aria-label="Quantity to return"
+                required
                 min={
                   ["METER", "FOOT", "KG", "LITER"].includes(unloadItem.unitOfMeasure)
                     ? 0.001
@@ -1138,9 +1167,12 @@ export default function ServiceVansPage({
       >
         {consumeItem && (
           <form
+            noValidate
             onSubmit={(event) => {
               event.preventDefault();
-              if (consumeBusy || consumeTicketLoading || !consumeUsageId || !consumeJobOrderId) return;
+              if (consumeBusy || consumeTicketLoading || consumeJobsLoading) return;
+              setConsumeSubmitted(true);
+              if (Object.values(consumeValidation).some(Boolean)) return;
               setConsumeBusy(true);
               setConsumeError("");
               save(
@@ -1150,7 +1182,7 @@ export default function ServiceVansPage({
                   productId: consumeItem.id || consumeItem._id,
                   quantity: consumeQty,
                   usageId: consumeUsageId,
-                  jobOrderId: consumeJobOrderId,
+                  jobId: consumeJobOrderId,
                   notes: consumeNotes,
                 },
                 "Material usage recorded successfully.",
@@ -1185,14 +1217,19 @@ export default function ServiceVansPage({
               Available in van: {consumeItem.quantity} {consumeItem.unitOfMeasure}
             </Typography.Text>
             <div className="sv-modal-field" style={{ marginTop: 12 }}>
-              <label>Usage ID</label>
+              <label htmlFor="consume-usage-id">Usage ID</label>
               <Input
+                id="consume-usage-id"
                 readOnly
-                value={consumeUsageId}
+                value={formatMovementNumber(consumeUsageId)}
                 placeholder={consumeTicketLoading ? "Generating usage ID..." : "Usage ID unavailable"}
                 aria-label="Usage ID"
+                status={consumeFieldErrors.usageId ? "error" : undefined}
+                aria-invalid={Boolean(consumeFieldErrors.usageId)}
+                aria-describedby={consumeFieldErrors.usageId ? "consume-usage-id-error" : undefined}
                 style={{ marginTop: 4 }}
               />
+              {consumeFieldErrors.usageId && <Typography.Text type="danger" id="consume-usage-id-error">{consumeFieldErrors.usageId}</Typography.Text>}
               {!consumeTicketLoading && !consumeUsageId && (
                 <button type="button" className="sv-btn-back" onClick={() => setConsumeTicketAttempt((attempt) => attempt + 1)}>
                   Retry Usage ID
@@ -1200,42 +1237,59 @@ export default function ServiceVansPage({
               )}
             </div>
             <div className="sv-modal-field">
-              <label>Current Job Order</label>
+              <label htmlFor="consume-job-order">Current Job Order *</label>
               <Input
+                id="consume-job-order"
                 readOnly
                 value={consumeJobs[0] ? `${formatJobNumber(consumeJobs[0].jobNumber)} · ${consumeJobs[0].title}` : ""}
-                placeholder={consumeTicketLoading ? "Loading current assignment..." : "No current job assigned"}
+                placeholder={consumeJobsLoading ? "Loading current assignment..." : "No current job assigned"}
                 aria-label="Current Job Order"
+                status={consumeFieldErrors.jobOrder ? "error" : undefined}
+                aria-invalid={Boolean(consumeFieldErrors.jobOrder)}
+                aria-describedby={consumeFieldErrors.jobOrder ? "consume-job-order-error" : undefined}
                 style={{ marginTop: 4 }}
               />
-              {!consumeTicketLoading && consumeJobs.length === 0 && (
+              {consumeFieldErrors.jobOrder && <Typography.Text type="danger" id="consume-job-order-error">{consumeFieldErrors.jobOrder}</Typography.Text>}
+              {!consumeJobsLoading && consumeJobs.length === 0 && !consumeFieldErrors.jobOrder && (
                 <Typography.Paragraph type="secondary">No current job assigned. Ask your admin or manager to assign a job from Job Orders.</Typography.Paragraph>
               )}
               {consumeJobOrderId && <Typography.Paragraph type="secondary">Customer: {consumeJobs[0]?.customerName} · Service location: {consumeJobs[0]?.location}</Typography.Paragraph>}
             </div>
             <div className="sv-modal-field">
-              <label>Quantity Used ({consumeItem.unitOfMeasure})</label>
-              <InputNumber
+              <label htmlFor="consume-quantity">Quantity Used ({consumeItem.unitOfMeasure}) *</label>
+              <InventoryNumberInput
+                id="consume-quantity"
+                aria-label="Quantity Used"
+                status={consumeFieldErrors.quantity ? "error" : undefined}
+                aria-invalid={Boolean(consumeFieldErrors.quantity)}
+                aria-describedby={consumeFieldErrors.quantity ? "consume-quantity-error" : undefined}
                 required
-                min={consumeItem.unitOfMeasure === "UNIT" ? 1 : 0.001}
+                min={["METER", "FOOT", "KG", "LITER"].includes(consumeItem.unitOfMeasure) ? 0.001 : 1}
                 max={consumeItem.quantity}
-                step={consumeItem.unitOfMeasure === "UNIT" ? 1 : 0.1}
-                precision={consumeItem.unitOfMeasure === "UNIT" ? 0 : 3}
+                step={["METER", "FOOT", "KG", "LITER"].includes(consumeItem.unitOfMeasure) ? 0.001 : 1}
+                precision={["METER", "FOOT", "KG", "LITER"].includes(consumeItem.unitOfMeasure) ? 3 : 0}
                 value={consumeQty}
                 onChange={setConsumeQty}
                 style={{ width: "100%", marginTop: 4 }}
               />
+              {consumeFieldErrors.quantity && <Typography.Text type="danger" id="consume-quantity-error">{consumeFieldErrors.quantity}</Typography.Text>}
             </div>
             <div className="sv-modal-field">
-              <label>Notes</label>
+              <label htmlFor="consume-notes">Notes *</label>
               <Input.TextArea
+                id="consume-notes"
+                status={consumeFieldErrors.notes ? "error" : undefined}
+                aria-invalid={Boolean(consumeFieldErrors.notes)}
+                aria-describedby={consumeFieldErrors.notes ? "consume-notes-error" : undefined}
                 required
+                maxLength={200}
                 value={consumeNotes}
                 onChange={(event) => setConsumeNotes(event.target.value)}
                 placeholder="Describe where the material was installed/used"
                 rows={3}
                 style={{ marginTop: 4 }}
               />
+              {consumeFieldErrors.notes && <Typography.Text type="danger" id="consume-notes-error">{consumeFieldErrors.notes}</Typography.Text>}
             </div>
             <Space style={{ width: "100%", justifyContent: "flex-end", marginTop: 16 }}>
               <button
@@ -1248,14 +1302,7 @@ export default function ServiceVansPage({
               <button
                 type="submit"
                 className="sv-btn-add"
-                disabled={
-                  consumeBusy ||
-                  consumeTicketLoading ||
-                  consumeQty <= 0 ||
-                  !consumeUsageId ||
-                  !consumeJobOrderId ||
-                  !consumeNotes.trim()
-                }
+                disabled={consumeBusy || consumeTicketLoading || consumeJobsLoading}
               >
                 {consumeBusy ? "Saving..." : "Record Usage"}
               </button>
@@ -1276,6 +1323,7 @@ export default function ServiceVansPage({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (newVanBusy) return;
             if (!newVanType) { setNewVanError("Select a vehicle type."); return; }
             setNewVanBusy(true);
             setNewVanError("");
@@ -1314,7 +1362,7 @@ export default function ServiceVansPage({
           )}
           <div className="sv-modal-field">
             <label>Vehicle ID / Code</label>
-            <Input readOnly value={newVanId} style={{ marginTop: 4 }} />
+            <Input aria-label="Vehicle ID" readOnly value={newVanId} style={{ marginTop: 4 }} />
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               Generated automatically.
             </Typography.Text>
@@ -1324,6 +1372,8 @@ export default function ServiceVansPage({
             <Input
               required
               placeholder="e.g. Field Service Van Charlie"
+              aria-label="Vehicle name"
+              maxLength={200}
               value={newVanName}
               onChange={(e) => setNewVanName(e.target.value)}
               style={{ marginTop: 4 }}
@@ -1333,12 +1383,19 @@ export default function ServiceVansPage({
             <label>Vehicle Type</label>
             <Select aria-label="New vehicle type" placeholder="Select vehicle type" value={newVanType || undefined}
               disabled={newVanBusy} onChange={setNewVanType}
-              options={VEHICLE_TYPES.map((value) => ({ value, label: value }))} style={{ width: "100%", marginTop: 4 }} />
+              options={VEHICLE_TYPES.map(({ value, label }) => ({ value, label }))} style={{ width: "100%", marginTop: 4 }} />
+            {newVanType && <figure className="sv-vehicle-type-preview">
+              <img src={getVehicleImage({ vehicleType: newVanType })}
+                alt={`${VEHICLE_TYPES.find((type) => type.value === newVanType)?.label} vehicle preview`} />
+              <figcaption>Photo selected automatically by vehicle type.</figcaption>
+            </figure>}
           </div>
           <div className="sv-modal-field">
             <label>Vehicle Plate Number</label>
             <Input
               placeholder="e.g. NCD-1982"
+              aria-label="Vehicle plate number"
+              maxLength={200}
               value={newVanPlate}
               onChange={(e) => setNewVanPlate(e.target.value)}
               style={{ marginTop: 4 }}

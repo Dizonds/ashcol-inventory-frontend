@@ -16,6 +16,8 @@ jest.mock("./api", () => ({
   api: jest.fn(),
   errorMessage: (error) => error.message,
 }));
+jest.mock("@solar-icons/react", () => ({ BusBoldDuotoneIcon: () => null }));
+jest.mock("@ant-design/icons", () => ({ EyeOutlined: () => null }));
 // CRA's older jsdom cannot parse all Ant Design 6 CSS. Browser tests cover styling.
 function render(ui) {
   return testingRender(<StyleProvider mock="server">{ui}</StyleProvider>);
@@ -43,7 +45,7 @@ beforeEach(() => {
 
 test("opens on real login rather than a default manager account", () => {
   render(<App />);
-  expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Sign In" })).toBeInTheDocument();
   expect(screen.queryByText("Branches & Accounts")).not.toBeInTheDocument();
   expect(api).not.toHaveBeenCalled();
 });
@@ -52,13 +54,13 @@ test("rejected login keeps the user signed out and shows the error", async () =>
   api.mockRejectedValue(new Error("Invalid email or password."));
   const onLogin = jest.fn();
   render(<LoginPage onLogin={onLogin} />);
-  fireEvent.change(screen.getByLabelText("Work email"), {
+  fireEvent.change(screen.getByLabelText("Email"), {
     target: { value: "tech@example.test" },
   });
   fireEvent.change(screen.getByLabelText("Password"), {
     target: { value: "wrong-password" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
   expect(
     await screen.findByText("Invalid email or password."),
   ).toBeInTheDocument();
@@ -77,15 +79,15 @@ test("employee can inspect stock but cannot edit, archive or post it", () => {
     />,
   );
   expect(
-    screen.queryByRole("button", { name: "Edit" }),
+    screen.queryByRole("button", { name: "Edit specifications" }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("button", { name: "Archive" }),
+    screen.queryByRole("button", { name: "Archive item" }),
   ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: "Post Movement" }),
   ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Specs" }));
+  fireEvent.click(screen.getByRole("button", { name: "View specifications" }));
   expect(screen.getByText("Item specifications")).toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: "Save item" }),
@@ -103,7 +105,7 @@ test("manager specification save excludes quantity", async () => {
       save={save}
     />,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+  fireEvent.click(screen.getByRole("button", { name: "Edit specifications" }));
   expect(screen.getByLabelText("Current stock (read only)")).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Save item" }));
   await waitFor(() => expect(save).toHaveBeenCalled());
@@ -128,6 +130,7 @@ test("failed movement preserves entered data so it can be corrected", async () =
     screen.getByLabelText("Receipt, transfer reference, or explanation"),
     { target: { value: "Receipt 100" } },
   );
+  await waitFor(() => expect(screen.getByRole("button", { name: "Confirm & Post" })).toBeEnabled());
   fireEvent.click(screen.getByRole("button", { name: "Confirm & Post" }));
   expect(await screen.findByText("STI0001")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Yes, Confirm & Post" }));
@@ -154,8 +157,13 @@ test("dashboard separates units and distinguishes cost from selling value", () =
   render(
     <DashboardPage items={[item, tubing]} requests={[]} canManage={false} />,
   );
-  expect(screen.getByText("3 UNIT")).toBeInTheDocument();
-  expect(screen.getByText("2.5 METER")).toBeInTheDocument();
+  expect(screen.getAllByText("3 UNIT · 2.5 METER").length).toBeGreaterThan(0);
   expect(screen.getByText("₱350.00")).toBeInTheDocument();
   expect(screen.getByText("₱525.00")).toBeInTheDocument();
+});
+
+test("an out-of-stock item is never labelled healthy", () => {
+  render(<DashboardPage items={[{ ...item, quantity: 0 }]} requests={[]} canManage={false} />);
+  expect(screen.getByText("1 Need attention")).toBeInTheDocument();
+  expect(screen.queryByText("Healthy", { exact: true })).not.toBeInTheDocument();
 });

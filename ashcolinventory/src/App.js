@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ConfigProvider,
   theme,
@@ -20,9 +20,11 @@ import CompatibilityLookupPage from "./components/CompatibilityLookupPage";
 import SuppliersPage from "./components/SuppliersPage";
 import ServiceVansPage from "./components/ServiceVansPage";
 import JobOrdersPage from "./components/JobOrdersPage";
-import { DEMO_SERVICE_VEHICLES } from "./data/demoServiceVehicles";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
+import NotificationStack from "./components/NotificationStack";
+import useLiveUpdates from "./hooks/useLiveUpdates";
+import { allowedPage, PAGE_STORAGE_KEY } from "./utils/navigation";
 import "./App.css";
 
 const TAGUIG_WAREHOUSE = {
@@ -53,34 +55,13 @@ function InventoryLoadingState() {
 export default function App() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState(() => sessionStorage.getItem(PAGE_STORAGE_KEY) || "dashboard");
   const [serviceVans, setServiceVans] = useState([]);
-  const [demoServiceVans, setDemoServiceVans] = useState(() =>
-    DEMO_SERVICE_VEHICLES.map((vehicle) => ({ ...vehicle })),
-  );
-  const serviceVehicleList = useMemo(() => {
-    const visibleDemos = user?.role === "EMPLOYEE"
-      ? demoServiceVans.filter((van) => van.driverId === user.id || van.driverName === user.fullName)
-      : demoServiceVans;
-    return [...serviceVans, ...visibleDemos];
-  }, [serviceVans, demoServiceVans, user]);
-
-  function updateDemoVehicle(vehicle) {
-    setDemoServiceVans((current) => current.map((van) => van.id === vehicle.id ? vehicle : van));
-    setNotice({ type: "success", text: "Service vehicle updated." });
-    return vehicle;
-  }
-
-  function removeDemoVehicle(id) {
-    setDemoServiceVans((current) => current.filter((van) => van.id !== id));
-    setNotice({ type: "success", text: "Service vehicle deleted." });
-  }
   function accountUpdated(updated, previous) {
     const renameDriver = (van) => van.driverId === updated.id ||
       (!van.driverId && [previous.fullName, `${previous.fullName} (${previous.role})`].includes(van.driverName))
       ? { ...van, driverName: updated.fullName } : van;
     setServiceVans((current) => current.map(renameDriver));
-    setDemoServiceVans((current) => current.map(renameDriver));
     if (updated.id === user.id) setUser(updated);
   }
   // The main inventory view is the fixed Taguig warehouse for every role.
@@ -92,8 +73,17 @@ export default function App() {
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
   const [dataReady, setDataReady] = useState(false);
+  const hasLoadedData = useRef(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState(null);
+  const [notices, setNotices] = useState([]);
+  const noticeSequence = useRef(0);
+  const dismissNotice = useCallback((id) => {
+    setNotices((current) => current.filter((notice) => notice.id !== id));
+  }, []);
+  function notify(type, text) {
+    const notice = { id: ++noticeSequence.current, type, text };
+    setNotices((current) => [notice, ...current].slice(0, 5));
+  }
   const [targetId, setTargetId] = useState("");
   const [inventoryFilter, setInventoryFilter] = useState(null);
   const [stockChartView, setStockChartView] = useState(null);
@@ -105,6 +95,27 @@ export default function App() {
     localStorage.getItem("ashcol_theme") === "dark",
   );
   const canManage = user && user.role !== "EMPLOYEE";
+  const refreshData = useCallback(() => setRefresh((value) => value + 1), []);
+  const endSession = useCallback(() => {
+    sessionStorage.removeItem("ashcol_inventory_token");
+    sessionStorage.removeItem(PAGE_STORAGE_KEY);
+    hasLoadedData.current = false;
+    setUser(null);
+    setDataReady(false);
+    setServiceVans([]);
+    setItems([]);
+    setBrands([]);
+    setRequests([]);
+    setPage("dashboard");
+  }, []);
+  useLiveUpdates(user?.id, refreshData, endSession);
+
+  useEffect(() => {
+    if (!user) return;
+    const nextPage = allowedPage(page, user.role);
+    if (nextPage !== page) setPage(nextPage);
+    else sessionStorage.setItem(PAGE_STORAGE_KEY, page);
+  }, [page, user]);
 
   // Keep page 100% full screen without shrinking html viewport
   useEffect(() => {
@@ -145,45 +156,51 @@ export default function App() {
     api("get", "/service-vans")
       .then(({ data }) => {
         if (active && Array.isArray(data)) {
-          setServiceVans(data);
+          setServiceVans((current) => JSON.stringify(current) === JSON.stringify(data) ? current : data);
         }
       })
       .catch((err) => {
-        if (active) setError(errorMessage(err));
+        if (active) {
+          if (err.response?.status === 401) endSession();
+          else setError(errorMessage(err));
+        }
       });
     return () => {
       active = false;
     };
-  }, [user, refresh]);
+  }, [user, refresh, endSession]);
 
   useEffect(() => {
     if (!user || !branchId) return;
     let active = true;
-    setDataReady(false);
-    setLoading(true);
+    setLoading(!hasLoadedData.current);
     setError("");
     Promise.all([
       api("get", "/products", null, { branchId }),
       api("get", "/brands"),
       api("get", "/requests", null, { branchId }),
+      api("get", "/auth/me"),
     ])
-      .then(([stock, brandList, requestList]) => {
+      .then(([stock, brandList, requestList, account]) => {
         if (active) {
-          setItems(stock.data);
-          setBrands(brandList.data);
-          setRequests(requestList.data);
+          setItems((current) => JSON.stringify(current) === JSON.stringify(stock.data) ? current : stock.data);
+          setBrands((current) => JSON.stringify(current) === JSON.stringify(brandList.data) ? current : brandList.data);
+          setRequests((current) => JSON.stringify(current) === JSON.stringify(requestList.data) ? current : requestList.data);
+          setUser((current) => JSON.stringify(current) === JSON.stringify(account.data) ? current : account.data);
+          hasLoadedData.current = true;
           setDataReady(true);
         }
       })
       .catch((err) => {
         if (active) {
-          setItems([]);
-          setRequests([]);
-          setDataReady(false);
+          if (!hasLoadedData.current) {
+            setItems([]);
+            setRequests([]);
+            setDataReady(false);
+          }
           setError(errorMessage(err));
           if (err.response && err.response.status === 401) {
-            sessionStorage.removeItem("ashcol_inventory_token");
-            setUser(null);
+            endSession();
           }
         }
       })
@@ -193,20 +210,19 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [user, branchId, refresh]);
+  }, [user, branchId, refresh, endSession]);
 
   function save(method, path, data, success, params, options = {}) {
     return api(method, path, data, params)
       .then((response) => {
         if (options.refresh !== false) setRefresh((value) => value + 1);
-        setNotice({ type: "success", text: success });
+        if (success) notify("success", success);
         return response.data;
       })
       .catch((err) => {
-        setNotice({ type: "error", text: errorMessage(err) });
+        notify("error", errorMessage(err));
         if (err.response && err.response.status === 401) {
-          sessionStorage.removeItem("ashcol_inventory_token");
-          setUser(null);
+          endSession();
         }
         throw err;
       });
@@ -214,21 +230,15 @@ export default function App() {
   function logout() {
     api("post", "/auth/logout")
       .then(() => {
-        sessionStorage.removeItem("ashcol_inventory_token");
-        setUser(null);
-        setServiceVans([]);
-        setItems([]);
-        setRequests([]);
-        setDataReady(false);
+        endSession();
         setError("");
-        setNotice(null);
+        setNotices([]);
         setPage("dashboard");
       })
       .catch((err) => {
         if (err.response && err.response.status === 401) {
-          sessionStorage.removeItem("ashcol_inventory_token");
-          setUser(null);
-        } else setNotice({ type: "error", text: errorMessage(err) });
+          endSession();
+        } else notify("error", errorMessage(err));
       });
   }
   return (
@@ -249,6 +259,7 @@ export default function App() {
       }}
     >
       <div className={`inventory-app ${isDark ? "dark" : ""}`}>
+        <NotificationStack notices={notices} onDismiss={dismissNotice} />
 
         {/* ── CHECKING SESSION ── */}
         {checking ? (
@@ -320,24 +331,13 @@ export default function App() {
                     style={{ marginBottom: 16 }}
                   />
                 )}
-                {notice && (
-                  <Alert
-                    type={notice.type}
-                    title={notice.text}
-                    showIcon
-                    closable
-                    onClose={() => setNotice(null)}
-                    style={{ marginBottom: 16 }}
-                  />
-                )}
-
                 <Spin spinning={loading}>
-                  {!error && branchId && (
+                  {(!error || dataReady) && branchId && (
                     loading && !dataReady ? (
                       <InventoryLoadingState />
                     ) : (
-                      <div className="page-transition" key={`${page}-${branchId}`}>
-                        {page === "dashboard" && (
+                      <>
+                        <div hidden={page !== "dashboard"} aria-hidden={page !== "dashboard"}>
                           <DashboardPage
                             items={items}
                             requests={requests}
@@ -355,7 +355,8 @@ export default function App() {
                               setPage("inventory");
                             }}
                           />
-                        )}
+                        </div>
+                        {page !== "dashboard" && <div className="page-transition" key={`${page}-${branchId}`}>
                         {page === "inventory" && (
                           <InventorySection
                             items={
@@ -372,10 +373,12 @@ export default function App() {
                                 : items
                             }
                             brands={brands}
+                            isDark={isDark}
                             serviceVans={serviceVans}
                             user={user}
                             branchId={branchId}
                             save={save}
+                            refresh={refresh}
                             preselectedFilter={inventoryFilter}
                             onNavigateToPostMovement={() => {
                               setTargetId("");
@@ -385,9 +388,7 @@ export default function App() {
                         )}
                         {(page === "service_vehicles" || page === "service_vans") && (
                           <ServiceVansPage
-                            serviceVans={serviceVehicleList}
-                            updateDemoVehicle={updateDemoVehicle}
-                            removeDemoVehicle={removeDemoVehicle}
+                            serviceVans={serviceVans}
                             branchId={branchId}
                             user={user}
                             save={save}
@@ -404,7 +405,9 @@ export default function App() {
                         {page === "suppliers" && (
                           <SuppliersPage
                             user={user}
+                            brands={brands}
                             save={save}
+                            onBrandsChange={setBrands}
                             refresh={refresh}
                             items={items}
                             isDark={isDark}
@@ -412,6 +415,7 @@ export default function App() {
                         )}
                         {page === "requests" && (
                           <RequestsPage
+                            isDark={isDark}
                             items={items}
                             requests={requests}
                             user={user}
@@ -426,6 +430,7 @@ export default function App() {
                         {page === "post_movement" && canManage && (
                           <PostMovementPage
                             items={items}
+                            brands={brands}
                             branchId={branchId}
                             user={user}
                             save={save}
@@ -448,7 +453,8 @@ export default function App() {
                             isDark={isDark}
                           />
                         )}
-                      </div>
+                        </div>}
+                      </>
                     )
                   )}
                 </Spin>

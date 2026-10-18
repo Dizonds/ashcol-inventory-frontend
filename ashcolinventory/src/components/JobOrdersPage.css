@@ -1,9 +1,41 @@
-.job-orders-page { display: flex; flex-direction: column; gap: 18px; }
-.job-orders-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.job-orders-heading h3 { margin: 0 0 6px; }
-.job-orders-heading .ant-typography { margin-bottom: 0; }
-.job-orders-filters { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-.job-orders-filters .ant-input-search { flex: 1; min-width: 220px; }
-.job-orders-filters .ant-select { min-width: 160px; }
+.job-orders-page { display: flex; flex-direction: column; gap: 18px; width: 100%; }
+.job-orders-card.ant-card { border: 1px solid rgba(0, 0, 0, .12); border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, .03); }
+.job-orders-card .ant-card-body { display: flex; flex-direction: column; gap: 24px; padding: 24px; }
+.job-orders-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; width: 100%; }
+.job-orders-toolbar-left, .job-orders-toolbar-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.job-orders-toolbar-left { flex: 1 1 500px; }
+.job-orders-toolbar-right { justify-content: flex-end; }
+.job-orders-title-group { display: flex; align-items: center; gap: 10px; min-width: max-content; }
+.job-orders-title-icon { width: 36px; height: 36px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: #f0fbf0; color: #13a506; font-size: 25px; line-height: 1; }
+.job-orders-title-group h3.ant-typography { margin: 0 0 3px; font-size: 22px; }
+.job-orders-title-group p.ant-typography { margin: 0; font-size: 12px; }
+.job-orders-search.ant-input-search { width: 340px; max-width: 100%; }
+.job-orders-toolbar-right > .ant-select { min-width: 150px; }
+.job-orders-create-btn { height: 48px; padding: 0 20px 0 14px; display: inline-flex; align-items: center; gap: 10px; border: 0; border-radius: 12px; background: linear-gradient(180deg, #13c906 0%, #096303 100%); color: #f8f8f8; font-family: inherit; font-size: 15.5px; font-weight: 500; white-space: nowrap; cursor: pointer; box-shadow: 0 7px 12px rgba(19, 201, 6, .28), 0 7px 8.5px rgba(0, 0, 0, .2); transition: transform .22s ease, box-shadow .22s ease, filter .22s ease; }
+.job-orders-create-btn:hover { transform: translateY(-1.5px); filter: brightness(1.05); box-shadow: 0 9px 16px rgba(19, 201, 6, .38), 0 8px 10px rgba(0, 0, 0, .25); }
+.job-orders-create-btn:active { transform: translateY(0); }
+.job-orders-create-btn:focus-visible { outline: 3px solid rgba(19, 201, 6, .3); outline-offset: 2px; }
+.job-orders-create-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.job-orders-table { width: 100%; overflow-x: auto; border-radius: 8px; }
+.job-orders-table .ant-table-thead > tr > th { background: #f5f8f6; color: #202923; font-weight: 600; }
+.job-orders-table .ant-table-tbody > tr > td { vertical-align: middle; }
+.job-orders-actions { flex-wrap: nowrap; }
+.job-orders-action-btn.ant-btn { width: 32px; min-width: 32px; height: 32px; padding: 0; border-radius: 8px; font-size: 16px; }
 .job-order-form { display: flex; flex-direction: column; gap: 14px; }
 .job-orders-form-actions { justify-content: flex-end; width: 100%; }
+.inventory-app.dark .job-orders-card.ant-card { background: #142018; border-color: rgba(255, 255, 255, .08); box-shadow: 0 4px 24px rgba(0, 0, 0, .35); }
+.inventory-app.dark .job-orders-title-icon { background: rgba(19, 201, 6, .12); color: #49e85c; }
+.inventory-app.dark .job-orders-table .ant-table-thead > tr > th { background: #1b2a21; color: #e5f1ea; }
+.inventory-app.dark .job-orders-table .ant-table-tbody > tr > td { background: #142018; }
+@media (max-width: 900px) {
+  .job-orders-card .ant-card-body { padding: 18px; }
+  .job-orders-toolbar-left { flex-basis: 100%; }
+  .job-orders-search.ant-input-search { flex: 1; min-width: 220px; }
+}
+@media (max-width: 600px) {
+  .job-orders-toolbar-left, .job-orders-toolbar-right { width: 100%; }
+  .job-orders-toolbar-right { justify-content: flex-start; }
+  .job-orders-title-group { min-width: 0; }
+  .job-orders-title-group p.ant-typography { max-width: 260px; }
+  .job-orders-create-btn { flex: 1; justify-content: center; }
+}

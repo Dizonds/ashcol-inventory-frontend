@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Alert,
   Modal,
@@ -7,6 +7,7 @@ import {
 } from "antd";
 import { api, errorMessage } from "../api";
 import { formatMovementNumber } from "../utils/formatters";
+import InventoryNumberInput from "./InventoryNumberInput";
 import "./PostMovementPage.css";
 
 const isContinuousUnit = (unit) =>
@@ -14,6 +15,7 @@ const isContinuousUnit = (unit) =>
 
 export default function PostMovementPage({
   items = [],
+  brands: catalogBrands = [],
   branchId,
   save,
   preselectedItemId,
@@ -24,6 +26,7 @@ export default function PostMovementPage({
   );
 
   const [productId, setProductId] = useState("");
+  const appliedPreselection = useRef(null);
   const [itemType, setItemType] = useState("");
   const [brand, setBrand] = useState("");
   const [operation, setOperation] = useState("STOCK_IN");
@@ -65,9 +68,11 @@ export default function PostMovementPage({
 
   // Handle preselected item from props
   useEffect(() => {
-    if (preselectedItemId) {
+    if (!preselectedItemId) appliedPreselection.current = null;
+    if (preselectedItemId && appliedPreselection.current !== preselectedItemId) {
       const target = activeItems.find((i) => i.id === preselectedItemId);
       if (target) {
+        appliedPreselection.current = preselectedItemId;
         setItemType(target.itemType || "");
         setBrand(target.brand || "");
         setProductId(target.id);
@@ -80,7 +85,10 @@ export default function PostMovementPage({
 
   const itemTypes = useMemo(() => {
     return [
-      ...new Set(activeItems.map((item) => item.itemType).filter(Boolean)),
+      ...new Set([
+        "AC Unit", "Material / Part", "Spare Part", "Consumable", "Tool / Equipment",
+        ...activeItems.map((item) => item.itemType).filter(Boolean),
+      ]),
     ].sort();
   }, [activeItems]);
 
@@ -89,9 +97,12 @@ export default function PostMovementPage({
       ? activeItems.filter((item) => item.itemType === itemType)
       : activeItems;
     return [
-      ...new Set(list.map((item) => item.brand).filter(Boolean)),
+      ...new Set([
+        ...catalogBrands.map((entry) => typeof entry === "string" ? entry : entry.name).filter(Boolean),
+        ...list.map((item) => item.brand).filter(Boolean),
+      ]),
     ].sort();
-  }, [activeItems, itemType]);
+  }, [activeItems, itemType, catalogBrands]);
 
   const filteredItems = useMemo(() => {
     return activeItems.filter((item) => {
@@ -120,6 +131,10 @@ export default function PostMovementPage({
     currentPage * pageSize,
   );
 
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   function selectRestockItem(item) {
     if (busy || reviewOpen) return;
     setItemType(item.itemType || "");
@@ -133,20 +148,29 @@ export default function PostMovementPage({
   }
 
   const stockIn = operation === "STOCK_IN";
+  function changeOperation(nextOperation) {
+    if (busy || reviewOpen || nextOperation === operation) return;
+    setOperation(nextOperation);
+    setItemType("");
+    setBrand("");
+    setProductId("");
+    setReason(nextOperation === "STOCK_IN"
+      ? "Supplier Delivery / Restock"
+      : "Client Installation / Site Project");
+  }
+
   const reasons = stockIn
     ? [
         "Supplier Delivery / Restock",
         "Unused Material Return",
         "Defective / RMA Replacement Return",
         "Audit Correction (Surplus)",
-        "Service Van Return",
       ]
     : [
         "Client Installation / Site Project",
         "Parts Sale",
         "Damaged / Defective Write-off",
         "Audit Correction (Shortage)",
-        "Service Van Stock Dispatch",
       ];
 
   function submit(event) {
@@ -155,6 +179,10 @@ export default function PostMovementPage({
     setError("");
     if (!selected || !quantity || quantity <= 0) {
       setError("Select an item and enter a positive quantity.");
+      return;
+    }
+    if (!notes.trim()) {
+      setError("Enter a receipt, reference, or explanation.");
       return;
     }
     if (!stockIn && quantity > selected.quantity) {
@@ -240,16 +268,11 @@ export default function PostMovementPage({
                   role="radio"
                   aria-checked={stockIn}
                   tabIndex={0}
-                  onClick={() => {
-                    if (busy || reviewOpen) return;
-                    setOperation("STOCK_IN");
-                    setReason("Supplier Delivery / Restock");
-                  }}
+                  onClick={() => changeOperation("STOCK_IN")}
                   onKeyDown={(e) => {
                     if (e.key === " " || e.key === "Enter") {
-                      if (busy || reviewOpen) return;
-                      setOperation("STOCK_IN");
-                      setReason("Supplier Delivery / Restock");
+                      e.preventDefault();
+                      changeOperation("STOCK_IN");
                     }
                   }}
                 >
@@ -274,16 +297,11 @@ export default function PostMovementPage({
                   role="radio"
                   aria-checked={!stockIn}
                   tabIndex={0}
-                  onClick={() => {
-                    if (busy || reviewOpen) return;
-                    setOperation("STOCK_OUT");
-                    setReason("Client Installation / Site Project");
-                  }}
+                  onClick={() => changeOperation("STOCK_OUT")}
                   onKeyDown={(e) => {
                     if (e.key === " " || e.key === "Enter") {
-                      if (busy || reviewOpen) return;
-                      setOperation("STOCK_OUT");
-                      setReason("Client Installation / Site Project");
+                      e.preventDefault();
+                      changeOperation("STOCK_OUT");
                     }
                   }}
                 >
@@ -438,17 +456,19 @@ export default function PostMovementPage({
                   Quantity {selected ? `(${selected.unitOfMeasure})` : ""}
                 </label>
                 <div className="pm-input-wrap">
-                  <input
+                  <InventoryNumberInput
                     id="pm-quantity"
                     aria-label="Quantity"
-                    type="number"
+                    required
                     className="pm-input-number"
                     placeholder="Select Quantity"
                     disabled={busy || reviewOpen}
                     min={isContinuousUnit(selected?.unitOfMeasure) ? 0.001 : 1}
-                    step={isContinuousUnit(selected?.unitOfMeasure) ? 0.1 : 1}
+                    step={isContinuousUnit(selected?.unitOfMeasure) ? 0.001 : 1}
+                    precision={isContinuousUnit(selected?.unitOfMeasure) ? 3 : 0}
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value) || 0)}
+                    onChange={setQuantity}
+                    style={{ width: "100%" }}
                   />
                 </div>
               </div>
@@ -603,6 +623,7 @@ export default function PostMovementPage({
                               <button
                                 type="button"
                                 className="pm-btn-restock"
+                                disabled={busy || reviewOpen}
                                 onClick={() => selectRestockItem(item)}
                               >
                                 Restock
@@ -686,10 +707,9 @@ export default function PostMovementPage({
         onOk={confirmPost}
         okText="Yes, Confirm & Post"
         confirmLoading={busy}
-        okButtonProps={{ disabled: !review }}
+        okButtonProps={{ disabled: !review, "aria-label": "Yes, Confirm & Post" }}
         cancelButtonProps={{ disabled: busy }}
         closable={!busy}
-        maskClosable={false}
       >
         {error && (
           <Alert

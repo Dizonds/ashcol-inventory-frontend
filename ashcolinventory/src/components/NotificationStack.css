@@ -1,0 +1,108 @@
+.notification-stack {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2000;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.notice-layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  transform: translateY(calc(var(--stack-index) * 12px)) scale(calc(1 - var(--stack-index) * 0.035));
+  transform-origin: top center;
+  transition: transform 240ms ease;
+}
+
+.notice-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 18px 14px 18px 18px;
+  border: 1px solid var(--border-light);
+  border-left: 3px solid #059669;
+  border-radius: 14px;
+  background: var(--card-bg, #fff);
+  color: var(--text-main, #111b14);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
+  pointer-events: auto;
+  animation: notice-enter 200ms ease-out both;
+}
+
+.notice-layer:not(:first-child) .notice-card {
+  pointer-events: none;
+}
+
+.notice-card p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.notice-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: #059669;
+}
+
+.notice-error {
+  border-left-color: #dc2626;
+}
+
+.notice-error .notice-icon {
+  color: #dc2626;
+}
+
+.notice-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary, #4a5e55);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.notice-close:hover,
+.notice-close:focus-visible {
+  background: var(--border-light, rgba(0, 0, 0, 0.06));
+}
+
+.notice-card.is-leaving {
+  pointer-events: none;
+  animation: notice-exit 320ms ease-in forwards;
+}
+
+@keyframes notice-enter {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes notice-exit {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(calc(100% + 32px)); }
+}
+
+@media (max-width: 600px) {
+  .notification-stack { top: 16px; right: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice-layer { transition: none; }
+  .notice-card { animation: none; }
+  .notice-card.is-leaving { animation: notice-fade 100ms linear forwards; }
+  @keyframes notice-fade { to { opacity: 0; } }
+}

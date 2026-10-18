@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Dropdown } from "antd";
 
 // AC Type / Brand Product Images
@@ -250,39 +250,14 @@ export default function CompatibilityLookupPage({ items = [], onNavigateToItem, 
   const matchingParts = useMemo(() => {
     if (!selectedUnit) return [];
 
+    const sku = String(selectedUnit.sku || "").trim().toUpperCase();
+    const name = String(selectedUnit.name || "").trim().toUpperCase();
     return items.filter((part) => {
-      if (part.id === selectedUnit.id || part.archived) return false;
-
-      // Explicit match in compatibleModels array
-      const hasExplicitMatch =
-        Array.isArray(part.compatibleModels) &&
-        part.compatibleModels.some((model) => {
-          const m = String(model).toUpperCase();
-          return (
-            m === selectedUnit.sku.toUpperCase() ||
-            m === selectedUnit.name.toUpperCase() ||
-            selectedUnit.name.toUpperCase().includes(m) ||
-            selectedUnit.sku.toUpperCase().includes(m)
-          );
-        });
-
-      // Brand match (e.g. Kolin parts match Kolin ACs, Carrier match Carrier)
-      const isBrandMatch =
-        part.brand &&
-        selectedUnit.brand &&
-        part.brand.toLowerCase() === selectedUnit.brand.toLowerCase();
-
-      // Universal AC supplies (refrigerants, tubing, capacitor, electrical, tools)
-      const isUniversalSupply =
-        part.category === "Refrigerant" ||
-        part.category === "Refrigerants" ||
-        part.category === "Copper Tubing" ||
-        part.category === "Electrical" ||
-        part.category === "Capacitors" ||
-        part.category === "Compressors" ||
-        part.category === "Tools & Equipment";
-
-      return hasExplicitMatch || isBrandMatch || isUniversalSupply;
+      if (part.itemType === "AC Unit" || part.archived) return false;
+      return Array.isArray(part.compatibleModels) && part.compatibleModels.some((model) => {
+        const reference = String(model).trim().toUpperCase();
+        return reference && (reference === sku || reference === name);
+      });
     });
   }, [items, selectedUnit]);
 
@@ -304,8 +279,13 @@ export default function CompatibilityLookupPage({ items = [], onNavigateToItem, 
 
   // 4. Metric calculations matching Figma Node 488:7595, 488:7602, 488:7609
   const compatibleItemsCount = filteredParts.length;
-  const totalStockUnits = useMemo(() => {
-    return filteredParts.reduce((acc, p) => acc + (Number(p.quantity) || 0), 0);
+  const stockByUnit = useMemo(() => {
+    const totals = filteredParts.reduce((result, part) => {
+      const unit = part.unitOfMeasure || "UNIT";
+      result[unit] = Math.round(((result[unit] || 0) + Number(part.quantity || 0)) * 1000) / 1000;
+      return result;
+    }, {});
+    return Object.entries(totals).map(([unit, total]) => `${total} ${unit}`).join(" · ") || "0";
   }, [filteredParts]);
   const suppliersCount = useMemo(() => {
     return new Set(filteredParts.map((p) => p.supplier).filter(Boolean)).size;
@@ -314,6 +294,7 @@ export default function CompatibilityLookupPage({ items = [], onNavigateToItem, 
   // 5. Pagination
   const totalEntries = filteredParts.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
+  useEffect(() => { setCurrentPage((page) => Math.min(page, totalPages)); }, [totalPages]);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedParts = useMemo(() => {
     return filteredParts.slice(startIndex, startIndex + pageSize);
@@ -414,12 +395,8 @@ export default function CompatibilityLookupPage({ items = [], onNavigateToItem, 
 
   return (
     <div className={`model-matching-container ${isDark ? "dark" : ""}`}>
-      {/* ====================================================================
-          1. MODEL MATCHING OVERVIEW CARD
-          ==================================================================== */}
+      {/* Search and model selection controls */}
       <div className="model-matching-overview-card">
-        <h2 className="model-matching-overview-title">Model Matching Overview</h2>
-
         <div className="model-matching-overview-actions">
           {/* Inset Search Box (Node 488:7622) */}
           <div className="model-matching-search-box">
@@ -429,7 +406,7 @@ export default function CompatibilityLookupPage({ items = [], onNavigateToItem, 
             <input
               type="text"
               className="model-matching-search-input"
-              placeholder="Search SKU, name, or stock"
+              placeholder="Search SKU, name, or supplier"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -494,12 +471,12 @@ export default function CompatibilityLookupPage({ items = [], onNavigateToItem, 
 
         {/* Card 2: Total Stock Units */}
         <div className="model-matching-metric-card">
-          <h1 className="model-matching-metric-value">{totalStockUnits}</h1>
+          <h1 className="model-matching-metric-value model-matching-unit-totals">{stockByUnit}</h1>
           <div className="model-matching-metric-label-group">
             <span className="model-matching-metric-icon">
               <ShippingTruckIcon size={24} />
             </span>
-            <span className="model-matching-metric-label">Total Stock Units</span>
+            <span className="model-matching-metric-label">Stock by unit</span>
           </div>
         </div>
 

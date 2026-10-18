@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Modal, Alert, message, Dropdown } from "antd";
+import { Modal, Alert, Dropdown } from "antd";
 import { api, errorMessage } from "../api";
+import BrandLogo from "./BrandLogo";
 import "./SuppliersPage.css";
 
 /* --- EXACT ICONS FROM FIGMA NODE 488:7791 --- */
@@ -113,30 +114,31 @@ function PenIcon({ size = 17 }) {
   );
 }
 
-// Delete / Trash Icon (Figma node 457:15685)
-function TrashIcon({ size = 17 }) {
+function ArchiveIcon({ size = 17 }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9h16v11H4V9ZM3 4h18v5H3V4ZM9 13h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+function RestoreIcon({ size = 17 }) {
   return (
-    <svg width={size} height={size * 1.1} viewBox="0 0 19.5 21.5" fill="none">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
-        d="M17.25 4.25L16.6303 14.2751C16.4719 16.8365 16.3928 18.1171 15.7508 19.0379C15.4333 19.4931 15.0247 19.8773 14.5507 20.166C13.5921 20.75 12.309 20.75 9.74274 20.75C7.17312 20.75 5.8883 20.75 4.92905 20.1649C4.4548 19.8757 4.046 19.4908 3.72868 19.0348C3.08688 18.1126 3.00945 16.8301 2.85461 14.2652L2.25 4.25"
+        d="M4 10a8 8 0 1 1 0 5M4 4v6h6"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
       />
-      <path
-        d="M0.75 4.25H18.75M13.8057 4.25L13.1231 2.84173C12.6696 1.90626 12.4428 1.43852 12.0517 1.14681C11.965 1.0821 11.8731 1.02454 11.777 0.974702C11.3439 0.750001 10.8241 0.750001 9.78453 0.750001C8.71883 0.750001 8.18598 0.750001 7.74568 0.984121C7.6481 1.03601 7.55498 1.0959 7.46729 1.16317C7.07164 1.4667 6.85063 1.95155 6.40861 2.92126L5.80292 4.25"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path d="M7.25 15.25L7.25 9.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M12.25 15.25L12.25 9.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
 
-export default function SuppliersPage({ user, save, refresh, items = [], isDark = false }) {
+export default function SuppliersPage({ user, save, refresh, items = [], brands = [], onBrandsChange, isDark = false }) {
+  const [showBrands, setShowBrands] = useState(false);
+  const [newBrand, setNewBrand] = useState("");
+  const [brandBusy, setBrandBusy] = useState(false);
+  const [brandError, setBrandError] = useState("");
   const [suppliers, setSuppliers] = useState([]);
+  const [archived, setArchived] = useState(false);
+  const [supplierActionBusy, setSupplierActionBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -168,7 +170,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
     let active = true;
     setLoading(true);
     setError("");
-    api("get", "/suppliers")
+    api("get", "/suppliers", null, { archived })
       .then(({ data }) => {
         if (active) {
           setSuppliers(Array.isArray(data) ? data : []);
@@ -183,7 +185,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
     return () => {
       active = false;
     };
-  }, [refresh]);
+  }, [refresh, archived]);
 
   // Filter & Search Logic
   const filteredSuppliers = useMemo(() => {
@@ -212,6 +214,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
   // Pagination calculation
   const totalEntries = filteredSuppliers.length;
   const totalPages = Math.max(1, Math.ceil(totalEntries / pageSize));
+  useEffect(() => { setCurrentPage((page) => Math.min(page, totalPages)); }, [totalPages]);
   const startIndex = (currentPage - 1) * pageSize;
   const currentEntries = filteredSuppliers.slice(startIndex, startIndex + pageSize);
 
@@ -249,40 +252,58 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
     setViewModalOpen(true);
   }
 
-  function handleDelete(supplier) {
+  async function changeSupplierArchive(supplier, restore = false) {
+    if (supplierActionBusy || !canManage) return;
+    const id = supplier.id || supplier._id;
+    setSupplierActionBusy(true);
+    setError("");
+    try {
+      await save(restore ? "post" : "delete", `/suppliers/${id}${restore ? "/restore" : ""}`, null, restore ? "Supplier restored." : "Supplier archived.");
+      setSuppliers((current) => current.filter((item) => (item.id || item._id) !== id));
+    } catch (err) {
+      setError(errorMessage(err));
+      throw err;
+    } finally {
+      setSupplierActionBusy(false);
+    }
+  }
+
+  function handleArchive(supplier) {
     Modal.confirm({
-      title: "Delete Supplier Record",
-      content: `Are you sure you want to remove "${supplier.name}"? This action cannot be undone.`,
-      okText: "Yes, Delete",
-      okType: "danger",
+      title: "Archive Supplier",
+      content: `Archive "${supplier.name}"? You can restore it from Archived Suppliers. Existing inventory records will keep their supplier details.`,
+      okText: "Archive Supplier",
       cancelText: "Cancel",
-      onOk: () => {
-        const id = supplier.id || supplier._id;
-        if (!id) {
-          message.error("Supplier ID not found.");
-          return;
-        }
-        return save("delete", `/suppliers/${id}`, null, "Supplier deleted.")
-          .then(() => {
-            setSuppliers((prev) => prev.filter((item) => (item.id || item._id) !== id));
-          })
-          .catch((err) => {
-            message.error(errorMessage(err));
-          });
-      },
+      onOk: () => changeSupplierArchive(supplier),
     });
   }
 
   function handleFormSubmit(e) {
     e.preventDefault();
-    if (!formData.name.trim()) {
+    if (busy) return;
+    const clean = Object.fromEntries(Object.entries(formData).map(([key, value]) => [key, value.trim()]));
+    if (!clean.name) {
       setFormError("Supplier name is required.");
       return;
     }
+    if (Object.values(clean).some((value) => value.length > 200)) {
+      setFormError("Supplier details must be 200 characters or fewer per field.");
+      return;
+    }
+    const phoneDigits = clean.phone.replace(/\D/g, "");
+    if (clean.phone && (!/^\+?[0-9][0-9 ()-]*[0-9]$/.test(clean.phone) || phoneDigits.length < 7 || phoneDigits.length > 15 || clean.phone.length > 30)) {
+      setFormError("Phone number must contain 7–15 digits, with an optional leading +, spaces, hyphens or parentheses.");
+      return;
+    }
+    if (clean.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean.email)) {
+      setFormError("Enter a valid supplier email address.");
+      return;
+    }
+    clean.email = clean.email.toLowerCase();
     setBusy(true);
     setFormError("");
 
-    save("post", "/suppliers", formData, formData.id ? "Supplier updated." : "Supplier registered.")
+    save("post", "/suppliers", clean, formData.id ? "Supplier updated." : "Supplier registered.")
       .then((savedSupplier) => {
         setFormModalOpen(false);
         // Optimistic refresh
@@ -300,6 +321,50 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
       })
       .catch((err) => setFormError(errorMessage(err)))
       .finally(() => setBusy(false));
+  }
+
+  async function handleAddBrand(event) {
+    event.preventDefault();
+    const name = newBrand.trim();
+    if (!name || brandBusy || !canManage) return;
+    setBrandError("");
+    if (brands.some((brand) => brand.name.toLowerCase() === name.toLowerCase())) {
+      setBrandError("This brand already exists.");
+      return;
+    }
+    setBrandBusy(true);
+    try {
+      const savedBrand = await save("post", "/brands", { name }, "Brand added.", undefined, { refresh: false });
+      if (savedBrand && onBrandsChange) {
+        onBrandsChange((current) => {
+          const id = savedBrand.id || savedBrand._id;
+          const exists = current.some((brand) => (brand.id || brand._id) === id);
+          return exists
+            ? current.map((brand) => (brand.id || brand._id) === id ? savedBrand : brand)
+            : [...current, savedBrand];
+        });
+      }
+      setNewBrand("");
+    } catch (err) {
+      setBrandError(errorMessage(err));
+    } finally {
+      setBrandBusy(false);
+    }
+  }
+
+  async function handleRemoveBrand(brand) {
+    if (brandBusy || !canManage) return;
+    setBrandBusy(true);
+    setBrandError("");
+    try {
+      const id = brand.id || brand._id;
+      await save("delete", `/brands/${id}`, null, "Brand removed.", undefined, { refresh: false });
+      if (onBrandsChange) onBrandsChange((current) => current.filter((entry) => (entry.id || entry._id) !== id));
+    } catch (err) {
+      setBrandError(errorMessage(err));
+    } finally {
+      setBrandBusy(false);
+    }
   }
 
   // Filter dropdown items
@@ -331,7 +396,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
               <div className="suppliers-title-icon-badge">
                 <ItemsListIcon size={24} />
               </div>
-              <h2 className="suppliers-card-title">Suppliers List</h2>
+              <h2 className="suppliers-card-title">{archived ? "Archived Suppliers" : "Suppliers List"}</h2>
             </div>
 
             {/* Inset Search Input (Node 457:15076) */}
@@ -342,7 +407,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
               <input
                 type="text"
                 className="suppliers-search-input"
-                placeholder="Search name, phone, or brand"
+                placeholder="Search name or phone"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -360,6 +425,16 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
           </div>
 
           <div className="suppliers-toolbar-right">
+            <button
+              type="button"
+              className={`suppliers-archive-toggle${archived ? " active" : ""}`}
+              aria-pressed={archived}
+              disabled={supplierActionBusy}
+              onClick={() => { setSuppliers([]); setArchived((current) => !current); setCurrentPage(1); }}
+            >
+              <ArchiveIcon size={18} />
+              <span>{archived ? "View Active Suppliers" : "View Archives"}</span>
+            </button>
             {/* Filter Dropdown (Node 457:15080) */}
             <Dropdown
               menu={{
@@ -380,7 +455,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
             </Dropdown>
 
             {/* Register Supplier Button (Node 457:15108) */}
-            {canManage && (
+            {canManage && !archived && (
               <button
                 type="button"
                 className="suppliers-register-btn"
@@ -419,7 +494,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
                   <td colSpan={7} className="suppliers-empty-state">
                     {search || filterTerm !== "ALL"
                       ? "No suppliers match your search criteria."
-                      : "No registered suppliers found. Click 'Register Supplier' above."}
+                      : archived ? "No archived suppliers found." : "No registered suppliers found. Click 'Register Supplier' above."}
                   </td>
                 </tr>
               ) : (
@@ -459,7 +534,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
                         {supplier.address || "—"}
                       </td>
 
-                      {/* Actions (View, Edit, Delete) (Node 457:15330) */}
+                      {/* View, edit, archive or restore */}
                       <td className="text-center">
                         <div className="suppliers-action-group">
                           {/* View Button */}
@@ -473,7 +548,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
                           </button>
 
                           {/* Edit Button */}
-                          {canManage && (
+                          {canManage && !archived && (
                             <button
                               type="button"
                               className="suppliers-action-btn edit-btn"
@@ -484,15 +559,16 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
                             </button>
                           )}
 
-                          {/* Delete Button */}
+                          {/* Archive / restore button */}
                           {canManage && (
                             <button
                               type="button"
-                              className="suppliers-action-btn delete-btn"
-                              title="Delete Supplier"
-                              onClick={() => handleDelete(supplier)}
+                              className={`suppliers-action-btn ${archived ? "restore-btn" : "archive-btn"}`}
+                              title={archived ? "Restore Supplier" : "Archive Supplier"}
+                              disabled={supplierActionBusy}
+                              onClick={() => archived ? changeSupplierArchive(supplier, true).catch(() => {}) : handleArchive(supplier)}
                             >
-                              <TrashIcon size={16} />
+                              {archived ? <RestoreIcon size={16} /> : <ArchiveIcon size={16} />}
                             </button>
                           )}
                         </div>
@@ -566,6 +642,86 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
         </div>
       </div>
 
+      <div className="suppliers-card suppliers-brands-card">
+        <div>
+          <button
+            type="button"
+            className="suppliers-register-btn"
+            aria-expanded={showBrands}
+            aria-controls="supplier-brands"
+            onClick={() => setShowBrands((current) => !current)}
+          >
+            <EyeIcon />
+            <span>{showBrands ? "Hide Brands" : "Show Brands"}</span>
+          </button>
+        </div>
+        <div
+          className={`suppliers-brands-expand${showBrands ? " is-open" : ""}`}
+          style={{ gridTemplateRows: showBrands ? "1fr" : "0fr", opacity: showBrands ? 1 : 0 }}
+        >
+          <section
+            id="supplier-brands"
+            aria-label="Brands"
+            aria-hidden={!showBrands}
+            inert={!showBrands}
+            style={{ visibility: showBrands ? "visible" : "hidden" }}
+          >
+            <div className="suppliers-brands-content">
+            <h2 className="suppliers-card-title">Brands</h2>
+            {brands.length ? (
+              <ul className="suppliers-brands-list">
+                {[...brands].sort((a, b) =>
+                  (new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()) ||
+                  String(a.id || a._id || "").localeCompare(String(b.id || b._id || ""))
+                ).map((brand) => (
+                  <li key={brand.id || brand._id || brand.name} title={brand.name}>
+                    <BrandLogo brand={brand} />
+                    {canManage && (
+                      <button
+                        type="button"
+                        className="suppliers-brand-remove"
+                        aria-label={`Remove ${brand.name}`}
+                        title={`Remove ${brand.name}`}
+                        disabled={brandBusy}
+                        onClick={() => handleRemoveBrand(brand)}
+                      >
+                        &times;
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No brands registered yet.</p>
+            )}
+            {canManage && (
+              <form onSubmit={handleAddBrand}>
+                {brandError && <Alert type="error" showIcon message={brandError} style={{ marginBottom: 12 }} />}
+                <div className="suppliers-brand-form">
+                  <div className="suppliers-modal-field">
+                    <label htmlFor="supplier-brand-name">New brand name</label>
+                    <input
+                      id="supplier-brand-name"
+                      required
+                      maxLength={200}
+                      placeholder="Enter brand name"
+                      value={newBrand}
+                      disabled={brandBusy}
+                      onChange={(event) => setNewBrand(event.target.value)}
+                    />
+                  </div>
+                  <button type="submit" className="suppliers-register-btn" disabled={!newBrand.trim() || brandBusy}>
+                    <AddIcon size={20} />
+                    <span>{brandBusy ? "Saving..." : "Add Brand"}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+            </div>
+          </section>
+        </div>
+      </div>
+
       {/* --- REGISTER / EDIT SUPPLIER MODAL --- */}
       <Modal
         title={formData.id ? "Edit Supplier Record" : "Register New Supplier"}
@@ -587,8 +743,10 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
         <form onSubmit={handleFormSubmit}>
           <div className="suppliers-modal-grid">
             <div className="suppliers-modal-field full-width">
-              <label>Company / Supplier Name *</label>
+              <label htmlFor="supplier-name">Company / Supplier Name *</label>
               <input
+                id="supplier-name"
+                maxLength={200}
                 required
                 type="text"
                 placeholder="e.g. Carrier Air Conditioning Philippines, Inc."
@@ -598,8 +756,10 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
             </div>
 
             <div className="suppliers-modal-field">
-              <label>Contact Person</label>
+              <label htmlFor="supplier-contact">Contact Person</label>
               <input
+                id="supplier-contact"
+                maxLength={200}
                 type="text"
                 placeholder="e.g. Michael Santos"
                 value={formData.contactPerson}
@@ -608,22 +768,35 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
             </div>
 
             <div className="suppliers-modal-field">
-              <label>Phone Number</label>
+              <label htmlFor="supplier-phone">Phone Number</label>
               <input
-                type="text"
+                id="supplier-phone"
+                type="tel"
+                inputMode="tel"
+                maxLength={30}
+                aria-describedby="supplier-phone-hint"
                 placeholder="e.g. +63 917 845 2310"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/[^0-9+ ()-]/g, "") })}
               />
+              <small id="supplier-phone-hint">7–15 digits. Spaces, hyphens, parentheses and a leading + are allowed.</small>
             </div>
 
             <div className="suppliers-modal-field">
-              <label>Email Address</label>
+              <label htmlFor="supplier-email">Email Address</label>
               <input
+                id="supplier-email"
+                maxLength={200}
                 type="email"
                 placeholder="e.g. msantos@carrierph.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onBlur={() => setFormData((current) => {
+                  const match = current.email.trim().match(/^([^@\s]+)@(g|a)$/i);
+                  if (!match) return current;
+                  const domain = match[2].toLowerCase() === "g" ? "gmail.com" : "ashcol.com";
+                  return { ...current, email: `${match[1]}@${domain}` };
+                })}
               />
             </div>
 
@@ -643,8 +816,10 @@ export default function SuppliersPage({ user, save, refresh, items = [], isDark 
             </div>
 
             <div className="suppliers-modal-field full-width">
-              <label>Warehouse / Business Address</label>
+              <label htmlFor="supplier-address">Warehouse / Business Address</label>
               <textarea
+                id="supplier-address"
+                maxLength={200}
                 rows={2}
                 placeholder="e.g. Pasig City, Metro Manila"
                 value={formData.address}

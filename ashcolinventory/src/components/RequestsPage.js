@@ -6,7 +6,6 @@ import {
   Button,
   Modal,
   Input,
-  InputNumber,
   Select,
   Alert,
   Typography,
@@ -17,11 +16,13 @@ import {
 } from "antd";
 import { EyeOutlined } from "@ant-design/icons";
 import { api, errorMessage } from "../api";
+import InventoryNumberInput from "./InventoryNumberInput";
 import { formatRequestNumber } from "../utils/formatters";
+import "./RequestsPage.css";
 
 const isContinuousUnit = (unit) =>
   ["METER", "FOOT", "KG", "LITER"].includes(unit);
-const requestNumber = (entry) => formatRequestNumber(entry.requestNumber || entry.workOrderId || entry.id);
+const requestNumber = (entry) => formatRequestNumber(entry.requestNumber || entry.id);
 const formatDate = (value) => new Date(value).toLocaleString("en-PH", { timeZone: "Asia/Manila" });
 const requestHistory = (entry) => entry.history?.length ? entry.history : [
   { status: "PENDING", performedByName: entry.requestedByName, at: entry.createdAt },
@@ -36,6 +37,7 @@ export default function RequestsPage({
   serviceVans = [],
   branchId,
   save,
+  isDark = false,
 }) {
   const [open, setOpen] = useState(false);
   const [productId, setProductId] = useState("");
@@ -140,58 +142,51 @@ export default function RequestsPage({
   }
   return (
     <>
-      <Typography.Title level={3}>Material Requests</Typography.Title>
-      <Typography.Paragraph type="secondary">
-        Request → Approve → Fulfill. Approval does not reserve stock;
-        fulfillment transfers available warehouse stock into the technician's assigned vehicle once. Search a request ID
-        to see its status and history.
-      </Typography.Paragraph>
       {user.role === "EMPLOYEE" && !assignedVan && <Alert type="warning" showIcon
         title="You need an assigned service vehicle before requesting materials. Ask your admin or manager to assign one."
         style={{ marginBottom: 16 }} />}
-      {error && !deleting && (
+      {error && !deleting && !open && (
         <Alert type="error" title={error} style={{ marginBottom: 16 }} />
       )}
-      <Card
-        title={user.role === "EMPLOYEE" ? "My requests" : "Warehouse requests"}
-        extra={
-          user.role === "EMPLOYEE" && (
-            <Button
-              type="primary"
-              loading={busy}
-              disabled={!assignedVan}
-              onClick={newRequest}
-            >
-              New Request
-            </Button>
-          )
-        }
-      >
-        <Input
-          aria-label="Search requests"
-          placeholder="Search request ID, item, or requester"
-          allowClear
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setFilter("ALL");
-          }}
-          style={{ maxWidth: 480, marginBottom: 16, marginRight: 12 }}
-        />
-        <Select
-          value={filter}
-          onChange={setFilter}
-          style={{ width: 180, marginBottom: 16 }}
-          options={["ALL", "PENDING", "APPROVED", "DENIED", "FULFILLED"].map(
-            (value) => ({ value, label: value }),
-          )}
-        />
+      <Card className="requests-list-card">
+        <div className="requests-toolbar">
+          <div className="requests-toolbar-left">
+            <h2 className="requests-list-title">{user.role === "EMPLOYEE" ? "My requests" : "Warehouse requests"}</h2>
+            <Input.Search
+              aria-label="Search requests"
+              placeholder="Search request ID, item, or requester"
+              allowClear
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setFilter("ALL");
+              }}
+            />
+          </div>
+          <div className="requests-toolbar-right">
+            <Select
+              aria-label="Filter requests by status"
+              value={filter}
+              onChange={setFilter}
+              options={["ALL", "PENDING", "APPROVED", "DENIED", "FULFILLED"].map(
+                (value) => ({ value, label: value === "ALL" ? "All statuses" : value }),
+              )}
+            />
+            {user.role === "EMPLOYEE" && (
+              <button type="button" className="requests-new-button" disabled={!assignedVan || busy} onClick={newRequest}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 6a1 1 0 0 0-2 0v5H6a1 1 0 0 0 0 2h5v5a1 1 0 0 0 2 0v-5h5a1 1 0 0 0 0-2h-5V6Z" /></svg>
+                <span>New Request</span>
+              </button>
+            )}
+          </div>
+        </div>
         <Table
+          className="requests-table"
           rowKey="id"
           dataSource={[...requests, ...(showDeleted ? deletedEntries : [])].filter(
             (entry) => (user.role !== "EMPLOYEE" || ownsRequest(entry)) &&
               (filter === "ALL" || entry.status === filter) &&
-              [requestNumber(entry), entry.id, entry.workOrderId, entry.sku, entry.itemName, entry.brand, entry.itemType, entry.requestedByName]
+              [requestNumber(entry), entry.id, entry.jobNumber, entry.sku, entry.itemName, entry.brand, entry.itemType, entry.requestedByName]
                 .some((value) => String(value || "").toLowerCase().includes(formatRequestNumber(search.trim()).toLowerCase())),
           )}
           scroll={{ x: 1300 }}
@@ -349,103 +344,159 @@ export default function RequestsPage({
         {error && <Alert type="error" showIcon title={error} />}
       </Modal>
       <Modal
-        title="New material request"
+        title={
+          <div className="material-request-heading">
+            <span className="material-request-heading-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                <path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <div>
+              <h2>New material request</h2>
+              <p>Choose the materials you need for your assigned vehicle.</p>
+            </div>
+          </div>
+        }
+        className={`material-request-modal${isDark ? " material-request-modal-dark" : ""}`}
+        width={720}
+        centered
         open={user.role === "EMPLOYEE" && open}
         onCancel={() => !busy && setOpen(false)}
+        closable={!busy}
+        maskClosable={!busy}
         footer={null}
         maskClosable={false}
       >
-        {error && <Alert type="error" title={error} />}
-        <form onSubmit={submit}>
-          <label className="field">Receiving vehicle<Input readOnly value={assignedVan?.name || "No vehicle assigned"} /></label>
-          <label className="field">
-            Item Type
-            <Select
-              aria-label="Request item type"
-              showSearch
-              optionFilterProp="label"
-              placeholder="Select item type"
-              value={itemType || undefined}
-              onChange={(value) => {
-                setItemType(value);
-                setBrand("");
-                setProductId("");
-                setQuantity(1);
-              }}
-              options={itemTypes.map((value) => ({ value, label: value }))}
-            />
-          </label>
-          <label className="field">
-            Brand
-            <Select
-              aria-label="Request brand"
-              showSearch
-              optionFilterProp="label"
-              placeholder={itemType ? "Select brand" : "Select item type first"}
-              disabled={!itemType}
-              value={brand || undefined}
-              onChange={(value) => {
-                setBrand(value);
-                setProductId("");
-                setQuantity(1);
-              }}
-              options={brands.map((value) => ({ value, label: value }))}
-            />
-          </label>
-          <label className="field">
-            Item
-            <Select
-              aria-label="Request item"
-              showSearch
-              optionFilterProp="label"
-              placeholder={itemType && brand ? "Select item" : "Select item type and brand first"}
-              disabled={!itemType || !brand}
-              notFoundContent="No matching items"
-              value={selectedItem?.id}
-              onChange={(value) => {
-                setProductId(value);
-                setQuantity(1);
-              }}
-              options={filteredItems.map((item) => ({
-                value: item.id,
-                label: `${item.name} — ${item.sku} (${item.unitOfMeasure})`,
-              }))}
-            />
-          </label>
-          <label className="field">
-            Request ID
-            <Input
-              readOnly
-              value={formatRequestNumber(reference?.requestNumber) || ""}
-            />
-          </label>
-          <label className="field">
-            Quantity {selectedItem ? `(${selectedItem.unitOfMeasure})` : ""}
-            <InputNumber
-              min={isContinuousUnit(selectedItem?.unitOfMeasure) ? 0.001 : 1}
-              step={isContinuousUnit(selectedItem?.unitOfMeasure) ? 0.1 : 1}
-              precision={isContinuousUnit(selectedItem?.unitOfMeasure) ? 3 : 0}
-              value={quantity}
-              onChange={setQuantity}
-              style={{ width: "100%" }}
-            />
-          </label>
-          <label className="field">
-            Notes
-            <Input.TextArea
-              maxLength={200}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </label>
-          <Button
-            htmlType="submit"
-            type="primary"
-            loading={busy}
-            disabled={!selectedItem || !reference || !assignedVan}
-          >
-            Submit request
-          </Button>
+        <form className="material-request-form" onSubmit={submit}>
+          <div className="material-request-content">
+            {error && <Alert type="error" showIcon title={error} className="material-request-error" />}
+            <div className="material-request-summary">
+              <div className="material-request-reference">
+                <span className="material-request-caption">Request ID</span>
+                <strong>{formatRequestNumber(reference?.requestNumber) || "Pending"}</strong>
+              </div>
+              <div className="material-request-vehicle">
+                <span className="material-request-caption">Receiving vehicle</span>
+                <strong>{assignedVan?.name || "No vehicle assigned"}</strong>
+                {assignedVan?.plateNumber && <span className="material-request-plate">{assignedVan.plateNumber}</span>}
+              </div>
+            </div>
+            <h3 className="material-request-section-title">Material details</h3>
+            <div className="material-request-grid">
+              <label className="material-request-field" htmlFor="request-item-type">
+                Item Type
+                <Select
+                  id="request-item-type"
+                  classNames={{ popup: { root: isDark ? "material-request-popup-dark" : "" } }}
+                  aria-label="Request item type"
+                  size="large"
+                  disabled={busy}
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder="Select item type"
+                  value={itemType || undefined}
+                  onChange={(value) => {
+                    setItemType(value);
+                    setBrand("");
+                    setProductId("");
+                    setQuantity(1);
+                  }}
+                  options={itemTypes.map((value) => ({ value, label: value }))}
+                />
+              </label>
+              <label className="material-request-field" htmlFor="request-brand">
+                Brand
+                <Select
+                  id="request-brand"
+                  classNames={{ popup: { root: isDark ? "material-request-popup-dark" : "" } }}
+                  aria-label="Request brand"
+                  size="large"
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder={itemType ? "Select brand" : "Select item type first"}
+                  disabled={!itemType || busy}
+                  value={brand || undefined}
+                  onChange={(value) => {
+                    setBrand(value);
+                    setProductId("");
+                    setQuantity(1);
+                  }}
+                  options={brands.map((value) => ({ value, label: value }))}
+                />
+              </label>
+              <label className="material-request-field material-request-full-width" htmlFor="request-item">
+                Item
+                <Select
+                  id="request-item"
+                  classNames={{ popup: { root: isDark ? "material-request-popup-dark" : "" } }}
+                  aria-label="Request item"
+                  size="large"
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder={itemType && brand ? "Select item" : "Select item type and brand first"}
+                  disabled={!itemType || !brand || busy}
+                  notFoundContent="No matching items"
+                  value={selectedItem?.id}
+                  onChange={(value) => {
+                    setProductId(value);
+                    setQuantity(1);
+                  }}
+                  options={filteredItems.map((item) => ({
+                    value: item.id,
+                    label: `${item.name} — ${item.sku} (${item.unitOfMeasure})`,
+                  }))}
+                />
+              </label>
+              <label className="material-request-field" htmlFor="request-quantity">
+                Quantity {selectedItem ? `(${selectedItem.unitOfMeasure})` : ""}
+                <InventoryNumberInput
+                  required
+                  id="request-quantity"
+                  aria-label="Request quantity"
+                  size="large"
+                  disabled={!selectedItem || busy}
+                  min={isContinuousUnit(selectedItem?.unitOfMeasure) ? 0.001 : 1}
+                  step={isContinuousUnit(selectedItem?.unitOfMeasure) ? 0.1 : 1}
+                  precision={isContinuousUnit(selectedItem?.unitOfMeasure) ? 3 : 0}
+                  value={quantity}
+                  onChange={setQuantity}
+                  style={{ width: "100%" }}
+                />
+              </label>
+              <div className="material-request-availability" aria-live="polite">
+                <span className="material-request-caption">Available at warehouse</span>
+                <strong>{selectedItem ? `${selectedItem.quantity} ${selectedItem.unitOfMeasure}` : "Select an item to view stock"}</strong>
+              </div>
+              <label className="material-request-field material-request-full-width" htmlFor="request-notes">
+                <span>Notes <span className="material-request-optional">(optional)</span></span>
+                <Input.TextArea
+                  id="request-notes"
+                  aria-label="Request notes"
+                  rows={3}
+                  disabled={busy}
+                  placeholder="e.g. Materials for an AC installation at the client's site"
+                  maxLength={200}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+                <span className="material-request-notes-count">{notes.length}/200 characters</span>
+              </label>
+            </div>
+          </div>
+          <div className="material-request-actions">
+            <Button size="large" disabled={busy} onClick={() => setOpen(false)}>Cancel</Button>
+            <Button
+              size="large"
+              htmlType="submit"
+              aria-label="Submit request"
+              type="primary"
+              loading={busy}
+              disabled={!selectedItem || !reference || !assignedVan || !quantity || quantity <= 0}
+            >
+              Submit request
+            </Button>
+          </div>
         </form>
       </Modal>
       <Modal

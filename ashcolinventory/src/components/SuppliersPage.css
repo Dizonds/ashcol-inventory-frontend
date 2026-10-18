@@ -13,6 +13,131 @@
 }
 
 /* --- MAIN CARD --- */
+.suppliers-card.suppliers-brands-card {
+  gap: 0;
+}
+
+.suppliers-brands-expand {
+  display: grid;
+  transition: grid-template-rows 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease;
+}
+
+.suppliers-brands-expand > section {
+  min-height: 0;
+  overflow: hidden;
+  transition: visibility 0s linear 320ms;
+}
+
+.suppliers-brands-expand.is-open > section {
+  transition-delay: 0s;
+}
+
+.suppliers-brands-content {
+  padding-top: 28px;
+  padding-bottom: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suppliers-brands-expand,
+  .suppliers-brands-expand > section {
+    transition: none;
+  }
+}
+
+.suppliers-brands-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.suppliers-brands-list li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 132px;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  background: #fff;
+  color: #142018;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.suppliers-brands-list li:hover {
+  border-color: #13c906;
+  box-shadow: 0 6px 20px rgba(19, 201, 6, 0.1);
+}
+
+.suppliers-brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 72px;
+}
+
+.suppliers-brand-logo img {
+  display: block;
+  max-width: 100%;
+  max-height: 72px;
+  object-fit: contain;
+}
+
+.suppliers-brand-fallback {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.suppliers-brand-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.suppliers-brand-remove:hover:not(:disabled),
+.suppliers-brand-remove:focus-visible {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+
+.suppliers-brand-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.suppliers-brand-form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.suppliers-brand-form .suppliers-modal-field {
+  flex: 1 1 220px;
+}
+
 .suppliers-card {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.12);
@@ -43,6 +168,8 @@
 }
 
 .suppliers-toolbar-left {
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   align-items: center;
   gap: 24px;
@@ -131,6 +258,7 @@
 }
 
 .suppliers-search-input {
+  min-width: 0;
   border: none;
   background: transparent;
   outline: none;
@@ -461,17 +589,39 @@
   border-color: #3cb84a;
 }
 
-.suppliers-action-btn.delete-btn:hover {
-  background: #fff1f0;
-  color: #ff4d4f;
-  border-color: #ffa39e;
+.suppliers-action-btn.archive-btn:hover {
+  background: #fff7e6;
+  color: #ad6800;
+  border-color: #ffd591;
 }
 
-.inventory-app.dark .suppliers-action-btn.delete-btn:hover {
-  background: rgba(255, 77, 79, 0.18);
-  color: #ff7875;
-  border-color: #d32029;
+.inventory-app.dark .suppliers-action-btn.archive-btn:hover {
+  background: rgba(173, 104, 0, 0.18);
+  color: #ffd591;
+  border-color: #ad6800;
 }
+
+.suppliers-action-btn.restore-btn:hover { background: #e8faef; color: #059669; border-color: #6ee7b7; }
+.inventory-app.dark .suppliers-action-btn.restore-btn:hover { background: rgba(5, 150, 105, 0.18); color: #6ee7b7; border-color: #059669; }
+.suppliers-action-btn:disabled { opacity: 0.5; cursor: wait; }
+.suppliers-archive-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.suppliers-archive-toggle:hover,
+.suppliers-archive-toggle.active { color: #059669; border-color: #6ee7b7; background: #ecfdf5; }
+.inventory-app.dark .suppliers-archive-toggle { background: #19271e; color: #b5cebf; border-color: rgba(255, 255, 255, 0.12); }
+.inventory-app.dark .suppliers-archive-toggle.active { color: #6ee7b7; background: rgba(5, 150, 105, 0.15); border-color: #059669; }
 
 /* --- PAGINATION (Node 457:15427) --- */
 .suppliers-pagination-row {

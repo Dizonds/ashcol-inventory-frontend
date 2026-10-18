@@ -1,0 +1,22 @@
+.stock-balance-view { min-width: 0; width: 100%; color: var(--text-main, #17251d); }
+.stock-balance-footnote { color: var(--text-secondary, #64748b); font-size: 12px; margin: 6px 0 0; }
+.stock-balance-metrics { display: flex; flex-wrap: wrap; gap: 28px 48px; margin: 24px 0 8px; }
+.stock-balance-metrics > div { display: flex; flex-direction: column; gap: 6px; }
+.stock-balance-metrics span { color: var(--text-secondary, #64748b); font-size: 12px; }
+.stock-balance-metrics strong { font-size: 25px; font-weight: 650; }
+.stock-balance-metrics small { font-size: 12px; font-weight: 500; }
+.stock-balance-positive { color: #059669; }
+.stock-balance-negative { color: #d97706; }
+.stock-balance-plot { width: 100%; height: 320px; overflow: hidden; }
+.stock-activity-card.is-expanded .stock-balance-plot { height: clamp(360px, 60dvh, 720px); }
+.stock-balance-plot svg { display: block; width: 100%; }
+.stock-balance-plot text { fill: var(--text-secondary, #64748b); font-size: 12px; }
+.stock-balance-grid { stroke: var(--border-light, #e5e7eb); stroke-dasharray: 4 5; }
+.stock-balance-line { fill: none; stroke: #10b981; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.stock-balance-dot { opacity: 0.9; fill: var(--card-bg, #fff); stroke: #10b981; stroke-width: 2; r: 2.5; transition: r 0.12s ease; }
+.stock-balance-plot [role=button] { cursor: inherit; outline: none; }
+.stock-balance-plot [role=button]:hover .stock-balance-dot,
+.stock-balance-plot [role=button]:focus-visible .stock-balance-dot { opacity: 1; r: 4; stroke-width: 2.5; }
+.stock-balance-detail { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; }
+.stock-balance-message { padding: 45px 0; text-align: center; color: var(--text-secondary, #64748b); }
+@media (max-width: 600px) { .stock-balance-metrics { gap: 18px 24px; } .stock-balance-metrics strong { font-size: 22px; } }

@@ -2,6 +2,10 @@ import React, { useState, useMemo, useCallback, useRef, useEffect, useId } from 
 import { Tooltip, Modal, Table } from "antd";
 import "./StockActivityChart.css";
 import { formatRequestNumber, formatMovementNumber, formatJobNumber } from "../utils/formatters";
+import { movementPresentation } from "../utils/movements";
+import StockBalanceView from "./StockBalanceView";
+import { OVERALL_UNIT } from "../utils/stockBalance";
+import RemarksCell from "./RemarksCell";
 
 const TIMEFRAME_OPTIONS = [7, 14, 30, 90];
 
@@ -62,7 +66,13 @@ function calculateNiceTicks(maxValue, targetTickCount = 5) {
   return { ticks, maxTick: topTick || step };
 }
 
-export default function StockActivityChart({ movementHistory = [], historyReady = true, initialView = null, onViewSave, isExpanded = false, onExpandedChange }) {
+export default function StockActivityChart({ items = [], branchId, movementHistory: allMovements = [], historyReady = true, historyError = false, initialView = null, onViewSave, isExpanded = false, onExpandedChange }) {
+  // New charts start with the combined view. Keep this explicit preference
+  // separate so old saved snapshots that defaulted to UNIT migrate cleanly.
+  const [selectedUnit, setSelectedUnit] = useState(initialView?.unitPreference || OVERALL_UNIT);
+  const units = [...new Set([...allMovements.map((entry) => entry.unitOfMeasure || "UNIT"), ...items.map(item => item.unitOfMeasure).filter(Boolean)])].sort();
+  const activeUnit = selectedUnit === OVERALL_UNIT || units.includes(selectedUnit) ? selectedUnit : units.includes("UNIT") ? "UNIT" : units[0] || "UNIT";
+  const movementHistory = useMemo(() => activeUnit === OVERALL_UNIT ? allMovements : allMovements.filter((entry) => (entry.unitOfMeasure || "UNIT") === activeUnit), [allMovements, activeUnit]);
   const [selectedTimeframe, setSelectedTimeframe] = useState(initialView?.selectedTimeframe ?? 7);
   const [visibleDays, setVisibleDays] = useState(initialView?.visibleDays ?? 7);
   // Reflect the current horizontal zoom without changing its stable vertical scale.
@@ -73,7 +83,9 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   const [yZoom, setYZoom] = useState(initialView?.yZoom ?? 1);
   const [quantityFloor, setQuantityFloor] = useState(initialView?.quantityFloor ?? 0);
   const [fittedScale, setFittedScale] = useState(initialView?.fittedScale ?? null);
-  const [chartMode, setChartMode] = useState(initialView?.chartMode === "bar" ? "bar" : "line");
+  const [chartMode, setChartMode] = useState(["bar", "overall"].includes(initialView?.chartMode) ? initialView.chartMode : "line");
+  const [overallUnit, setOverallUnit] = useState(initialView?.overallUnit || OVERALL_UNIT);
+  const activeOverallUnit = units.includes(overallUnit) ? overallUnit : OVERALL_UNIT;
   const [showStockIn, setShowStockIn] = useState(initialView?.showStockIn ?? true);
   const [showStockOut, setShowStockOut] = useState(initialView?.showStockOut ?? true);
   const [showBalance, setShowBalance] = useState(initialView?.showBalance ?? true);
@@ -98,7 +110,9 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   const savedViewRef = useRef(null);
   savedViewRef.current = {
     selectedTimeframe, visibleDays, panDays, yZoom, quantityFloor,
-    fittedScale, chartMode, showStockIn, showStockOut, showBalance,
+    fittedScale, chartMode, showStockIn, showStockOut, showBalance, overallUnit: activeOverallUnit,
+    unitOfMeasure: activeUnit,
+    unitPreference: activeUnit,
   };
   // The app owns this snapshot, so leaving the dashboard does not reset the view.
   // Saving only on departure avoids rerendering the dashboard during each drag.
@@ -108,12 +122,15 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   const rangeDays = Math.max(3, Math.ceil(visibleDays));
   const integerPanDays = Math.floor(panDays);
   const panFraction = panDays - integerPanDays;
+  const historyMovements = useMemo(() => chartMode === "overall"
+    ? allMovements.filter(entry => entry.branchId === branchId && (activeOverallUnit === OVERALL_UNIT || (entry.unitOfMeasure || "UNIT") === activeOverallUnit))
+    : movementHistory, [chartMode, allMovements, branchId, activeOverallUnit, movementHistory]);
 
   // Keep panning bounded by the oldest movement currently available.
   const historyDays = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const movementDates = movementHistory
+    const movementDates = historyMovements
       .map((entry) => toDateKey(entry.createdAt || entry.date))
       .filter(Boolean)
       .map((key) => new Date(`${key}T00:00:00`))
@@ -123,7 +140,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     const oldestDate = new Date(Math.min(...movementDates.map((date) => date.getTime())));
     const availableDays = Math.floor((today - oldestDate) / 86400000);
     return Math.max(0, availableDays);
-  }, [movementHistory]);
+  }, [historyMovements]);
   const maxPanDays = Math.max(0, historyDays - (visibleDays - 1));
 
   useEffect(() => {
@@ -144,7 +161,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
     });
     observer.observe(viewportRef.current);
     return () => observer.disconnect();
-  }, [isExpanded]);
+  }, [isExpanded, chartMode]);
 
   // Aggregate daily data over the chosen range
   const { seriesData, summaryStats } = useMemo(() => {
@@ -438,6 +455,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
   wheelHandlerRef.current = handleChartWheel;
   useEffect(() => {
     const viewport = viewportRef.current;
+    if (!viewport) return undefined;
     const onWheel = (event) => wheelHandlerRef.current(event);
     viewport.addEventListener("wheel", onWheel, { passive: false });
     return () => {
@@ -446,7 +464,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
       zoomFrameRef.current = null;
       zoomTargetRef.current = null;
     };
-  }, []);
+  }, [chartMode]);
 
   // Bring the expanded card into view after the dashboard layout updates.
   useEffect(() => {
@@ -507,7 +525,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
         data-stock-point={index}
         role="button"
         tabIndex={0}
-        aria-label={`View ${direction === "balance" ? "Net Balance" : direction === "in" ? "Stock In" : "Stock Out"} details for ${point.day.fullLabel}`}
+        aria-label={`View ${direction === "balance" ? "Net Change" : direction === "in" ? "Stock In" : "Stock Out"} details for ${point.day.fullLabel}`}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -533,15 +551,15 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
       </div>
     ) },
     { title: "Brand", dataIndex: "brand", width: 120, align: "center", render: (value) => value || "—" },
-    { title: "Movement", dataIndex: "movementType", width: 160, render: (value) => String(value || "Movement").replace(/_/g, " ") },
+    { title: "Movement", width: 160, render: (_, entry) => <div className="chart-movement-item"><span>{movementPresentation(entry).label}</span>{movementPresentation(entry).isVehicle && <span>Vehicle</span>}</div> },
     { title: "Quantity", width: 120, render: (_, entry) => {
       const delta = Number(entry.quantityDelta) || 0;
       return <strong className={delta > 0 ? "chart-movement-in" : delta < 0 ? "chart-movement-out" : ""}>{delta > 0 ? "+" : ""}{delta.toLocaleString()} {entry.unitOfMeasure || "units"}</strong>;
     } },
     { title: "Stock balance", width: 130, render: (_, entry) => entry.beforeQuantity == null || entry.afterQuantity == null ? "Not recorded" : `${entry.beforeQuantity.toLocaleString()} → ${entry.afterQuantity.toLocaleString()}` },
-    { title: "Reference / Work order", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{formatMovementNumber(formatRequestNumber(entry.requestNumber || entry.referenceId)) || "No reference"}</span>{entry.workOrderId && <span>{entry.jobOrderId ? formatJobNumber(entry.workOrderId) : formatRequestNumber(entry.workOrderId)}</span>}</div> },
+    { title: "Reference / Job", width: 180, render: (_, entry) => <div className="chart-movement-item"><span>{formatMovementNumber(entry.vehicleReceiptNumber || entry.transferNumber || formatRequestNumber(entry.requestNumber || entry.referenceId)) || "No reference"}</span>{entry.jobNumber && <span>{formatJobNumber(entry.jobNumber)}</span>}{entry.referenceNumber && !entry.jobNumber && <span>{entry.referenceNumber}</span>}</div> },
     { title: "Processed by", dataIndex: "performedByName", width: 160, render: (value) => value || "Not recorded" },
-    { title: "Remarks", dataIndex: "reason", width: 250, render: (value) => value || "No remarks" },
+    { title: "Remarks", dataIndex: "reason", width: 250, render: (value) => <RemarksCell value={value} emptyText="No remarks" /> },
   ];
 
   const activeDay = hoverIndex !== null ? seriesData[hoverIndex] : null;
@@ -589,7 +607,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
           <div className="stock-title-wrap">
             <div className="stock-title-row">
               <h2 className="stock-card-title">Stock In & Stock Out Activity</h2>
-              <Tooltip title="Daily inbound inventory restocks vs outbound dispatches and net balance.">
+              <Tooltip title={chartMode === "overall" ? "Stock remaining after each warehouse movement." : "Daily inbound inventory restocks vs outbound dispatches and net change."}>
                 <span className="stock-info-icon" tabIndex={0} aria-label="More info">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
@@ -604,14 +622,30 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
               </Tooltip>
             </div>
             <span className="stock-card-subtitle">
-              Daily movement flow & velocity for Taguig warehouse
+              {chartMode === "overall" ? `Warehouse stock balance after each movement · ${activeOverallUnit === OVERALL_UNIT ? "mixed units" : activeOverallUnit}` : `Daily movement flow & velocity for Taguig warehouse · ${activeUnit === OVERALL_UNIT ? "mixed units" : activeUnit}`}
             </span>
           </div>
         </div>
 
         <div className="stock-header-controls">
+          <label className="stock-unit-filter">Unit
+            <select aria-label="Chart unit of measure" value={chartMode === "overall" ? activeOverallUnit : activeUnit} onChange={(event) => {
+              stopZoomAnimation();
+              if (chartMode === "overall") setOverallUnit(event.target.value);
+              else setSelectedUnit(event.target.value);
+              setFittedScale(null);
+              setQuantityFloor(0);
+              setYZoom(1);
+              setPanDays(0);
+              setHoverIndex(null);
+              setSelectedDay(null);
+            }}>
+              <option value={OVERALL_UNIT}>Overall</option>
+              {units.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
+            </select>
+          </label>
           <div className="stock-mode-toggle" role="group" aria-label="Chart display type">
-            {[{ value: "line", label: "Line" }, { value: "bar", label: "Bar" }].map((mode) => (
+            {[{ value: "line", label: "Line" }, { value: "bar", label: "Bar" }, { value: "overall", label: "Overall" }].map((mode) => (
               <button
                 key={mode.value}
                 type="button"
@@ -620,8 +654,12 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
                 onClick={() => {
                   stopZoomAnimation();
                   setChartMode(mode.value);
+                  setFittedScale(null);
+                  setQuantityFloor(0);
+                  setYZoom(1);
                   setHoverIndex(null);
                   setHoverY(null);
+                  setSelectedDay(null);
                 }}
               >{mode.label}</button>
             ))}
@@ -687,6 +725,20 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
       </div>
 
       {/* 2. SUMMARY METRIC PILLS & LEGEND */}
+      {chartMode === "overall" ? <StockBalanceView key={`${activeOverallUnit}-${selectedTimeframe}`} items={items} movementHistory={allMovements} branchId={branchId}
+        unit={activeOverallUnit} days={selectedTimeframe} historyReady={historyReady} historyError={historyError}
+        isExpanded={isExpanded} view={{ visibleDays, panDays, yZoom, quantityFloor, fittedScale }}
+        onViewChange={(next) => {
+          if (next.visibleDays !== undefined) setVisibleDays(next.visibleDays);
+          if (next.panDays !== undefined) setPanDays(next.panDays);
+          if (next.yZoom !== undefined) setYZoom(next.yZoom);
+          if (next.quantityFloor !== undefined) setQuantityFloor(next.quantityFloor);
+          if (next.fittedScale !== undefined) setFittedScale(next.fittedScale);
+        }} onOpenPoint={(point, movements) => {
+          setSelectedDay({ fullLabel: new Date(point.timestamp).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
+            movements, stockIn: movements.reduce((sum, entry) => sum + Math.max(0, Number(entry.quantityDelta) || 0), 0),
+            stockOut: movements.reduce((sum, entry) => sum + Math.max(0, -(Number(entry.quantityDelta) || 0)), 0) });
+        }} /> : <>
       <div className="stock-sub-bar">
         <div className="stock-metric-chips">
           <div className="metric-chip chip-stock-in">
@@ -710,7 +762,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
               summaryStats.netChange >= 0 ? "is-positive" : "is-negative"
             }`}
           >
-            <span className="metric-chip-label">Net Balance:</span>
+            <span className="metric-chip-label">Net Change:</span>
             <strong className="metric-chip-val">
               {summaryStats.netChange >= 0 ? "+" : ""}
               {summaryStats.netChange.toLocaleString()}
@@ -751,10 +803,10 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             className={`stock-legend-item ${showBalance ? "active" : "disabled"}`}
             onClick={() => setShowBalance((value) => !value)}
             aria-pressed={showBalance}
-            title="Daily net balance: Stock In minus Stock Out"
+            title="Daily net change: Stock In minus Stock Out"
           >
             <span className="legend-indicator stock-balance-indicator" />
-            <span>Net Balance</span>
+            <span>Net Change</span>
           </button>
         </div>
       </div>
@@ -765,7 +817,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
         className={`stock-chart-viewport ${isDragging ? "is-dragging" : ""}`}
         tabIndex={0}
         role="region"
-        aria-label="Interactive stock chart with daily net balance. Drag horizontally to browse dates and vertically to pan quantities. Negative balances indicate more stock out than in. Arrow keys browse dates. Plus and minus zoom. Home resets the view."
+        aria-label="Interactive stock chart with daily net change. Drag horizontally to browse dates and vertically to pan quantities. Negative net change indicates more stock out than in. Arrow keys browse dates. Plus and minus zoom. Home resets the view."
         onKeyDown={(event) => {
           if (event.target !== event.currentTarget) return;
           stopZoomAnimation();
@@ -903,7 +955,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             const bars = [
               ...(showStockIn ? [{ label: "Stock In", value: day.stockIn, color: "#10b981" }] : []),
               ...(showStockOut ? [{ label: "Stock Out", value: day.stockOut, color: "#f59e0b" }] : []),
-              ...(showBalance ? [{ label: "Net Balance", value: day.stockIn - day.stockOut, color: "#8b5cf6", opacity: 0.4 }] : []),
+              ...(showBalance ? [{ label: "Net Change", value: day.stockIn - day.stockOut, color: "#8b5cf6", opacity: 0.4 }] : []),
             ];
             const width = Math.min(18, dayWidth * 0.75 / Math.max(1, bars.length));
             return bars.map((bar, barIndex) => bar.value !== 0 && (
@@ -940,7 +992,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
             ));
           })}
 
-          {/* Daily net balance line */}
+          {/* Daily net change line */}
           {chartMode === "line" && showBalance && (
             <g opacity="0.4">
               <path
@@ -1116,6 +1168,7 @@ export default function StockActivityChart({ movementHistory = [], historyReady 
           <button type="button" onClick={resetView}>Reset</button>
         </div>
       </div>
+      </>}
       <Modal
         open={Boolean(selectedDay)}
         title={selectedDay ? `Stock activity · ${selectedDay.fullLabel}` : "Stock activity"}

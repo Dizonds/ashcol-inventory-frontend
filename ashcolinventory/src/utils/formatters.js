@@ -14,7 +14,7 @@ export function formatRequestNumber(value) {
 
 export function formatMovementNumber(value) {
   if (typeof value !== "string") return value;
-  const match = value.match(/^(STI|STO)\s*-?\s*(\d+)$/i);
+  const match = value.match(/^(STI|STO|TRI|TRO|VAN|USE)\s*-?\s*(\d+)$/i);
   return match ? `${match[1].toUpperCase()} - ${match[2]}` : value;
 }
 

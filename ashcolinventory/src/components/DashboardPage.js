@@ -91,6 +91,7 @@ export default function DashboardPage({
   const [analytics, setAnalytics] = useState({ fastMoving: [], slowMoving: [] });
   const [movementHistory, setMovementHistory] = useState([]);
   const [movementHistoryReady, setMovementHistoryReady] = useState(false);
+  const [movementHistoryError, setMovementHistoryError] = useState(false);
 
   // Keep original analytics fetch
   useEffect(() => {
@@ -109,23 +110,25 @@ export default function DashboardPage({
   useEffect(() => {
     if (!branchId) return;
     let active = true;
-    api("get", "/movements", null, { branchId, page: 1, pageSize: 100 })
+    setMovementHistoryReady(false);
+    setMovementHistoryError(false);
+    api("get", "/movements", null, { branchId, scope: "branch", page: 1, pageSize: 100 })
       .then(async ({ data }) => {
         const firstPage = data.items || [];
         const pageSize = data.pageSize || firstPage.length || 100;
         const totalPages = Math.ceil((data.total || firstPage.length) / pageSize);
         const remaining = await Promise.all(
           Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) =>
-            api("get", "/movements", null, { branchId, page: index + 2, pageSize })
+            api("get", "/movements", null, { branchId, scope: "branch", page: index + 2, pageSize })
               .then((response) => response.data.items || [])
           )
         );
         if (active) {
-          setMovementHistory(firstPage.concat(...remaining));
+          setMovementHistory(firstPage.concat(...remaining).filter((entry) => entry.branchId === branchId));
           setMovementHistoryReady(true);
         }
       })
-      .catch(() => {});
+      .catch(() => { if (active) setMovementHistoryError(true); });
     return () => {
       active = false;
     };
@@ -146,14 +149,10 @@ export default function DashboardPage({
     0
   );
   const potentialInventoryValue = salesValue;
-  const totalUnits = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const pending = requests.filter(
     (request) => request.status === "PENDING"
   ).length;
-  const reservedTotal = items.reduce(
-    (acc, it) => acc + (it.reservedQuantity || 0),
-    0
-  );
+  const approvedRequests = requests.filter((request) => request.status === "APPROVED").length;
   const recentMovementCount = movementHistory.length;
 
 
@@ -163,6 +162,8 @@ export default function DashboardPage({
       Math.round(((result[unit] || 0) + item.quantity) * 1000) / 1000;
     return result;
   }, {});
+
+  const stockSummary = Object.entries(totals).map(([unit, total]) => `${total} ${unit}`).join(" · ") || "No stock";
 
   const categories = [
     "Split Type",
@@ -240,7 +241,7 @@ export default function DashboardPage({
                 {formatMoney(cost)}
               </span>
               <span className="kpi-subdelta" data-node-id="441:5422">
-                {totalUnits} units
+                {stockSummary}
               </span>
             </div>
           </div>
@@ -325,7 +326,7 @@ export default function DashboardPage({
                 <span>{items.length} SKUs</span>
               </div>
               <span className="kpi-trend-period" data-node-id="441:5462">
-                {totalUnits} units total
+                {stockSummary}
               </span>
             </div>
 
@@ -376,11 +377,11 @@ export default function DashboardPage({
               >
                 <img src={arrowGrow} alt="Trend" className="kpi-trend-arrow" />
                 <span>
-                  {low.length > 0 ? `${low.length} Need attention` : "Healthy"}
+                  {warnings.length > 0 ? `${warnings.length} Need attention` : "Healthy"}
                 </span>
               </div>
               <span className="kpi-trend-period">
-                {reservedTotal} Units Reserved
+                {approvedRequests} Approved requests
               </span>
             </div>
 
@@ -406,8 +407,11 @@ export default function DashboardPage({
       {/* 3. INVENTORY MOVEMENT TREND */}
       <div className={`dashboard-main-grid ${isChartExpanded ? "has-expanded-chart" : ""}`}>
         <StockActivityChart
+          items={items}
+          branchId={branchId}
           movementHistory={movementHistory}
           historyReady={movementHistoryReady}
+          historyError={movementHistoryError}
           initialView={stockChartView}
           onViewSave={onStockChartViewSave}
           isExpanded={isChartExpanded}
@@ -433,7 +437,7 @@ export default function DashboardPage({
         </button>
         <div className="attention-row attention-row-static">
           <span className="attention-row-icon attention-info">↗</span>
-          <span><strong>{pending} pending requests</strong><small>Awaiting review or fulfillment</small></span>
+          <span><strong>{pending} pending requests</strong><small>Awaiting review</small></span>
         </div>
       </div>
       </div>
@@ -479,10 +483,10 @@ export default function DashboardPage({
               <span className="unit-label">{unit}</span>
             </div>
           ))}
-          {reservedTotal > 0 && (
+          {approvedRequests > 0 && (
             <div className="unit-chip reserved">
-              <span className="unit-value">{reservedTotal}</span>
-              <span className="unit-label">RESERVED FOR JOBS</span>
+              <span className="unit-value">{approvedRequests}</span>
+              <span className="unit-label">AWAITING FULFILLMENT</span>
             </div>
           )}
           {pending > 0 && (

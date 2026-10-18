@@ -61,6 +61,26 @@ The migration:
 
 It does **not** repair discrepancies already created by the old clamping logic. After migration, compare physical stock against the recorded quantities and post an explained stock correction where needed.
 
+## Rename legacy job references
+
+The current schema stores the job relationship as `jobId` (an ObjectId reference) and keeps the readable `jobNumber` separately. Generic receipts and adjustment IDs use `referenceNumber`. Material requests keep their own `requestNumber` and can optionally link to a job with `jobId`.
+
+For a database restored from an older version, stop the backend and back up MongoDB first. From `ashcolinventory_backend_final`, run the dry run, review the record counts, then apply:
+
+```powershell
+npm run migrate:job-links
+npm run migrate:job-links -- --apply
+```
+
+The migration preserves old job-number text, connects it to a `JobOrder` when a matching job exists, removes duplicate legacy field names, and verifies that no old names remain. It refuses to apply when an old and new field contain conflicting values.
+
+Products also keep optional `brandId` and `supplierId` references to their lookup collections, while retaining brand and supplier names for display. Back up the database, then run a dry run and apply the additive references from the backend folder:
+
+```powershell
+npm run migrate:catalog-links
+npm run migrate:catalog-links -- --apply
+```
+
 ## Permissions and normal workflow
 
 | Role | Access |
@@ -71,7 +91,7 @@ It does **not** repair discrepancies already created by the old clamping logic. 
 
 Register an item with its opening balance. SKUs are unique per branch, including archived items. Unit of measure and SKU remain fixed after registration to keep historical quantities meaningful.
 
-Employees submit a material request with a manual job reference, such as `AC-001`. A manager approves it, then fulfills it when the materials are actually issued. Approval does not reserve or deduct stock. Fulfillment deducts stock and records the request link exactly once. Pending or approved requests can be denied with a reason.
+Employees submit a material request with its own request number; the API can optionally link it to the employee's current job. A manager approves it, then fulfills it when the materials are actually issued. Approval does not reserve or deduct stock. Fulfillment deducts stock and records the request link exactly once. Pending or approved requests can be denied with a reason.
 
 For deliveries, unused-material returns, direct dispatches, sales, and corrections, use **Post Movement** and provide a receipt/reference/explanation. Record requests through **Fulfill**, not a second direct dispatch. ADMIN transfers update both branches and produce two entries sharing the same reference. This simple workflow records a completed transfer, not an in-transit shipment or separate receipt approval.
 

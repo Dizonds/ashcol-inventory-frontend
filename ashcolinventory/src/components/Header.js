@@ -1,8 +1,8 @@
-import React, { useState } from "react";
 import { Dropdown, Modal } from "antd";
-import "./Header.css";
+import { useState } from "react";
 import avatarImg from "../assets/header/avatar.png";
 import AccountEditor from "./AccountEditor";
+import "./Header.css";
 
 function CalendarIcon() {
   return (
@@ -15,39 +15,39 @@ function CalendarIcon() {
   );
 }
 
-function BellIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M12 21.75C13.1 21.75 14 20.85 14 19.75H10C10 20.85 10.9 21.75 12 21.75ZM18 15.75V10.75C18 7.68 16.37 5.11 13.5 4.43V3.75C13.5 2.92 12.83 2.25 12 2.25C11.17 2.25 10.5 2.92 10.5 3.75V4.43C7.64 5.11 6 7.67 6 10.75V15.75L4 17.75V18.75H20V17.75L18 15.75ZM16 16.75H8V10.75C8 8.27 9.51 6.25 12 6.25C14.49 6.25 16 8.27 16 10.75V16.75Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
+// function BellIcon() {
+//   return (
+//     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+//       <path
+//         d="M12 21.75C13.1 21.75 14 20.85 14 19.75H10C10 20.85 10.9 21.75 12 21.75ZM18 15.75V10.75C18 7.68 16.37 5.11 13.5 4.43V3.75C13.5 2.92 12.83 2.25 12 2.25C11.17 2.25 10.5 2.92 10.5 3.75V4.43C7.64 5.11 6 7.67 6 10.75V15.75L4 17.75V18.75H20V17.75L18 15.75ZM16 16.75H8V10.75C8 8.27 9.51 6.25 12 6.25C14.49 6.25 16 8.27 16 10.75V16.75Z"
+//         fill="currentColor"
+//       />
+//     </svg>
+//   );
+// }
 
-function MoonIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-      <path
-        d="M19 12C17.8 12.64 16.43 13 14.98 13C10.25 13 6.42 9.17 6.42 4.44C6.42 2.99 6.78 1.62 7.42 0.42C3.17 1.42 0 5.24 0 9.8C0 15.11 4.31 19.42 9.63 19.42C14.19 19.42 18 16.25 19 12Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+// function MoonIcon() {
+//   return (
+//     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+//       <path
+//         d="M19 12C17.8 12.64 16.43 13 14.98 13C10.25 13 6.42 9.17 6.42 4.44C6.42 2.99 6.78 1.62 7.42 0.42C3.17 1.42 0 5.24 0 9.8C0 15.11 4.31 19.42 9.63 19.42C14.19 19.42 18 16.25 19 12Z"
+//         stroke="currentColor"
+//         strokeWidth="1.5"
+//         strokeLinecap="round"
+//         strokeLinejoin="round"
+//       />
+//     </svg>
+//   );
+// }
 
-function SunIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M12 2V4M12 20V22M4 12H2M22 12H20M5.64 5.64L7.05 7.05M16.95 16.95L18.36 18.36M5.64 18.36L7.05 16.95M16.95 7.05L18.36 5.64" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
+// function SunIcon() {
+//   return (
+//     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+//       <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.5" />
+//       <path d="M12 2V4M12 20V22M4 12H2M22 12H20M5.64 5.64L7.05 7.05M16.95 16.95L18.36 18.36M5.64 18.36L7.05 16.95M16.95 7.05L18.36 5.64" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+//     </svg>
+//   );
+// }
 
 function ChevronDownIcon() {
   return (
@@ -164,9 +164,9 @@ export default function Header({
         </div>
 
         {/* Action Buttons Section (Node 488:6934) */}
-        <div className="header-actions-divider" data-node-id="488:6934">
+        {/* <div className="header-actions-divider" data-node-id="488:6934"> */}
           {/* Moon / Theme Toggle Button */}
-          <button
+          {/* <button
             type="button"
             className="header-square-btn"
             onClick={() => {
@@ -178,10 +178,10 @@ export default function Header({
             data-node-id="488:6935"
           >
             {isDark ? <SunIcon /> : <MoonIcon />}
-          </button>
+          </button> */}
 
           {/* Notifications Button */}
-          <button
+          {/* <button
             type="button"
             className="header-square-btn"
             title="Notifications"
@@ -191,7 +191,7 @@ export default function Header({
             <BellIcon />
             {pendingCount > 0 && <span className="header-badge-dot" />}
           </button>
-        </div>
+        </div> */}
 
         {/* User Profile Dropdown (Node 488:6939, 488:6940, 488:6941, 488:6942) */}
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={["click"]}>
@@ -213,10 +213,10 @@ export default function Header({
 
             <div className="header-user-info" data-node-id="488:6940">
               <span className="header-user-name" data-node-id="488:6941">
-                {user?.fullName || "Jenny Wilson"}
+                {user?.fullName || "User"}
               </span>
               <span className="header-user-email" data-node-id="488:6942">
-                {user?.email || "felicia.reid@example.com"}
+                {user?.email || "Email unavailable"}
               </span>
             </div>
 
