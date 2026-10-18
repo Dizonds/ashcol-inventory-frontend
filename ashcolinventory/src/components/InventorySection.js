@@ -941,7 +941,10 @@ export default function InventorySection({
         width={700}
       >
         {formError && <Alert type="error" title={formError} />}
-        <form onSubmit={submit}>
+        <form className="inventory-item-form" onSubmit={submit}>
+          <div className="inventory-item-body">
+          <section className="inventory-item-section" aria-labelledby="inventory-details-heading">
+          <div className="inventory-item-section-heading"><h3 id="inventory-details-heading">Item details</h3><span>Identify and classify your item</span></div>
           <div className="form-grid">
             <label className="field">
               SKU / model

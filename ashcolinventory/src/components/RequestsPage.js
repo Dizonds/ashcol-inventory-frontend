@@ -366,7 +366,6 @@ export default function RequestsPage({
         closable={!busy}
         maskClosable={!busy}
         footer={null}
-        maskClosable={false}
       >
         <form className="material-request-form" onSubmit={submit}>
           <div className="material-request-content">

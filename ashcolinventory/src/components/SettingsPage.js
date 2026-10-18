@@ -196,6 +196,7 @@ export default function SettingsPage({
   // Filtered & Paged users
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
+      if (u.role === "ADMIN") return false; // Admin accounts are hidden from the list
       const q = searchQuery.toLowerCase().trim();
       const name = (u.fullName || `${u.firstName} ${u.lastName}`).toLowerCase();
       const email = (u.email || "").toLowerCase();
@@ -312,75 +313,467 @@ export default function SettingsPage({
   if (section !== "users") return null;
 
   return (
-      <>
-        <Typography.Title level={3}>User Management</Typography.Title>
-        <Typography.Paragraph type="secondary">
-          Create and review authenticated inventory accounts. Assign the least-privileged
-          role; all accounts automatically use the Taguig warehouse.
-        </Typography.Paragraph>
-        {!activeModule && <div className="user-management-actions" aria-label="User management actions">
-          <Button className="user-management-action" onClick={() => setActiveModule("create")}>
-            <span className="user-management-action-icon">+</span>
-            <span>
-              <strong>Create User Account</strong>
-              <small>Add a new administrator, manager, or employee</small>
-            </span>
-          </Button>
-          <Button className="user-management-action" onClick={() => setActiveModule("registered")}>
-            <span className="user-management-action-icon user-management-action-icon--list">☷</span>
-            <span>
-              <strong>Registered User Accounts</strong>
-              <small>Review all accounts and their assigned roles</small>
-            </span>
-          </Button>
-        </div>}
-        {activeModule && (
-          <Button className="user-management-back" onClick={() => {
-            setActiveModule(null);
-            setError("");
-            setFormError("");
-          }}>
-            ← Back to User Management
-          </Button>
-        )}
-        {error && <Alert type="error" title={error} showIcon />}
-        {formError && <Alert type="warning" title={formError} showIcon style={{ marginTop: 12 }} />}
-        {activeModule === "create" && <Card title="Create User Account" className="user-management-module">
-          <form onSubmit={createAccount}>
-            <div className="form-grid">
-              <label className="field">
-                First name
-                <Input required maxLength={50} placeholder="e.g. Juan" value={account.firstName} onChange={(e) => setAccount({ ...account, firstName: e.target.value })} />
-              </label>
-              <label className="field">
-                Last name
-                <Input required maxLength={50} placeholder="e.g. Dela Cruz" value={account.lastName} onChange={(e) => setAccount({ ...account, lastName: e.target.value })} />
-              </label>
-              <label className="field">
-                Work email address
-                <Input required type="email" maxLength={200} autoComplete="email" placeholder="name@ashcol.com" value={account.email} onChange={(e) => setAccount({ ...account, email: e.target.value })} />
-              </label>
-              <label className="field">
-                Account role
-                <Select
-                  value={account.role}
-                  onChange={(role) => setAccount({ ...account, role })}
-                  options={[
-                    { value: "EMPLOYEE", label: "Employee — view and request materials" },
-                    { value: "MANAGER", label: "Manager — manage warehouse inventory" },
-                    { value: "ADMIN", label: "Administrator — manage the whole system" },
-                  ]}
+    <div className="um-container">
+      {error && (
+        <Alert
+          type="error"
+          message={error}
+          showIcon
+          closable
+          onClose={() => setError("")}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {/* ── MAIN CARD: ACCOUNT LIST (Figma Node 534:5462) ── */}
+      <div className="um-card">
+        {/* Header Row: Title, Search, Filter, Register Button */}
+        <div className="um-header-row">
+          <div className="um-header-left">
+            {/* Title with List Icon */}
+            <div className="um-title-group">
+              <div className="um-title-icon-box">
+                <ListIcon />
+              </div>
+              <h2 className="um-title">Account List</h2>
+            </div>
+
+            {/* Search Input */}
+            <div className="um-search-wrap">
+              <span className="um-search-icon">
+                <SearchIcon />
+              </span>
+              <input
+                type="text"
+                className="um-search-input"
+                placeholder="Search name, role, or email"
+                aria-label="Search name, role, or email"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="um-header-right">
+            {/* Filter Dropdown */}
+            <div className="um-filter-wrap">
+              <select
+                className="um-filter-btn"
+                aria-label="Filter by role"
+                value={roleFilter}
+                onChange={(e) => {
+                  setRoleFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="ALL">ALL</option>
+                <option value="MANAGER">Manager</option>
+                <option value="EMPLOYEE">Employee</option>
+              </select>
+            </div>
+
+            {/* Register Account Button */}
+            {isAdmin && (
+              <button
+                type="button"
+                className="um-btn-register"
+                onClick={() => {
+                  setFormError("");
+                  setNewAccount(emptyAccount);
+                  setCreateModalOpen(true);
+                }}
+              >
+                <PlusIcon />
+                <span>Register Account</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Account Table */}
+        <div className="um-table-container">
+          <table className="um-table">
+            <thead>
+              <tr>
+                <th style={{ width: "22%" }}>FULLNAME</th>
+                <th style={{ width: "24%" }}>EMAIL</th>
+                <th style={{ width: "14%" }}>ROLE</th>
+                <th style={{ width: "12%" }}>STATUS</th>
+                <th style={{ width: "14%" }}>JOINED DATE</th>
+                <th style={{ width: "14%", textAlign: "center" }}>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagedUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="um-empty-state">
+                    No matching user accounts found.
+                  </td>
+                </tr>
+              ) : (
+                pagedUsers.map((item) => {
+                  const nameInfo = parseName(item);
+                  const isOwn = item.id === (currentUser?.id || currentUser?._id);
+                  const protectedUser = isProtectedAccount(item);
+                  const isActive = item.availability !== "AWAY";
+
+                  return (
+                    <tr key={item.id}>
+                      {/* FULLNAME */}
+                      <td className="um-td-fullname">
+                        {item.fullName || `${nameInfo.firstName} ${nameInfo.lastName}`}
+                      </td>
+
+                      {/* EMAIL */}
+                      <td>{item.email}</td>
+
+                      {/* ROLE */}
+                      <td>
+                        <span className="um-role-text">{formatRole(item.role)}</span>
+                      </td>
+
+                      {/* STATUS */}
+                      <td>
+                        <span
+                          className={`um-status-badge ${
+                            isActive ? "active" : "inactive"
+                          }`}
+                        >
+                          <span className="um-status-dot" />
+                          <span>{isActive ? "Active" : "Inactive"}</span>
+                        </span>
+                      </td>
+
+                      {/* JOINED DATE */}
+                      <td>{formatJoinedDate(item.createdAt)}</td>
+
+                      {/* ACTIONS */}
+                      <td>
+                        <div
+                          className="um-actions-cell"
+                          style={{ justifyContent: "center" }}
+                        >
+                          {/* View Details Button (Eye) */}
+                          <button
+                            type="button"
+                            className="um-action-btn"
+                            title="View Details"
+                            aria-label={`View ${item.fullName}`}
+                            onClick={() => setDetailsModalUser(item)}
+                          >
+                            <EyeIcon />
+                          </button>
+
+                          {/* Edit User Button (Pen) */}
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              className="um-action-btn"
+                              title="Edit User"
+                              aria-label={`Edit ${item.fullName}`}
+                              onClick={() => setEditAccount(item)}
+                            >
+                              <PenIcon />
+                            </button>
+                          )}
+
+                          {/* Delete User Button (Trash) */}
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              className="um-action-btn btn-delete"
+                              title={
+                                protectedUser
+                                  ? isOwn
+                                    ? "Cannot delete your own signed-in account"
+                                    : "Last administrator account cannot be deleted"
+                                  : "Delete User"
+                              }
+                              aria-label={`Delete ${item.fullName}`}
+                              disabled={protectedUser}
+                              onClick={() => {
+                                setRemoveError("");
+                                setRemoveAccount(item);
+                              }}
+                            >
+                              <TrashIcon />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Bar */}
+        <div className="um-pagination-bar">
+          <span className="um-pagination-text">
+            Showing{" "}
+            {filteredUsers.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}{" "}
+            to {Math.min(currentPage * pageSize, filteredUsers.length)} of{" "}
+            {filteredUsers.length} entries
+          </span>
+
+          <div className="um-pagination-controls">
+            <button
+              type="button"
+              className="um-page-btn"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              aria-label="Previous page"
+            >
+              &lt;
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`um-page-btn ${p === currentPage ? "active" : ""}`}
+                onClick={() => setCurrentPage(p)}
+              >
+                {p}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="um-page-btn"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Next page"
+            >
+              &gt;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── MODAL 1: CREATE USER ACCOUNT (Figma Node 534:5899) ── */}
+      {createModalOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className={`um-modal-overlay ${isDarkMode ? "dark" : ""}`}
+          >
+            <div
+              className="um-modal-card"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="create-user-modal-title"
+            >
+              {/* Header */}
+              <div className="um-modal-header">
+                <h3 id="create-user-modal-title" className="um-modal-title">
+                  Create User Account
+                </h3>
+                <button
+                  type="button"
+                  className="um-modal-close-btn"
+                  disabled={busy}
+                  onClick={() => {
+                    setFormError("");
+                    setCreateModalOpen(false);
+                  }}
+                  aria-label="Close modal"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+
+              {formError && (
+                <Alert
+                  type="error"
+                  message={formError}
+                  showIcon
+                  style={{ marginBottom: 4 }}
                 />
-              </label>
-              <label className="field">
-                Temporary password
-                <Input.Password required minLength={10} autoComplete="new-password" placeholder="At least 10 characters" value={account.password} onChange={(e) => setAccount({ ...account, password: e.target.value })} />
-                <small>Use uppercase, lowercase, and a number.</small>
-              </label>
-              <label className="field">
-                Confirm password
-                <Input.Password required minLength={10} autoComplete="new-password" placeholder="Re-enter temporary password" value={account.confirmPassword} onChange={(e) => setAccount({ ...account, confirmPassword: e.target.value })} />
-              </label>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleCreateAccount}>
+                <div className="um-form-grid-2col">
+                  {/* Left Column */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "20px",
+                    }}
+                  >
+                    {/* First Name */}
+                    <div className="um-form-group">
+                      <label className="um-form-label" htmlFor="create-first-name">
+                        First Name
+                      </label>
+                      <input
+                        id="create-first-name"
+                        type="text"
+                        className="um-form-input"
+                        placeholder="e.g Juan"
+                        required
+                        maxLength={50}
+                        disabled={busy}
+                        value={newAccount.firstName}
+                        onChange={(e) =>
+                          setNewAccount({
+                            ...newAccount,
+                            firstName: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    {/* Last Name */}
+                    <div className="um-form-group">
+                      <label className="um-form-label" htmlFor="create-last-name">
+                        Last Name
+                      </label>
+                      <input
+                        id="create-last-name"
+                        type="text"
+                        className="um-form-input"
+                        placeholder="e.g Dela Cruz"
+                        required
+                        maxLength={50}
+                        disabled={busy}
+                        value={newAccount.lastName}
+                        onChange={(e) =>
+                          setNewAccount({
+                            ...newAccount,
+                            lastName: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div className="um-form-group">
+                      <label className="um-form-label" htmlFor="create-email">
+                        Email
+                      </label>
+                      <input
+                        id="create-email"
+                        type="email"
+                        className="um-form-input"
+                        placeholder="e.g delacruz@ashcol.com"
+                        required
+                        maxLength={200}
+                        autoComplete="email"
+                        disabled={busy}
+                        value={newAccount.email}
+                        onChange={(e) =>
+                          setNewAccount({
+                            ...newAccount,
+                            email: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "20px",
+                    }}
+                  >
+                    {/* Select Role */}
+                    <div className="um-form-group">
+                      <label className="um-form-label" htmlFor="create-role">
+                        Select Role
+                      </label>
+                      <select
+                        id="create-role"
+                        className="um-form-select"
+                        disabled={busy}
+                        value={newAccount.role}
+                        onChange={(e) =>
+                          setNewAccount({
+                            ...newAccount,
+                            role: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="EMPLOYEE">Employee</option>
+                        <option value="MANAGER">Manager</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    </div>
+
+                    {/* Password */}
+                    <div className="um-form-group">
+                      <label className="um-form-label" htmlFor="create-password">
+                        Password
+                      </label>
+                      <input
+                        id="create-password"
+                        type="password"
+                        className="um-form-input"
+                        placeholder="At least 10 characters"
+                        required
+                        minLength={10}
+                        autoComplete="new-password"
+                        disabled={busy}
+                        value={newAccount.password}
+                        onChange={(e) =>
+                          setNewAccount({
+                            ...newAccount,
+                            password: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    {/* Confirmed Password */}
+                    <div className="um-form-group">
+                      <label
+                        className="um-form-label"
+                        htmlFor="create-confirm-password"
+                      >
+                        Confirmed Password
+                      </label>
+                      <input
+                        id="create-confirm-password"
+                        type="password"
+                        className="um-form-input"
+                        placeholder="Confirmed Password"
+                        required
+                        minLength={10}
+                        autoComplete="new-password"
+                        disabled={busy}
+                        value={newAccount.confirmPassword}
+                        onChange={(e) =>
+                          setNewAccount({
+                            ...newAccount,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="um-modal-footer">
+                  <button
+                    type="submit"
+                    className="um-btn-submit"
+                    disabled={busy}
+                  >
+                    {busy ? "Creating..." : "Create User"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>,
           document.body,

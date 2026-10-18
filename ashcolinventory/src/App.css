@@ -720,3 +720,16 @@ body:has(.inventory-app.dark) .ant-modal-mask,
   .form-grid { grid-template-columns: 1fr; }
   .user-management-section .ant-card-body { padding: 18px; }
 }
+
+/* Popups always fit the viewport: header/footer stay reachable, content scrolls. */
+.ant-modal { top: 12px !important; max-width: calc(100vw - 24px) !important; padding-bottom: 0 !important; margin-inline: auto; }
+.ant-modal-wrap { overflow: hidden !important; display: flex; align-items: center; justify-content: center; }
+.ant-modal-wrap > .ant-modal { top: 0 !important; }
+.ant-modal .ant-modal-content,
+.ant-modal .ant-modal-container { display: flex; flex-direction: column; max-height: calc(100dvh - 24px); overflow: hidden; }
+.ant-modal .ant-modal-header { flex: 0 0 auto; }
+.ant-modal .ant-modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.ant-modal .ant-modal-footer { flex: 0 0 auto; }
+.inventory-item-body,
+.material-request-content { max-height: none !important; overflow: visible !important; }
+.inventory-item-footer { position: sticky; bottom: 0; z-index: 1; background: var(--card-bg, #fff); }
