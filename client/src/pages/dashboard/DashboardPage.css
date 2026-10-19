@@ -1,0 +1,748 @@
+/* --- DASHBOARD STYLES --- */
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+}
+
+/* 1. WELCOME GREETING BANNER */
+.dashboard-welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.dashboard-welcome-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #02081a;
+  letter-spacing: -0.4px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inventory-app.dark .dashboard-welcome-title {
+  color: #e2ede7;
+}
+
+.dashboard-welcome-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #02081a;
+  opacity: 0.55;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.inventory-app.dark .dashboard-welcome-subtitle {
+  color: #8bb09c;
+  opacity: 0.8;
+}
+
+/* 2. KPI METRIC CARDS ROW */
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.dashboard-kpi-grid-secondary { margin-top: 16px; }
+.compact-kpi-card { min-height: 150px; }
+.dashboard-main-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.75fr); gap: 16px; align-items: stretch; }
+.dashboard-main-grid .stock-activity-card { min-width: 0; position: relative; }
+.dashboard-main-grid.has-expanded-chart { grid-template-columns: minmax(0, 1fr); }
+.dashboard-attention-card { background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 14px; padding: 20px; box-shadow: var(--shadow-card); }
+.attention-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 14px 0; border: 0; border-bottom: 1px solid var(--border-light); background: transparent; color: var(--text-main); text-align: left; cursor: pointer; }
+.attention-row:last-child { border-bottom: 0; }
+.attention-row:not(.attention-row-static):hover strong { color: var(--brand); }
+.attention-row > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.attention-row strong { font-size: 13px; transition: color var(--t); }
+.attention-row small { color: var(--text-secondary); font-size: 11px; }
+.attention-row-icon { display: grid; width: 30px; height: 30px; place-items: center; flex: 0 0 auto; border-radius: 9px; font-weight: 700; }
+.attention-warning { color: #a16207; background: #fef3c7; }
+.attention-danger { color: #b91c1c; background: #fee2e2; }
+.attention-info { color: #1d4ed8; background: #dbeafe; }
+.attention-arrow { color: var(--text-muted); font-size: 18px; }
+.recent-activity-card { margin-top: 20px; }
+.recent-activity-list { display: flex; flex-direction: column; }
+.recent-activity-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+.recent-activity-row:last-child { border-bottom: 0; }
+.recent-activity-type { width: 34px; padding: 4px 0; border-radius: 6px; text-align: center; font-size: 10px; font-weight: 700; }
+.recent-in { color: #15803d; background: #dcfce7; }
+.recent-out { color: #b45309; background: #fef3c7; }
+.recent-activity-item { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.recent-activity-item strong { overflow: hidden; color: var(--text-main); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.recent-activity-item small { overflow: hidden; color: var(--text-secondary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.recent-activity-quantity { color: var(--text-main); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.recent-activity-empty { padding: 18px 0; color: var(--text-secondary); font-size: 13px; }
+
+.stock-status-card { margin-top: 20px; }
+.stock-status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+.stock-status-item { min-width: 0; }
+.stock-status-label { display: flex; align-items: center; gap: 7px; margin-bottom: 9px; color: var(--text-secondary); font-size: 13px; }
+.stock-status-label strong { margin-left: auto; color: var(--text-main); font-size: 16px; }
+.stock-status-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+
+.dashboard-kpi-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.inventory-app.dark .dashboard-kpi-card {
+  background: #13221a;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.inventory-app.dark .dashboard-kpi-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-color: rgba(18, 168, 7, 0.3);
+}
+
+.kpi-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+.kpi-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kpi-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #e2ffe0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #12a807;
+}
+
+.inventory-app.dark .kpi-icon-badge {
+  background: rgba(18, 168, 7, 0.16);
+  color: #3ae058;
+}
+
+.kpi-title {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #02081a;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .kpi-title {
+  color: #e2ede7;
+}
+
+.kpi-trend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.kpi-trend-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #31c998;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.kpi-trend-arrow {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.kpi-trend-period {
+  font-size: 13.5px;
+  color: #02081a;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .kpi-trend-period {
+  color: #8bb09c;
+  opacity: 0.8;
+}
+
+.kpi-values-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kpi-value-large {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #02081a;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.inventory-app.dark .kpi-value-large {
+  color: #ffffff;
+}
+
+.kpi-subdelta {
+  font-size: 15px;
+  font-weight: 500;
+  color: #31c998;
+}
+
+/* Mini Bar Chart Visual on the right of KPI cards */
+.kpi-mini-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  height: 72px;
+  padding-left: 12px;
+  flex-shrink: 0;
+}
+
+.kpi-bar {
+  width: 20px;
+  border-radius: 6px;
+  background: #f3f3f3;
+  transition: height 0.3s ease;
+}
+
+.inventory-app.dark .kpi-bar {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.kpi-bar.active {
+  background: #12a807;
+  box-shadow: 0 2px 8px rgba(18, 168, 7, 0.3);
+}
+
+/* 3. TOTAL SALES ANALYTICS CHART CARD */
+.dashboard-sales-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+}
+
+.inventory-app.dark .dashboard-sales-card {
+  background: #13221a;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.sales-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.sales-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sales-header-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e2ffe0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #12a807;
+}
+
+.inventory-app.dark .sales-header-icon {
+  background: rgba(18, 168, 7, 0.16);
+  color: #3ae058;
+}
+
+.sales-header-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #02081a;
+  margin: 0;
+}
+
+.inventory-app.dark .sales-header-title {
+  color: #ffffff;
+}
+
+.sales-info-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: color 0.18s;
+}
+
+.inventory-app.dark .sales-info-icon {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sales-info-icon:hover {
+  color: #12a807;
+}
+
+.sales-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sales-control-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 14px;
+  background: #f8f8f8;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #02081a;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.inventory-app.dark .sales-control-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #e2ede7;
+}
+
+.sales-control-pill:hover {
+  background: #edf5ed;
+  border-color: rgba(18, 168, 7, 0.3);
+}
+
+.inventory-app.dark .sales-control-pill:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(58, 224, 88, 0.3);
+}
+
+.sales-stat-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sales-stat-amount {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #02081a;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.inventory-app.dark .sales-stat-amount {
+  color: #ffffff;
+}
+
+.sales-stat-trend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #31c998;
+}
+
+.sales-stat-period {
+  font-size: 14px;
+  color: #02081a;
+  opacity: 0.5;
+}
+
+.inventory-app.dark .sales-stat-period {
+  color: #8bb09c;
+  opacity: 0.8;
+}
+
+/* Dot Matrix Chart Container */
+.sales-chart-wrapper {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  align-items: stretch;
+  min-height: 290px;
+  margin-top: 6px;
+}
+
+.sales-y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 34px;
+  padding-bottom: 28px;
+  font-size: 13.5px;
+  color: #02081a;
+  opacity: 0.45;
+  text-align: right;
+  user-select: none;
+}
+
+.inventory-app.dark .sales-y-axis {
+  color: #8bb09c;
+  opacity: 0.7;
+}
+
+.sales-chart-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.sales-columns-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 240px;
+  position: relative;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+  padding-bottom: 8px;
+  gap: 8px;
+}
+
+.inventory-app.dark .sales-columns-container {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.sales-month-group {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+  flex: 1;
+  height: 100%;
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+.sales-dot-column {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 4px;
+  width: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.sales-dot-column:hover {
+  transform: scaleY(1.04);
+}
+
+.sales-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.sales-dot-column:hover .sales-dot {
+  filter: brightness(1.15);
+}
+
+.sales-x-axis {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #02081a;
+  opacity: 0.55;
+  user-select: none;
+  padding: 0 4px;
+}
+
+.inventory-app.dark .sales-x-axis {
+  color: #8bb09c;
+  opacity: 0.8;
+}
+
+.sales-x-label {
+  flex: 1;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .dashboard-main-grid { grid-template-columns: 1fr; }
+  .stock-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .movement-summary-row { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .movement-header-right { width: 100%; justify-content: space-between; }
+  .sales-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .sales-columns-container {
+    min-width: 680px;
+  }
+}
+
+/* 4, 5, 6, 7. DASHBOARD SECTION CARDS */
+.dashboard-section-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inventory-app.dark .dashboard-section-card {
+  background: #13221a;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-section-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.inventory-app.dark .dashboard-section-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.section-header-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.section-title {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #02081a;
+  margin: 0;
+}
+
+.inventory-app.dark .section-title {
+  color: #e2ede7;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: #02081a;
+  opacity: 0.55;
+  margin: 0;
+}
+
+.inventory-app.dark .section-subtitle {
+  color: #8bb09c;
+  opacity: 0.8;
+}
+
+/* Unit Ribbon Chips */
+.dashboard-unit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.unit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4fbf5;
+  border: 1px solid rgba(18, 168, 7, 0.2);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .unit-chip {
+  background: rgba(18, 168, 7, 0.1);
+  border-color: rgba(18, 168, 7, 0.3);
+}
+
+.unit-chip:hover {
+  border-color: #12a807;
+  transform: translateY(-1px);
+}
+
+.unit-value {
+  font-weight: 700;
+  color: #12a807;
+  font-size: 14px;
+}
+
+.inventory-app.dark .unit-value {
+  color: #3ae058;
+}
+
+.unit-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.inventory-app.dark .unit-label {
+  color: #bbf7d0;
+}
+
+.unit-chip.reserved {
+  background: #eff6ff;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.unit-chip.reserved .unit-value {
+  color: #2563eb;
+}
+
+.unit-chip.reserved .unit-label {
+  color: #1e40af;
+}
+
+.unit-chip.pending {
+  background: #fefce8;
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.unit-chip.pending .unit-value {
+  color: #ca8a04;
+}
+
+.unit-chip.pending .unit-label {
+  color: #854d0e;
+}
+
+/* Composition Items */
+.composition-item {
+  background: #fafafa;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.inventory-app.dark .composition-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.composition-item:hover {
+  border-color: #12a807;
+  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(18, 168, 7, 0.08);
+}
+
+.inventory-app.dark .composition-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #3ae058;
+}
+
+.composition-link {
+  padding: 0 !important;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827 !important;
+}
+
+.inventory-app.dark .composition-link {
+  color: #f3f4f6 !important;
+}
+
+.composition-count {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.count-number {
+  font-size: 22px;
+  font-weight: 700;
+  color: #02081a;
+}
+
+.inventory-app.dark .count-number {
+  color: #e2ede7;
+}
+
+.count-unit {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.inventory-app.dark .count-unit {
+  color: #9ca3af;
+}
+

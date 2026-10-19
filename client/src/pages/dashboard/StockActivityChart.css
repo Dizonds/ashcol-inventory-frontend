@@ -1,0 +1,824 @@
+/* ========================================================
+   STOCK ACTIVITY CHART - CHART STYLES
+   ======================================================== */
+
+.stock-activity-card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+  border-radius: 16px;
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.03);
+  position: relative;
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  --chart-grid: rgba(0, 0, 0, 0.06);
+  --chart-axis: #64748b;
+  --chart-axis-line: rgba(0, 0, 0, 0.12);
+  --chart-tooltip-bg: rgba(255, 255, 255, 0.96);
+  --chart-tooltip-border: rgba(0, 0, 0, 0.08);
+  --chart-hover-bg: rgba(16, 185, 129, 0.06);
+}
+
+.inventory-app.dark .stock-activity-card {
+  background: #13221a;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --chart-grid: rgba(255, 255, 255, 0.06);
+  --chart-axis: #8bb09c;
+  --chart-axis-line: rgba(255, 255, 255, 0.14);
+  --chart-tooltip-bg: rgba(19, 34, 26, 0.96);
+  --chart-tooltip-border: rgba(255, 255, 255, 0.12);
+  --chart-hover-bg: rgba(52, 211, 153, 0.08);
+}
+
+/* Expanded chart stays in the dashboard flow, with other cards below it. */
+.stock-activity-card.is-expanded {
+  scroll-margin-top: 16px;
+  overflow: hidden;
+  padding: 28px 36px;
+}
+
+.stock-activity-card.is-expanded > .stock-chart-viewport {
+  flex: none;
+  height: clamp(360px, 60dvh, 720px);
+}
+
+.stock-activity-card.is-expanded .stock-fullscreen-btn {
+  width: auto;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* 1. HEADER ROW */
+.stock-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stock-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock-header-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #e2ffe0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #12a807;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.inventory-app.dark .stock-header-badge {
+  background: rgba(18, 168, 7, 0.18);
+  color: #3ae058;
+}
+
+.stock-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stock-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-card-title {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text-main, #02081a);
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.stock-card-subtitle {
+  font-size: 12.5px;
+  color: var(--text-secondary, #64748b);
+  opacity: 0.85;
+}
+
+.stock-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+
+.stock-info-icon:hover {
+  color: #10b981;
+}
+
+/* Controls Toolbar */
+.stock-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* View Mode Segmented Switch */
+.stock-mode-toggle {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-light, rgba(0, 0, 0, 0.06));
+}
+
+.inventory-app.dark .stock-mode-toggle {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stock-mode-toggle button {
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 10px;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.18s ease;
+}
+
+.stock-mode-toggle button:hover {
+  color: var(--text-main, #02081a);
+}
+
+.stock-mode-toggle button.active {
+  background: var(--card-bg, #ffffff);
+  color: #059669;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.inventory-app.dark .stock-mode-toggle button.active {
+  background: #1a2f24;
+  color: #34d399;
+}
+
+/* Range Selector Pills */
+.stock-range-pill {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-light, rgba(0, 0, 0, 0.06));
+}
+
+.inventory-app.dark .stock-range-pill {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stock-range-pill button {
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 9px;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.stock-range-pill button:hover {
+  color: var(--text-main, #02081a);
+}
+
+.stock-range-pill button.active {
+  background: var(--card-bg, #ffffff);
+  color: #059669;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.inventory-app.dark .stock-range-pill button.active {
+  background: #1a2f24;
+  color: #34d399;
+}
+
+/* Fullscreen Button */
+.stock-fullscreen-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light, rgba(0, 0, 0, 0.06));
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.stock-fullscreen-btn:hover {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.06);
+}
+
+/* 2. SUB BAR (METRICS & LEGEND) */
+.stock-sub-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-light, rgba(0, 0, 0, 0.05));
+}
+
+.stock-metric-chips {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--text-secondary, #475569);
+}
+
+.inventory-app.dark .metric-chip {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.metric-chip-icon {
+  font-weight: 700;
+}
+
+.metric-chip.chip-stock-in {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.inventory-app.dark .metric-chip.chip-stock-in {
+  background: rgba(16, 185, 129, 0.14);
+  color: #34d399;
+}
+
+.metric-chip.chip-stock-out {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.inventory-app.dark .metric-chip.chip-stock-out {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+}
+
+.metric-chip.chip-net.is-positive {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.inventory-app.dark .metric-chip.chip-net.is-positive {
+  background: rgba(59, 130, 246, 0.14);
+  color: #60a5fa;
+}
+
+.metric-chip.chip-net.is-negative {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.inventory-app.dark .metric-chip.chip-net.is-negative {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+}
+
+.metric-chip.chip-activity {
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+}
+
+.metric-chip-val {
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.stock-legend-toggles {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.stock-legend-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.inventory-app.dark .stock-legend-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stock-legend-item.disabled {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
+.legend-indicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.stock-in-indicator {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.stock-balance-indicator {
+  background: #8b5cf6;
+}
+
+.stock-out-indicator {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+/* 3. CHART CANVAS VIEWPORT */
+.stock-chart-viewport {
+  position: relative;
+  width: 100%;
+  margin-top: 4px;
+  touch-action: none;
+  overscroll-behavior: contain;
+  overflow: hidden;
+  user-select: none;
+  cursor: crosshair;
+}
+
+.stock-chart-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.stock-svg-element {
+  display: block;
+  width: 100%;
+  overflow: visible;
+  cursor: inherit;
+  pointer-events: none;
+}
+
+.stock-chart-drag-hint {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  z-index: 1;
+  color: var(--text-muted, #94a3b8);
+  font-size: 10px;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.inventory-app.dark .stock-chart-drag-hint {
+  color: #8bb09c;
+}
+
+/* Grid & Axes */
+.stock-grid-line {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.stock-baseline {
+  stroke: var(--chart-axis-line);
+  stroke-width: 1.5;
+}
+
+.stock-axis-line {
+  stroke: var(--chart-axis-line);
+  stroke-width: 1.5;
+}
+
+.stock-axis-label {
+  fill: var(--chart-axis);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  user-select: none;
+}
+
+.stock-date-label {
+  transition: fill 0.15s ease;
+}
+
+.stock-date-label.is-active {
+  fill: #10b981;
+  font-weight: 700;
+}
+
+/* Curves & Bars */
+.stock-area-fill {
+  transition: opacity 0.25s ease;
+}
+
+.stock-curve {
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.stock-dot {
+  opacity: 0;
+  cursor: inherit;
+  transition: r 0.15s ease;
+}
+
+.stock-point-target { pointer-events: all; cursor: inherit; outline: none; }
+.stock-point-target:focus-visible .stock-dot { opacity: 1; r: 5.5; stroke-width: 3; }
+.chart-movement-item { display: flex; flex-direction: column; gap: 4px; }
+.chart-movement-item span { overflow-wrap: anywhere; }
+.chart-movement-summary { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 18px 0 12px; font-variant-numeric: tabular-nums; }
+.chart-movement-in { color: #10b981; }
+.chart-movement-out { color: #d97706; }
+
+.stock-bar {
+  cursor: inherit;
+  pointer-events: all;
+  transition: opacity 0.2s ease;
+}
+
+.stock-bar:hover,
+.stock-bar:focus-visible {
+  stroke: var(--text-main, #02081a);
+  stroke-width: 1.5;
+  outline: none;
+}
+
+.stock-bar.in-bar {
+  filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.15));
+}
+
+.stock-bar.out-bar {
+  filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.15));
+}
+
+.bar-hover-bg {
+  color: var(--chart-hover-bg);
+}
+
+.zero-indicator {
+  fill: var(--chart-axis);
+  opacity: 0.35;
+}
+
+/* Crosshair Guide */
+.stock-crosshair {
+  stroke: var(--text-muted, #94a3b8);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 4;
+}
+
+/* 4. FLOATING TOOLTIP CARD */
+.stock-floating-tooltip {
+  position: absolute;
+  width: min(220px, calc(100% - 70px));
+  box-sizing: border-box;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  background: var(--chart-tooltip-bg);
+  border: 1px solid var(--chart-tooltip-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  animation: fadeInTooltip 0.15s ease-out;
+}
+
+.stock-chart-viewport:focus-visible,
+.stock-chart-toolbar button:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+.stock-crosshair-labels rect { fill: #334155; }
+.stock-crosshair-labels text { fill: #fff; font-size: 10px; font-variant-numeric: tabular-nums; }
+
+.stock-chart-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--chart-grid);
+  padding-top: 12px;
+  color: var(--chart-axis);
+  font-size: 11px;
+}
+.stock-chart-toolbar > div { display: flex; gap: 4px; flex-wrap: wrap; }
+.stock-chart-toolbar .stock-chart-details {
+  flex: 1 1 360px;
+  align-items: center;
+  gap: 8px 16px;
+  min-height: 30px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.stock-chart-details > span { white-space: nowrap; }
+.stock-chart-details .stock-detail-date { color: var(--text-main, #02081a); font-weight: 600; }
+.stock-chart-details .stock-detail-in { color: #059669; }
+.stock-chart-details .stock-detail-out { color: #b45309; }
+.inventory-app.dark .stock-chart-details .stock-detail-in { color: #34d399; }
+.inventory-app.dark .stock-chart-details .stock-detail-out { color: #fbbf24; }
+.stock-chart-toolbar button {
+  border: 1px solid var(--chart-axis-line);
+  background: var(--chart-tooltip-bg);
+  color: var(--text-main, #02081a);
+  border-radius: 6px;
+  padding: 6px 9px;
+  min-height: 30px;
+  cursor: pointer;
+}
+.stock-chart-toolbar button:hover { border-color: #10b981; color: #059669; }
+
+@keyframes fadeInTooltip {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light, rgba(0, 0, 0, 0.06));
+}
+
+.tooltip-date {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main, #02081a);
+}
+
+.tooltip-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  font-weight: 600;
+}
+
+.tooltip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tooltip-stat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+
+.tooltip-stat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tooltip-stat-dot.in-dot {
+  background: #10b981;
+}
+
+.tooltip-stat-dot.out-dot {
+  background: #f59e0b;
+}
+
+.tooltip-stat-name {
+  color: var(--text-secondary, #64748b);
+  flex: 1;
+}
+
+.tooltip-stat-num {
+  font-weight: 600;
+  color: var(--text-main, #02081a);
+}
+
+.tooltip-stat.in-stat .tooltip-stat-num {
+  color: #059669;
+}
+
+.tooltip-stat.out-stat .tooltip-stat-num {
+  color: #d97706;
+}
+
+.tooltip-stat.net-stat {
+  margin-top: 3px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--border-light, rgba(0, 0, 0, 0.08));
+}
+
+.tooltip-stat.net-stat.positive .tooltip-stat-num {
+  color: #059669;
+}
+
+.tooltip-stat.net-stat.negative .tooltip-stat-num {
+  color: #dc2626;
+}
+
+.tooltip-entries-preview {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.06));
+}
+
+.tooltip-preview-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 3px;
+}
+
+.tooltip-preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.preview-name {
+  color: var(--text-secondary, #475569);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-delta.in {
+  color: #059669;
+  font-weight: 600;
+}
+
+.preview-delta.out {
+  color: #d97706;
+  font-weight: 600;
+}
+
+.tooltip-preview-more {
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 2px;
+  font-style: italic;
+}
+
+/* Empty State */
+.stock-chart-empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.empty-state-card {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  max-width: 320px;
+  padding: 18px 22px;
+  border-radius: 12px;
+  background: var(--chart-tooltip-bg);
+  border: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.empty-icon {
+  font-size: 24px;
+}
+
+.empty-state-card strong {
+  font-size: 13.5px;
+  color: var(--text-main, #02081a);
+}
+
+.empty-state-card small {
+  font-size: 11.5px;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.4;
+}
+
+.empty-action-btn {
+  margin-top: 4px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.empty-action-btn:hover {
+  background: #10b981;
+  color: #ffffff;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 900px) {
+  .stock-activity-card {
+    padding: 18px 18px;
+  }
+  .stock-sub-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .stock-legend-toggles {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px), (max-height: 600px) {
+  .stock-activity-card.is-expanded {
+    padding: 12px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  .stock-activity-card.is-expanded .stock-card-header {
+    gap: 8px;
+  }
+
+  .stock-activity-card.is-expanded .stock-sub-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .stock-activity-card.is-expanded .stock-chart-toolbar {
+    padding-top: 6px;
+  }
+}
+.stock-unit-filter { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 12px; }
+.stock-unit-filter select { padding: 8px 10px; border: 1px solid var(--border-light); border-radius: 9px; color: var(--text-main); background: var(--card-bg); font: inherit; }

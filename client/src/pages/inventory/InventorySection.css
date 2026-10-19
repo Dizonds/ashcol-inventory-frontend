@@ -1,0 +1,778 @@
+/* ==========================================================================
+   INVENTORY CATALOG STYLES
+   ========================================================================== */
+
+.inventory-catalog-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 8px 12px 32px;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 1. Main Products List Card */
+.inventory-catalog-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.inventory-app.dark .inventory-catalog-card {
+  background: #142018;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* 2. Top Toolbar */
+.catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.catalog-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.catalog-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catalog-list-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f0fbf0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #13c906;
+}
+
+.inventory-app.dark .catalog-list-icon-badge {
+  background: rgba(19, 201, 6, 0.12);
+}
+
+.catalog-section-title {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 28px;
+  color: #02081a;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .catalog-section-title {
+  color: #f0f7f3;
+}
+
+/* Inset Search Bar */
+.catalog-search-wrap {
+  width: 360px;
+  max-width: 100%;
+  height: 48px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  box-shadow: inset 0px 0px 7.1px 0px rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .catalog-search-wrap {
+  background: #1b2a21;
+  box-shadow: inset 0px 0px 7.1px 0px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.catalog-search-wrap:focus-within {
+  border-color: #13c906;
+  box-shadow: inset 0px 0px 7.1px 0px rgba(19, 201, 6, 0.2), 0 0 0 2px rgba(19, 201, 6, 0.15);
+}
+
+.catalog-search-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: #1e1e1e;
+  opacity: 0.44;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inventory-app.dark .catalog-search-icon {
+  color: #c0d8cb;
+  opacity: 0.6;
+}
+
+.catalog-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #02081a;
+}
+
+.inventory-app.dark .catalog-search-input {
+  color: #e5f1ea;
+}
+
+.catalog-search-input::placeholder {
+  color: #000000;
+  opacity: 0.44;
+}
+
+.inventory-app.dark .catalog-search-input::placeholder {
+  color: #9cb8aa;
+  opacity: 0.55;
+}
+
+.catalog-search-clear {
+  border: none;
+  background: transparent;
+  color: #888888;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.catalog-search-clear:hover {
+  color: #333333;
+}
+
+/* Right Toolbar: Filters & Actions */
+.catalog-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Filter Pills */
+.catalog-filter-pill {
+  height: 48px;
+  background: #f8f8f8;
+  border-radius: 16px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  user-select: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1e1e1e;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .catalog-filter-pill {
+  background: #1c2b22;
+  border-color: rgba(255, 255, 255, 0.05);
+  color: #d8e8df;
+}
+
+.catalog-filter-pill:hover {
+  background: #ececec;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.inventory-app.dark .catalog-filter-pill:hover {
+  background: #23352b;
+}
+
+.catalog-filter-pill svg {
+  display: block;
+}
+
+/* Separator Icon Group */
+.catalog-icon-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.inventory-app.dark .catalog-icon-group {
+  border-left-color: rgba(255, 255, 255, 0.08);
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+.catalog-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #7f807f;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.inventory-app.dark .catalog-icon-btn {
+  background: #19271e;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #9ab4a5;
+}
+
+.catalog-icon-btn:hover {
+  transform: scale(1.05);
+  border-color: #13c906;
+  color: #13c906;
+  background: #f0fbf0;
+}
+
+.inventory-app.dark .catalog-icon-btn:hover {
+  background: rgba(19, 201, 6, 0.15);
+  color: #49e85c;
+  border-color: #3cb84a;
+}
+
+.catalog-icon-btn.active {
+  background: #e9ffe8;
+  color: #006830;
+  border-color: #006830;
+  font-weight: 600;
+}
+
+.inventory-app.dark .catalog-icon-btn.active {
+  background: rgba(19, 201, 6, 0.2);
+  color: #49e85c;
+  border-color: #49e85c;
+}
+
+/* Post Movement Button */
+.btn-post-movement {
+  height: 48px;
+  border-radius: 16px;
+  border: 1px solid #7f807f;
+  background: transparent;
+  padding: 0 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15.5px;
+  font-weight: 500;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .btn-post-movement {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #e5f1ea;
+}
+
+.btn-post-movement:hover {
+  background: #f4fbf4;
+  border-color: #13c906;
+  color: #13c906;
+}
+
+.inventory-app.dark .btn-post-movement:hover {
+  background: rgba(19, 201, 6, 0.1);
+  border-color: #49e85c;
+  color: #49e85c;
+}
+
+/* Register Item Button */
+.btn-register-item {
+  height: 48px;
+  background: linear-gradient(180deg, #13c906 0%, #096303 100%);
+  border-radius: 12px;
+  padding: 0 20px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  cursor: pointer;
+  color: #f8f8f8;
+  font-family: 'Inter', sans-serif;
+  font-size: 15.5px;
+  font-weight: 500;
+  box-shadow: 0px 7px 12px rgba(19, 201, 6, 0.28), 0px 7px 8.5px rgba(0, 0, 0, 0.2);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn-register-item:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0px 9px 16px rgba(19, 201, 6, 0.38), 0px 8px 10px rgba(0, 0, 0, 0.25);
+  filter: brightness(1.05);
+}
+
+.btn-register-item:active {
+  transform: translateY(0);
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-register-item svg {
+  display: block;
+}
+
+/* 3. Table Styling */
+.figma-catalog-table {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.figma-catalog-table .ant-table {
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+}
+
+.figma-catalog-table .ant-table-thead > tr > th {
+  background: transparent !important;
+  padding: 16px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: rgba(0, 0, 0, 0.62) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  white-space: nowrap;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.inventory-app.dark .figma-catalog-table .ant-table-thead > tr > th {
+  color: rgba(255, 255, 255, 0.6) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.figma-catalog-table .ant-table-tbody > tr > td {
+  padding: 18px 14px;
+  height: 76px;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #1e1e1e;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  vertical-align: middle;
+  background: transparent !important;
+  transition: background-color 0.18s ease;
+}
+
+.inventory-app.dark .figma-catalog-table .ant-table-tbody > tr > td {
+  color: #dcece3;
+  border-bottom-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+.figma-catalog-table .ant-table-tbody > tr:hover > td {
+  background-color: #f7faf7 !important;
+}
+
+.inventory-app.dark .figma-catalog-table .ant-table-tbody > tr:hover > td {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Cell Elements */
+.table-sku-cell {
+  font-weight: 500;
+  color: #000000;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.inventory-app.dark .table-sku-cell {
+  color: #ffffff;
+}
+
+.table-item-name {
+  font-weight: 500;
+  color: #1e1e1e;
+  white-space: normal;
+  max-width: 380px;
+  line-height: 1.4;
+  display: block;
+}
+
+.inventory-app.dark .table-item-name {
+  color: #f0f7f3;
+}
+
+.table-type-cat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  line-height: 1.35;
+}
+
+.table-type-label {
+  font-size: 14.5px;
+  color: #1e1e1e;
+  font-weight: 500;
+}
+
+.inventory-app.dark .table-type-label {
+  color: #d2e4da;
+}
+
+.table-cat-label {
+  font-size: 13.5px;
+  color: #728277;
+}
+
+.inventory-app.dark .table-cat-label {
+  color: #8da396;
+}
+
+.table-price-cell {
+  font-weight: 500;
+  color: #1e1e1e;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.inventory-app.dark .table-price-cell {
+  color: #e5f1ea;
+}
+
+/* Stock Badges */
+.stock-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.stock-pill.on-hand {
+  background: #e9ffe8;
+  color: #006830;
+}
+
+.inventory-app.dark .stock-pill.on-hand {
+  background: rgba(19, 201, 6, 0.14);
+  color: #49e85c;
+}
+
+.stock-pill.low-stock {
+  background: #ffefdd;
+  color: #b37400;
+}
+
+.inventory-app.dark .stock-pill.low-stock {
+  background: rgba(255, 193, 48, 0.16);
+  color: #ffc130;
+}
+
+.stock-pill.no-stock {
+  background: #ffe5e5;
+  color: #66120a;
+}
+
+.inventory-app.dark .stock-pill.no-stock {
+  background: rgba(255, 77, 79, 0.16);
+  color: #ff7875;
+}
+
+.stock-pill.reserved {
+  background: #f0f5f8;
+  color: #2b5c77;
+  margin-top: 4px;
+}
+
+.inventory-app.dark .stock-pill.reserved {
+  background: rgba(64, 150, 255, 0.14);
+  color: #70b6ff;
+}
+
+/* Actions Buttons in Row */
+.table-actions-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.table-action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #7f807f;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.inventory-app.dark .table-action-btn {
+  background: #19271e;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #9ab4a5;
+}
+
+.table-action-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: #8be084;
+  color: #12a807;
+  background: #f0fbf0;
+}
+
+.inventory-app.dark .table-action-btn:hover {
+  background: rgba(18, 168, 7, 0.18);
+  color: #49e85c;
+  border-color: #3cb84a;
+}
+
+.table-action-btn.danger:hover {
+  border-color: #ffa39e;
+  color: #ff4d4f;
+  background: #fff1f0;
+}
+
+.inventory-app.dark .table-action-btn.danger:hover {
+  background: rgba(255, 77, 79, 0.18);
+  color: #ff7875;
+  border-color: #d32029;
+}
+
+.table-action-btn.van {
+  border-color: #006830;
+  color: #006830;
+}
+
+.inventory-app.dark .table-action-btn.van {
+  border-color: #38b849;
+  color: #38b849;
+}
+
+.table-action-btn.van:hover {
+  background: #e9ffe8;
+  border-color: #006830;
+  color: #006830;
+}
+
+.inventory-app.dark .table-action-btn.van:hover {
+  background: rgba(19, 201, 6, 0.2);
+  border-color: #49e85c;
+  color: #49e85c;
+}
+
+/* 4. Pagination Footer */
+.catalog-pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding-top: 8px;
+}
+
+.catalog-pagination-info {
+  font-family: 'Lato', 'Inter', sans-serif;
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.5);
+  font-weight: 500;
+}
+
+.inventory-app.dark .catalog-pagination-info {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.catalog-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination-arrow-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background: #f0f5f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #1e1e1e;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .pagination-arrow-btn {
+  background: #1c2b22;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #d6e8de;
+}
+
+.pagination-arrow-btn:hover:not(:disabled) {
+  border-color: #12a807;
+  color: #12a807;
+  background: #ffffff;
+}
+
+.inventory-app.dark .pagination-arrow-btn:hover:not(:disabled) {
+  background: #253a2e;
+}
+
+.pagination-arrow-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pagination-page-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: 'Lato', 'Inter', sans-serif;
+  font-size: 15.5px;
+  font-weight: 500;
+  color: #000000;
+  transition: all 0.2s ease;
+}
+
+.inventory-app.dark .pagination-page-btn {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #d6e8de;
+}
+
+.pagination-page-btn:hover:not(.active) {
+  border-color: #12a807;
+  color: #12a807;
+}
+
+.pagination-page-btn.active {
+  background: #12a807;
+  border-color: #12a807;
+  color: #fbfbfb;
+  font-weight: 600;
+}
+
+/* Register / edit inventory item */
+.inventory-item-modal { max-width: calc(100vw - 24px); }
+.inventory-item-modal-dark {
+  --card-bg: #152018;
+  --main-bg: #0d1512;
+  --text-main: #e0ede7;
+  --text-secondary: #8ab09a;
+  --text-muted: #8ba697;
+  --border-light: rgba(255, 255, 255, 0.1);
+}
+.inventory-item-modal .ant-modal-content { padding: 0 !important; }
+.inventory-item-modal .ant-modal-header { padding: 24px 52px 22px 28px !important; margin: 0; }
+.inventory-item-modal .ant-modal-body { padding: 0; }
+.inventory-item-heading { display: flex; align-items: center; gap: 14px; }
+.inventory-item-heading-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 13px;
+}
+.inventory-item-heading h2 { color: var(--text-main); font-size: 20px; font-weight: 700; margin: 0; line-height: 1.35; }
+.inventory-item-heading p { color: var(--text-secondary); font-size: 13px; font-weight: 400; margin: 5px 0 0; }
+.inventory-item-body {
+  padding: 22px 28px;
+  max-height: calc(100dvh - 240px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.inventory-item-section { border: 1px solid var(--border-light); border-radius: 14px; padding: 20px; }
+.inventory-item-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
+.inventory-item-section-heading h3 { margin: 0; font-size: 14px; color: var(--text-main); font-weight: 600; }
+.inventory-item-section-heading > span { color: var(--text-secondary); font-size: 11px; }
+.inventory-item-form .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; }
+.inventory-item-form .field { margin: 0; font-size: 12px; gap: 7px; }
+.inventory-item-form .field > .ant-input,
+.inventory-item-form .field > .ant-input-number,
+.inventory-item-form .field > .ant-input-number-affix-wrapper { min-height: 40px; border-radius: 9px; width: 100%; }
+.inventory-item-form .ant-input-number-input { height: 38px; }
+.inventory-item-form .ant-select { width: 100%; height: 40px; }
+.inventory-item-form .ant-select-selector { border-radius: 9px !important; }
+.inventory-item-form .field small { font-size: 11px; font-weight: 400; color: var(--text-secondary); }
+.inventory-item-wide-field { grid-column: 1 / -1; }
+.inventory-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 28px;
+  border-top: 1px solid var(--border-light);
+  background: var(--main-bg);
+}
+.inventory-item-footer > span { color: var(--text-secondary); font-size: 11px; max-width: 290px; }
+.inventory-item-footer .ant-btn { height: 40px; min-width: 90px; }
+@media (max-width: 600px) {
+  .catalog-toolbar-left { width: 100%; min-width: 0; }
+  .catalog-search-wrap { width: 100%; min-width: 0; }
+  .catalog-search-input { min-width: 0; }
+  .catalog-title-group { min-width: 0; }
+  .catalog-section-title { white-space: normal; font-size: 20px; }
+  .inventory-item-modal .ant-modal-header { padding: 20px 45px 18px 18px !important; }
+  .inventory-item-heading { gap: 10px; }
+  .inventory-item-heading h2 { font-size: 17px; }
+  .inventory-item-heading-icon { width: 38px; height: 38px; }
+  .inventory-item-body { padding: 18px; max-height: calc(100dvh - 260px); }
+  .inventory-item-section { padding: 16px; }
+  .inventory-item-form .form-grid { grid-template-columns: 1fr; }
+  .inventory-item-section-heading { flex-direction: column; gap: 4px; }
+  .inventory-item-footer { padding: 16px 18px; flex-wrap: wrap; }
+  .inventory-item-footer > span { max-width: none; }
+  .inventory-item-footer .ant-space { margin-left: auto; }
+}
