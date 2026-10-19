@@ -14,12 +14,24 @@ React application for ASHCOL warehouse inventory and service operations. It conn
 
 Requires Node.js **20.19+ or 22.12+**, npm, and the backend API running on port **3001**. The backend requires its own configured MongoDB database.
 
-Run these commands from `ashcol-inventory-frontend`:
+**Recommended: start the backend before the frontend.** Ensure MongoDB is running and the backend database configuration is complete, then run this from `ashcol-inventory-backend` in a separate terminal:
+
+```powershell
+npm start
+```
+
+Wait for `Inventory server running on port 3001` and keep that terminal running. You can also check **http://localhost:3001/api/health**; it should return `{ "ok": true }`.
+
+Then open another terminal and run these commands from `ashcol-inventory-frontend`:
 
 ```powershell
 npm run setup
 npm start
 ```
+
+Run `npm run setup` on the first installation or when you need to reinstall dependencies. If dependencies are already installed and you are just restarting the frontend, run only `npm start`.
+
+Starting the backend first helps avoid temporary `ECONNREFUSED 127.0.0.1:3001` proxy errors for login and live updates. If these errors continue, check that the backend is still running on port 3001 and connected to MongoDB.
 
 Open **http://localhost:3000**. Sign in with an account created through the backend setup process. The frontend contains no default credentials.
 
