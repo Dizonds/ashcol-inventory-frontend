@@ -51,7 +51,7 @@ export default function Header({
 
   const pageTitle = PAGE_TITLES[page] || "Service Vehicles";
 
-  // Format dynamic date like "Sat, 11 Oct 2026"
+
   const formattedDate = new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
     day: "numeric",

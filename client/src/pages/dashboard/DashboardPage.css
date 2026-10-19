@@ -1,4 +1,4 @@
-/* --- DASHBOARD STYLES --- */
+
 
 .dashboard-container {
   display: flex;
@@ -8,7 +8,7 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* 1. WELCOME GREETING BANNER */
+
 .dashboard-welcome {
   display: flex;
   flex-direction: column;
@@ -46,7 +46,7 @@
   opacity: 0.8;
 }
 
-/* 2. KPI METRIC CARDS ROW */
+
 .dashboard-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -223,7 +223,7 @@
   color: #31c998;
 }
 
-/* Mini Bar Chart Visual on the right of KPI cards */
+
 .kpi-mini-bars {
   display: flex;
   align-items: flex-end;
@@ -249,7 +249,7 @@
   box-shadow: 0 2px 8px rgba(18, 168, 7, 0.3);
 }
 
-/* 3. TOTAL SALES ANALYTICS CHART CARD */
+
 .dashboard-sales-card {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -410,7 +410,7 @@
   opacity: 0.8;
 }
 
-/* Dot Matrix Chart Container */
+
 .sales-chart-wrapper {
   display: flex;
   gap: 20px;
@@ -521,7 +521,7 @@
   text-align: center;
 }
 
-/* Responsive */
+
 @media (max-width: 900px) {
   .dashboard-main-grid { grid-template-columns: 1fr; }
   .stock-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -536,7 +536,7 @@
   }
 }
 
-/* 4, 5, 6, 7. DASHBOARD SECTION CARDS */
+
 .dashboard-section-card {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -600,7 +600,7 @@
   opacity: 0.8;
 }
 
-/* Unit Ribbon Chips */
+
 .dashboard-unit-chips {
   display: flex;
   flex-wrap: wrap;
@@ -678,7 +678,7 @@
   color: #854d0e;
 }
 
-/* Composition Items */
+
 .composition-item {
   background: #fafafa;
   border: 1px solid rgba(0, 0, 0, 0.06);

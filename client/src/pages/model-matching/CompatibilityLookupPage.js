@@ -94,10 +94,10 @@ function ChevronRightIcon() {
   );
 }
 
-/**
- * Resolve the model photo from the unit metadata
- * based on brand, category, SKU, and model name.
- */
+
+
+
+
 export function getAcUnitImage(unit) {
   if (!unit) return carrierSplitImg;
   if (unit.image) return unit.image;
@@ -107,7 +107,7 @@ export function getAcUnitImage(unit) {
   const brand = (unit.brand || "").toLowerCase();
   const category = (unit.category || "").toLowerCase();
 
-  // 1. Kolin or Window Type AC (KOL-0.75HP-WND, KOL-1.0HP-WINV, etc.)
+
   if (
     brand.includes("kolin") ||
     name.includes("kolin") ||
@@ -118,7 +118,7 @@ export function getAcUnitImage(unit) {
     return kolinWindowImg;
   }
 
-  // 2. Floor Mounted / Floor Standing Commercial AC (GREE-3.0TR-FLR, MIDEA-5.0TR-FLR, etc.)
+
   if (
     category.includes("floor") ||
     name.includes("floor") ||
@@ -130,7 +130,7 @@ export function getAcUnitImage(unit) {
     return floorMountedImg;
   }
 
-  // 3. Ceiling Cassette AC
+
   if (
     category.includes("cassette") ||
     name.includes("cassette") ||
@@ -140,7 +140,7 @@ export function getAcUnitImage(unit) {
     return ceilingCassetteImg;
   }
 
-  // 4. Portable AC (TCL-1.0HP-PORT, etc.)
+
   if (
     category.includes("portable") ||
     name.includes("portable") ||
@@ -149,7 +149,7 @@ export function getAcUnitImage(unit) {
     return portableAcImg;
   }
 
-  // 5. Daikin Inverter Split AC (DAIK-1.0HP-INV, DAIK-1.5HP-INV, etc.)
+
   if (
     brand.includes("daikin") ||
     name.includes("daikin") ||
@@ -158,7 +158,7 @@ export function getAcUnitImage(unit) {
     return daikinSplitImg;
   }
 
-  // 6. Panasonic Aero Inverter nanoe X Split AC (PANA-1.5HP-XPU, etc.)
+
   if (
     brand.includes("panasonic") ||
     name.includes("panasonic") ||
@@ -167,7 +167,7 @@ export function getAcUnitImage(unit) {
     return panasonicSplitImg;
   }
 
-  // 7. Carrier Inverter Split AC (CAR-1.0HP-CRY, CAR-1.5HP-INV, CAR-2.0HP-INV, etc.)
+
   if (
     brand.includes("carrier") ||
     name.includes("carrier") ||
@@ -176,7 +176,7 @@ export function getAcUnitImage(unit) {
     return carrierSplitImg;
   }
 
-  // Generic category fallbacks
+
   if (category.includes("window")) return kolinWindowImg;
   if (category.includes("floor")) return floorMountedImg;
   if (category.includes("cassette")) return ceilingCassetteImg;
@@ -208,7 +208,7 @@ export default function CompatibilityLookupPage({ items = [], onNavigateToItem, 
     );
   }, [items]);
 
-  // Default to Carrier Aura Inverter if present, otherwise first AC unit
+
   const [selectedUnitId, setSelectedUnitId] = useState(() => {
     const carrier = acUnits.find(
       (u) => u.sku === "CAR-1.5HP-INV" || u.name?.toLowerCase().includes("carrier aura")

@@ -1,6 +1,6 @@
-/* ==========================================================================
-   POST MOVEMENT PAGE STYLES
-   ========================================================================== */
+
+
+
 
 .pm-container {
   width: 100%;
@@ -12,7 +12,7 @@
   gap: 20px;
 }
 
-/* Two-Card Side-by-Side Layout */
+
 .pm-layout {
   display: flex;
   align-items: flex-start;
@@ -20,7 +20,7 @@
   width: 100%;
 }
 
-/* Base Card Style */
+
 .pm-card {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -36,7 +36,7 @@
   box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.35);
 }
 
-/* Card Titles */
+
 .pm-card-title {
   font-size: 20px;
   font-weight: 600;
@@ -49,7 +49,7 @@
   color: #f3f4f6;
 }
 
-/* ── LEFT CARD: RECORD INVENTORY MOVEMENT ── */
+
 .pm-form-card {
   flex: 0 0 510px;
   max-width: 530px;
@@ -84,7 +84,7 @@
   color: #9ca3af;
 }
 
-/* Radio Buttons: Stock In / Stock Out */
+
 .pm-operation-radios {
   display: flex;
   align-items: center;
@@ -161,7 +161,7 @@
   background: #4ade80;
 }
 
-/* 2-Column Form Row (Type & Brand, Item & Quantity) */
+
 .pm-form-row-2col {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -169,7 +169,7 @@
   width: 100%;
 }
 
-/* Form Inputs, Selects, Number Inputs */
+
 .pm-select-wrap,
 .pm-input-wrap {
   position: relative;
@@ -282,7 +282,7 @@
   color: #059669;
 }
 
-/* Notes Textarea */
+
 .pm-textarea {
   width: 100%;
   min-height: 96px;
@@ -314,7 +314,7 @@
   color: #9ca3af;
 }
 
-/* Stock Preview Pills */
+
 .pm-stock-preview {
   display: flex;
   align-items: center;
@@ -341,7 +341,7 @@
   color: #f9fafb;
 }
 
-/* Confirm and Post Button */
+
 .pm-btn-confirm {
   width: fit-content;
   height: 44px;
@@ -373,7 +373,7 @@
   transform: none;
 }
 
-/* ── RIGHT CARD: LOW STOCK & DEPLETED ITEMS ── */
+
 .pm-table-card {
   flex: 1;
   min-width: 0;
@@ -467,7 +467,7 @@
   color: #f9fafb !important;
 }
 
-/* Action Cell: Restock Button & Status Badges */
+
 .pm-action-cell {
   display: flex;
   align-items: center;
@@ -504,7 +504,7 @@
   color: #ffffff;
 }
 
-/* Badges: REORDER (Depleted) & LOW STOCK */
+
 .pm-badge-reorder {
   background: #fee2e2;
   color: #dc2626;
@@ -537,7 +537,7 @@
   color: #fbbf24;
 }
 
-/* ── PAGINATION BAR ── */
+
 .pm-pagination-bar {
   display: flex;
   align-items: center;
@@ -618,7 +618,7 @@
   cursor: not-allowed;
 }
 
-/* Responsive */
+
 @media (max-width: 1100px) {
   .pm-layout {
     flex-direction: column;

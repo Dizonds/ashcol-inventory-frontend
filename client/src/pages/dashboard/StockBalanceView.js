@@ -19,8 +19,8 @@ export default function StockBalanceView({ items = [], movementHistory = [], bra
   const plotRef = useRef(null), dragRef = useRef(null), wheelRef = useRef(null), suppressClick = useRef(false);
   const clipId = `balance-${useId().replace(/:/g, '')}`;
   const balanceUnit = unit === OVERALL_UNIT ? 'mixed units' : unit;
-  // Reconstruct the full ledger before cropping, retaining the carried balance
-  // when browsing older dates instead of treating today's stock as past stock.
+
+
   const data = useMemo(() => buildStockBalance({ items, movements: movementHistory, branchId, unit, days: 'ALL' }), [items, movementHistory, branchId, unit]);
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const historyDays = Math.max(0, (today.getTime() - data.points[0].timestamp) / DAY);
@@ -35,8 +35,8 @@ export default function StockBalanceView({ items = [], movementHistory = [], bra
     if (point.timestamp <= end) closing = point.balance;
   }
   const visible = activities.filter(point => point.timestamp >= start && point.timestamp <= end);
-  // Multiple inventory edits on one day are one plotted reading, preventing
-  // each transaction from adding another sharp spike to the overall graph.
+
+
   const daily = [];
   for (const activity of visible) {
     const date = new Date(activity.timestamp);
@@ -63,8 +63,8 @@ export default function StockBalanceView({ items = [], movementHistory = [], bra
   const width = size.width, height = isExpanded ? size.height : 320;
   const left = 46, right = 28, top = 22, bottom = 36;
   const plotWidth = Math.max(100, width - left - right), plotHeight = Math.max(60, height - top - bottom);
-  // Scale to the selected window so the movements being reviewed remain
-  // visible, even when older stock history contains much larger balances.
+
+
   const minimum = Math.min(...points.map(point => point.balance));
   const maximum = Math.max(...points.map(point => point.balance));
   const span = (fittedScale || Math.max(1, (maximum - minimum) * 1.12)) / yZoom;
@@ -72,8 +72,8 @@ export default function StockBalanceView({ items = [], movementHistory = [], bra
   const coordinates = points.map(point => ({ ...point,
     x: left + (point.timestamp - start) / (end - start) * plotWidth,
     y: top + (1 - (point.balance - floor) / span) * plotHeight }));
-  // Connect readings on neighboring days to form the stock trend. For a long
-  // inactive gap, hold the balance flat and make the climb on the restock day.
+
+
   let path = coordinates.length ? `M ${coordinates[0].x} ${coordinates[0].y}` : '';
   for (let index = 1; index < coordinates.length; index += 1) {
     const previous = coordinates[index - 1], point = coordinates[index];
@@ -171,8 +171,8 @@ export default function StockBalanceView({ items = [], movementHistory = [], bra
             const x = (event.clientX - rect.left) * width / (rect.width || width);
             const y = (event.clientY - rect.top) * height / (rect.height || height);
             if (x < left || x > width - right || y < top || y > height - bottom) { setHover(null); return; }
-            // Hover shows the balance already reached at this time, never a
-            // future restock just because its point is closer to the cursor.
+
+
             let index = 0;
             coordinates.forEach((point, candidate) => {
               if (point.x <= x) index = candidate;

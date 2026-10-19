@@ -44,7 +44,7 @@ test('incomplete or failed history does not display a misleading balance line', 
 test('Overall tracks the cursor between movements and clears its indicator outside the plot and during drags', () => {
   render(<StockBalanceView items={[{ quantity: 10 }]} />);
   const plot = screen.getByRole('region', { name: 'Interactive overall stock chart' });
-  // The chart can be stretched on screen; pointer positions must map to SVG coordinates.
+
   plot.getBoundingClientRect = () => ({ left: 100, top: 50, width: 1640, height: 640 });
   const originalPointerEvent = window.PointerEvent;
   window.PointerEvent = MouseEvent;
@@ -97,10 +97,10 @@ test('Overall stays flat during a long gap and changes only on movement dates', 
   expect(path).toMatch(/^M [\d.]+ [\d.]+ H [\d.]+ L [\d.]+ [\d.]+ H [\d.]+ L [\d.]+ [\d.]+ L [\d.]+ [\d.]+$/);
   const values = path.match(/[\d.]+/g).map(Number);
   const [, initialY, , outX, outY, , inX, inY, , endY] = values;
-  expect(outY).toBeGreaterThan(initialY); // A dispatch drops the stock line.
-  expect(inY).toBeLessThan(outY); // Restocking raises it on that date.
+  expect(outY).toBeGreaterThan(initialY);
+  expect(inY).toBeLessThan(outY);
   expect(endY).toEqual(inY);
-  expect(inX - outX).toBeGreaterThan(300); // The long gap is a horizontal hold.
+  expect(inX - outX).toBeGreaterThan(300);
   const plot = screen.getByRole('region', { name: 'Interactive overall stock chart' });
   plot.getBoundingClientRect = () => ({ left: 0, top: 0, width: 820, height: 320 });
   const originalPointerEvent = window.PointerEvent;

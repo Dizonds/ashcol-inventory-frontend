@@ -13,7 +13,7 @@ export default function BrandLogo({ brand }) {
         .then(({ data }) => {
           if (active && data?.logoUrl) setLogo(data);
         })
-        .catch(() => {}); // Keep the brand readable when the provider is unavailable.
+        .catch(() => {});
     }
     return () => { active = false; };
   }, [id, brand.name]);

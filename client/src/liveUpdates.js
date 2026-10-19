@@ -1,7 +1,7 @@
 import { API_BASE } from "./api";
 
-// Fetch rather than EventSource lets the stream use the same Authorization
-// header as the rest of the API, without putting login tokens into URLs.
+
+
 export function subscribeToUpdates({ onChange, onUnauthorized, fetchImpl = window.fetch.bind(window) }) {
   const controller = new AbortController();
   let stopped = false;
@@ -42,7 +42,7 @@ export function subscribeToUpdates({ onChange, onUnauthorized, fetchImpl = windo
         reader.releaseLock();
       }
     } catch (err) {
-      // Keep the current screen usable while offline; reconnect fetches a fresh snapshot.
+
       if (stopped || controller.signal.aborted) return;
     }
     if (!stopped) retry = setTimeout(connect, 2000);

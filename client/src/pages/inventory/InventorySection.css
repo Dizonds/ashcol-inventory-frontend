@@ -1,6 +1,6 @@
-/* ==========================================================================
-   INVENTORY CATALOG STYLES
-   ========================================================================== */
+
+
+
 
 .inventory-catalog-container {
   display: flex;
@@ -12,7 +12,7 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* 1. Main Products List Card */
+
 .inventory-catalog-card {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.12);
@@ -32,7 +32,7 @@
   box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.35);
 }
 
-/* 2. Top Toolbar */
+
 .catalog-toolbar {
   display: flex;
   align-items: center;
@@ -86,7 +86,7 @@
   color: #f0f7f3;
 }
 
-/* Inset Search Bar */
+
 .catalog-search-wrap {
   width: 360px;
   max-width: 100%;
@@ -172,7 +172,7 @@
   color: #333333;
 }
 
-/* Right Toolbar: Filters & Actions */
+
 .catalog-toolbar-right {
   display: flex;
   align-items: center;
@@ -180,7 +180,7 @@
   flex-wrap: wrap;
 }
 
-/* Filter Pills */
+
 .catalog-filter-pill {
   height: 48px;
   background: #f8f8f8;
@@ -219,7 +219,7 @@
   display: block;
 }
 
-/* Separator Icon Group */
+
 .catalog-icon-group {
   display: flex;
   align-items: center;
@@ -281,7 +281,7 @@
   border-color: #49e85c;
 }
 
-/* Post Movement Button */
+
 .btn-post-movement {
   height: 48px;
   border-radius: 16px;
@@ -314,7 +314,7 @@
   color: #49e85c;
 }
 
-/* Register Item Button */
+
 .btn-register-item {
   height: 48px;
   background: linear-gradient(180deg, #13c906 0%, #096303 100%);
@@ -350,7 +350,7 @@
   display: block;
 }
 
-/* 3. Table Styling */
+
 .figma-catalog-table {
   width: 100%;
   overflow-x: auto;
@@ -407,7 +407,7 @@
   background-color: rgba(255, 255, 255, 0.03) !important;
 }
 
-/* Cell Elements */
+
 .table-sku-cell {
   font-weight: 500;
   color: #000000;
@@ -471,7 +471,7 @@
   color: #e5f1ea;
 }
 
-/* Stock Badges */
+
 .stock-pill {
   display: inline-flex;
   align-items: center;
@@ -525,7 +525,7 @@
   color: #70b6ff;
 }
 
-/* Actions Buttons in Row */
+
 .table-actions-wrap {
   display: flex;
   align-items: center;
@@ -602,7 +602,7 @@
   color: #49e85c;
 }
 
-/* 4. Pagination Footer */
+
 .catalog-pagination-wrap {
   display: flex;
   align-items: center;
@@ -699,7 +699,7 @@
   font-weight: 600;
 }
 
-/* Register / edit inventory item */
+
 .inventory-item-modal { max-width: calc(100vw - 24px); }
 .inventory-item-modal-dark {
   --card-bg: #152018;

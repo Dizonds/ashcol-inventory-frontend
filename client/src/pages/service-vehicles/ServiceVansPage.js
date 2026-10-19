@@ -33,7 +33,7 @@ export default function ServiceVansPage({
   removeDemoVehicle,
 }) {
   const [selectedVanId, setSelectedVanId] = useState("");
-  const [viewMode, setViewMode] = useState("list"); // 'list' (Design 1) or 'details' (Design 2)
+  const [viewMode, setViewMode] = useState("list");
   const [vanItems, setVanItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -95,7 +95,7 @@ export default function ServiceVansPage({
     return () => { active = false; };
   }, [consumeItem, selectedVanId, consumeTicketAttempt]);
 
-  // Refresh the assignment in an open form without replacing its usage ticket or draft.
+
   useEffect(() => {
     if (!consumeItem || !selectedVanId) return;
     let active = true;

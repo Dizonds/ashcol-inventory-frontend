@@ -1,6 +1,6 @@
-/* ==========================================================================
-   USER MANAGEMENT STYLES
-   ========================================================================== */
+
+
+
 
 .um-container {
   width: 100%;
@@ -12,7 +12,7 @@
   gap: 20px;
 }
 
-/* Card Container */
+
 .um-card {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -33,7 +33,7 @@
   box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.35);
 }
 
-/* Header Row */
+
 .um-header-row {
   display: flex;
   align-items: center;
@@ -50,7 +50,7 @@
   flex-wrap: wrap;
 }
 
-/* Title with List Icon */
+
 .um-title-group {
   display: flex;
   align-items: center;
@@ -86,7 +86,7 @@
   color: #f3f4f6;
 }
 
-/* Search Input */
+
 .um-search-wrap {
   position: relative;
   width: 360px;
@@ -133,14 +133,14 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), inset 0px 0px 7.1px rgba(0, 0, 0, 0.08);
 }
 
-/* Header Right: Filter & Register */
+
 .um-header-right {
   display: flex;
   align-items: center;
   gap: 14px;
 }
 
-/* Filter Dropdown */
+
 .um-filter-wrap {
   position: relative;
 }
@@ -175,7 +175,7 @@
   background: #23362a;
 }
 
-/* Register Account Button */
+
 .um-btn-register {
   height: 44px;
   background: linear-gradient(180deg, #13c906 0%, #096303 100%);
@@ -204,7 +204,7 @@
   transform: translateY(0);
 }
 
-/* Table Container */
+
 .um-table-container {
   width: 100%;
   overflow-x: auto;
@@ -257,7 +257,7 @@
   background-color: rgba(255, 255, 255, 0.02);
 }
 
-/* User Fullname Cell */
+
 .um-td-fullname {
   font-weight: 600;
   color: #111827;
@@ -267,7 +267,7 @@
   color: #f9fafb;
 }
 
-/* Role Badges */
+
 .um-role-text {
   font-weight: 500;
   color: #374151;
@@ -277,7 +277,7 @@
   color: #d1d5db;
 }
 
-/* Status Cell */
+
 .um-status-badge {
   display: inline-flex;
   align-items: center;
@@ -318,7 +318,7 @@
   background: #4ade80;
 }
 
-/* Actions Cell */
+
 .um-actions-cell {
   display: flex;
   align-items: center;
@@ -376,7 +376,7 @@
   cursor: not-allowed;
 }
 
-/* Pagination Bar */
+
 .um-pagination-bar {
   display: flex;
   align-items: center;
@@ -456,9 +456,9 @@
   cursor: not-allowed;
 }
 
-/* ==========================================================================
-   MODAL DIALOGS
-   ========================================================================== */
+
+
+
 
 .um-modal-overlay {
   position: fixed;
@@ -520,7 +520,7 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Modal Header */
+
 .um-modal-header {
   display: flex;
   align-items: center;
@@ -567,7 +567,7 @@
   color: #f3f4f6;
 }
 
-/* 2-Column Form Grid */
+
 .um-form-grid-2col {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -645,7 +645,7 @@
   margin-top: 2px;
 }
 
-/* Modal Action Footer */
+
 .um-modal-footer {
   display: flex;
   align-items: center;
@@ -680,9 +680,9 @@
   cursor: not-allowed;
 }
 
-/* ==========================================================================
-   USER DETAILS DISPLAY
-   ========================================================================== */
+
+
+
 
 .um-details-grid {
   display: grid;
@@ -731,7 +731,7 @@
   color: #f3f4f6;
 }
 
-/* Empty State */
+
 .um-empty-state {
   text-align: center;
   padding: 60px 20px;

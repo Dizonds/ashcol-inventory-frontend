@@ -18,8 +18,8 @@ export function buildStockBalance({ items = [], movements = [], branchId, unit, 
   start.setHours(0, 0, 0, 0);
   if (days !== 'ALL') start.setDate(start.getDate() - (days - 1));
   const visible = activity.filter(entry => entry.timestamp >= start.getTime());
-  // Anchor history to today's actual stock, retaining any pre-existing balance.
-  // Summing movement deltas from zero would misstate imported inventory.
+
+
   const opening = round(current - visible.reduce((sum, entry) => sum + entry.quantityDelta, 0));
   let balance = opening;
   const points = [{ timestamp: start.getTime(), balance, delta: 0, label: 'Starting balance' }];

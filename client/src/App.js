@@ -17,7 +17,7 @@ import useLiveUpdates from "./hooks/useLiveUpdates";
 import { allowedPage, PAGE_STORAGE_KEY, PAGE_PATHS, pageFromPath, initialPage } from "./utils/navigation";
 import "./App.css";
 
-// Load workspace screens after sign-in instead of including every page in the login bundle.
+
 const DashboardPage = lazy(() => import("./pages/dashboard/DashboardPage"));
 const InventorySection = lazy(() => import("./pages/inventory/InventorySection"));
 const PostMovementPage = lazy(() => import("./pages/movements/PostMovementPage"));
@@ -73,8 +73,8 @@ export default function App() {
     setServiceVans((current) => current.map(renameDriver));
     if (updated.id === user.id) setUser(updated);
   }
-  // The main inventory view is the fixed Taguig warehouse for every role.
-  // Employee-specific van access is handled inside Service Vehicles.
+
+
   const branchId = TAGUIG_WAREHOUSE.id;
   const [items, setItems] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -146,7 +146,7 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPopState);
   }, [user, checking]);
 
-  // Keep page 100% full screen without shrinking html viewport
+
   useEffect(() => {
     document.documentElement.style.zoom = "";
   }, []);
@@ -297,7 +297,7 @@ export default function App() {
             </Spin>
           </div>
 
-        /* ── LOGIN PAGE ── */
+
         ) : !user ? (
           <LoginPage
             initialError={error}
@@ -308,7 +308,7 @@ export default function App() {
             }}
           />
 
-        /* ── MAIN APP ── */
+
         ) : (
           <>
             <Sidebar

@@ -6,7 +6,7 @@ import { movementPresentation } from "../../utils/movements";
 import RemarksCell from "../../components/common/RemarksCell";
 import "./MovementsPage.css";
 
-// Qlementine list icon (Figma node 440:3250)
+
 function QlementineItemsListIcon({ size = 24, color = "#12A807" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -24,7 +24,7 @@ function QlementineItemsListIcon({ size = 24, color = "#12A807" }) {
   );
 }
 
-// UIL Search icon (Figma node 440:1874)
+
 function SearchIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -36,7 +36,7 @@ function SearchIcon({ size = 20 }) {
   );
 }
 
-// Proicons filter (Figma node 440:1901)
+
 function FilterIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -127,7 +127,7 @@ export default function MovementsPage({ branchId, refresh }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Debounced search input
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
@@ -162,7 +162,7 @@ export default function MovementsPage({ branchId, refresh }) {
     };
   }, [branchId, page, pageSize, search, type, sortBy, refresh]);
 
-  // Display ledger timestamps in Philippine time.
+
   const formatTimestamp = (entry) => {
     if (!entry.createdAt) return entry.date || "Legacy";
     try {

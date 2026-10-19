@@ -1,7 +1,7 @@
 import React from "react";
 import { InputNumber } from "antd";
 
-// Keep invalid characters out of the visible input, including pasted text.
+
 export default function InventoryNumberInput({ precision = 0, min = 0, max = 100000000, ...props }) {
   const pattern = precision === 0 ? /^\d*$/ : new RegExp(`^\\d*(?:\\.\\d{0,${precision}})?$`);
   const clean = (value) => {
@@ -23,7 +23,7 @@ export default function InventoryNumberInput({ precision = 0, min = 0, max = 100
       controls={false}
       inputMode={precision ? "decimal" : "numeric"}
       onChangeCapture={(event) => {
-        // Also cover input methods that bypass key and paste events.
+
         if (!pattern.test(event.target.value)) event.target.value = clean(event.target.value);
       }}
       onKeyDown={(event) => {

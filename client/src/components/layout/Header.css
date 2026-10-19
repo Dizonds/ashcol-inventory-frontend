@@ -1,6 +1,6 @@
-/* ==========================================================================
-   HEADER STYLES
-   ========================================================================== */
+
+
+
 
 .ashcol-header {
   height: 96px;
@@ -25,7 +25,7 @@
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
-/* --- LEFT: PAGE TITLE --- */
+
 .header-page-title-wrap {
   display: flex;
   align-items: center;
@@ -46,7 +46,7 @@
   color: #e0ede7;
 }
 
-/* --- RIGHT UTILITY CLUSTER --- */
+
 .header-right-group {
   display: flex;
   align-items: center;
@@ -54,7 +54,7 @@
   flex-shrink: 0;
 }
 
-/* Date Pill */
+
 .header-date-pill {
   display: flex;
   align-items: center;
@@ -115,7 +115,7 @@
   flex-shrink: 0;
 }
 
-/* User Profile Trigger */
+
 .header-user-btn {
   display: flex;
   align-items: center;
@@ -209,7 +209,7 @@
   .header-user-avatar-wrap, .header-user-avatar { width: 36px; height: 36px; }
 }
 
-/* Responsive */
+
 
 @media (max-width: 1024px) {
   .ashcol-header {

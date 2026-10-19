@@ -4,7 +4,7 @@ import { api, errorMessage } from "../../api";
 import BrandLogo from "../../components/common/BrandLogo";
 import "./SuppliersPage.css";
 
-// Qlementine list icon (Figma node 457:15073)
+
 function ItemsListIcon({ size = 24, color = "#13C906" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -22,7 +22,7 @@ function ItemsListIcon({ size = 24, color = "#13C906" }) {
   );
 }
 
-// UIL Search icon (Figma node 440:1874)
+
 function SearchIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -34,7 +34,7 @@ function SearchIcon({ size = 20 }) {
   );
 }
 
-// Proicons filter (Figma node 440:1901)
+
 function FilterIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -49,7 +49,7 @@ function FilterIcon({ size = 20 }) {
   );
 }
 
-// SI Add Fill (Figma node 440:1891)
+
 function AddIcon({ size = 22 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -196,7 +196,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], brands 
     });
   }, [suppliers, search, filterTerm]);
 
-  // Reset to page 1 when query changes
+
   useEffect(() => {
     setCurrentPage(1);
   }, [search, filterTerm]);
@@ -294,7 +294,7 @@ export default function SuppliersPage({ user, save, refresh, items = [], brands 
     save("post", "/suppliers", clean, formData.id ? "Supplier updated." : "Supplier registered.")
       .then((savedSupplier) => {
         setFormModalOpen(false);
-        // Optimistic refresh
+
         if (savedSupplier) {
           setSuppliers((prev) => {
             const index = prev.findIndex((s) => (s.id || s._id) === (savedSupplier.id || savedSupplier._id));

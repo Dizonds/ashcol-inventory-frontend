@@ -1,6 +1,6 @@
-/* ==========================================================================
-   SUPPLIERS & VENDORS STYLES
-   ========================================================================== */
+
+
+
 
 .suppliers-page-container {
   width: 100%;
@@ -12,7 +12,7 @@
   gap: 20px;
 }
 
-/* --- MAIN CARD --- */
+
 .suppliers-card.suppliers-brands-card {
   gap: 0;
 }
@@ -157,7 +157,7 @@
   box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.35);
 }
 
-/* --- CARD TOOLBAR / HEADER --- */
+
 .suppliers-toolbar {
   display: flex;
   align-items: center;
@@ -213,7 +213,7 @@
   color: #f0f7f3;
 }
 
-/* Inset search bar */
+
 .suppliers-search-box {
   width: 360px;
   max-width: 100%;
@@ -300,7 +300,7 @@
   color: #333333;
 }
 
-/* Toolbar Right */
+
 .suppliers-toolbar-right {
   display: flex;
   align-items: center;
@@ -308,7 +308,7 @@
   flex-wrap: wrap;
 }
 
-/* Filter Dropdown Button */
+
 .suppliers-filter-btn {
   height: 48px;
   background: #f8f8f8;
@@ -363,7 +363,7 @@
   color: #b0ccbd;
 }
 
-/* Register Supplier Button */
+
 .suppliers-register-btn {
   height: 48px;
   background: linear-gradient(180deg, #13c906 0%, #096303 100%);
@@ -399,7 +399,7 @@
   display: block;
 }
 
-/* --- TABLE CONTAINER & STYLES --- */
+
 .suppliers-table-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -531,7 +531,7 @@
   color: #bed7cb;
 }
 
-/* --- ACTIONS BUTTONS --- */
+
 .suppliers-action-group {
   display: flex;
   align-items: center;
@@ -623,7 +623,7 @@
 .inventory-app.dark .suppliers-archive-toggle { background: #19271e; color: #b5cebf; border-color: rgba(255, 255, 255, 0.12); }
 .inventory-app.dark .suppliers-archive-toggle.active { color: #6ee7b7; background: rgba(5, 150, 105, 0.15); border-color: #059669; }
 
-/* --- PAGINATION --- */
+
 .suppliers-pagination-row {
   display: flex;
   align-items: center;
@@ -720,7 +720,7 @@
   font-weight: 600;
 }
 
-/* Empty state */
+
 .suppliers-empty-state {
   padding: 48px 24px;
   text-align: center;
@@ -731,7 +731,7 @@
   color: rgba(255, 255, 255, 0.45);
 }
 
-/* Modals */
+
 .suppliers-modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -793,7 +793,7 @@
   margin-top: 24px;
 }
 
-/* View Modal Details Styling */
+
 .supplier-detail-card {
   display: flex;
   flex-direction: column;

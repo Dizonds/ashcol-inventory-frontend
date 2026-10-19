@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom";
 
-// Provide browser APIs that jsdom does not implement.
+
 global.ResizeObserver = class {
   observe() {}
   unobserve() {}

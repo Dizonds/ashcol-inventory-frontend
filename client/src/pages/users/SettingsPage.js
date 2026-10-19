@@ -60,7 +60,7 @@ function formatRole(role) {
   return map[role] || role;
 }
 
-// Inline SVGs for clean presentation without external dependencies
+
 function ListIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -184,7 +184,7 @@ export default function SettingsPage({
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      if (u.role === "ADMIN") return false; // Admin accounts are hidden from the list
+      if (u.role === "ADMIN") return false;
       const q = searchQuery.toLowerCase().trim();
       const name = (u.fullName || `${u.firstName} ${u.lastName}`).toLowerCase();
       const email = (u.email || "").toLowerCase();

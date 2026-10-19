@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
         name: "jsx-in-source-js",
         enforce: "pre",
         transform(code, id) {
-          // Existing CRA source files contain JSX with a .js extension.
+
           if (/\/src\/.*\.js$/.test(id)) {
             return transformWithOxc(code, id, {
               lang: "jsx",

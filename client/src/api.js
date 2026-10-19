@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// Relative /api uses the development proxy, or a same-origin deployment proxy.
+
 export const API_BASE = process.env.REACT_APP_API_URL || "/api";
 export function api(method, path, data, params) {
   const token = sessionStorage.getItem("ashcol_inventory_token");

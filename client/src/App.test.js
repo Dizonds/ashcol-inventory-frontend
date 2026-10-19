@@ -18,7 +18,7 @@ jest.mock("./api", () => ({
 }));
 jest.mock("@solar-icons/react/bold-duotone/bus", () => ({ BusIcon: () => null }));
 jest.mock("@ant-design/icons", () => ({ EyeOutlined: () => null }));
-// CRA's older jsdom cannot parse all Ant Design 6 CSS. Browser tests cover styling.
+
 function render(ui) {
   return testingRender(<StyleProvider mock="server">{ui}</StyleProvider>);
 }

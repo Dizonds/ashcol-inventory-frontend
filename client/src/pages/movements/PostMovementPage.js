@@ -41,11 +41,11 @@ export default function PostMovementPage({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [review, setReview] = useState(null);
 
-  // Pagination for Low stock & depleted items
+
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
 
-  // Pre-generate transaction ticket ID whenever operation changes or on retry
+
   useEffect(() => {
     let active = true;
     setReferenceId("");
@@ -66,7 +66,7 @@ export default function PostMovementPage({
     };
   }, [operation, ticketVersion]);
 
-  // Handle preselected item from props
+
   useEffect(() => {
     if (!preselectedItemId) appliedPreselection.current = null;
     if (preselectedItemId && appliedPreselection.current !== preselectedItemId) {
@@ -114,7 +114,7 @@ export default function PostMovementPage({
 
   const selected = activeItems.find((item) => item.id === productId);
 
-  // Low stock & depleted items list
+
   const lowStockItems = useMemo(() => {
     return activeItems
       .filter((item) => item.quantity === 0 || item.quantity <= item.reorderLevel)
@@ -705,7 +705,7 @@ export default function PostMovementPage({
             <Typography.Text copyable>
               {formatMovementNumber(review?.referenceId) || ""}
             </Typography.Text>
-            {/* Hidden raw ID for compatibility */}
+            { }
             <span style={{ display: "none" }}>{review?.referenceId}</span>
           </Descriptions.Item>
           <Descriptions.Item label="Operation">

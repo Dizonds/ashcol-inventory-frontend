@@ -21,7 +21,7 @@ test("zooming in while hovering a recent day keeps the chart usable", () => {
   fireEvent.mouseMove(viewport, { clientX: 790, clientY: 100 });
   expect(screen.getByRole("img", { name: "Stock movement activity trend chart" })).toBeInTheDocument();
 
-  // The hovered index belonged to a longer date range before zooming in.
+
   expect(() => {
     for (let step = 0; step < 5; step += 1) {
       fireEvent.keyDown(viewport, { key: "+" });

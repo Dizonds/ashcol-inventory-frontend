@@ -1,6 +1,6 @@
-/* ========================================================
-   STOCK ACTIVITY CHART - CHART STYLES
-   ======================================================== */
+
+
+
 
 .stock-activity-card {
   background: var(--card-bg, #ffffff);
@@ -35,7 +35,7 @@
   --chart-hover-bg: rgba(52, 211, 153, 0.08);
 }
 
-/* Expanded chart stays in the dashboard flow, with other cards below it. */
+
 .stock-activity-card.is-expanded {
   scroll-margin-top: 16px;
   overflow: hidden;
@@ -55,7 +55,7 @@
   font-weight: 600;
 }
 
-/* 1. HEADER ROW */
+
 .stock-card-header {
   display: flex;
   align-items: center;
@@ -128,7 +128,7 @@
   color: #10b981;
 }
 
-/* Controls Toolbar */
+
 .stock-header-controls {
   display: flex;
   align-items: center;
@@ -136,7 +136,7 @@
   flex-wrap: wrap;
 }
 
-/* View Mode Segmented Switch */
+
 .stock-mode-toggle {
   display: inline-flex;
   padding: 3px;
@@ -180,7 +180,7 @@
   color: #34d399;
 }
 
-/* Range Selector Pills */
+
 .stock-range-pill {
   display: inline-flex;
   padding: 3px;
@@ -221,7 +221,7 @@
   color: #34d399;
 }
 
-/* Fullscreen Button */
+
 .stock-fullscreen-btn {
   width: 32px;
   height: 32px;
@@ -242,7 +242,7 @@
   background: rgba(16, 185, 129, 0.06);
 }
 
-/* 2. SUB BAR (METRICS & LEGEND) */
+
 .stock-sub-bar {
   display: flex;
   align-items: center;
@@ -385,7 +385,7 @@
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
 }
 
-/* 3. CHART CANVAS VIEWPORT */
+
 .stock-chart-viewport {
   position: relative;
   width: 100%;
@@ -424,7 +424,7 @@
   color: #8bb09c;
 }
 
-/* Grid & Axes */
+
 .stock-grid-line {
   stroke: var(--chart-grid);
   stroke-width: 1;
@@ -457,7 +457,7 @@
   font-weight: 700;
 }
 
-/* Curves & Bars */
+
 .stock-area-fill {
   transition: opacity 0.25s ease;
 }
@@ -510,14 +510,14 @@
   opacity: 0.35;
 }
 
-/* Crosshair Guide */
+
 .stock-crosshair {
   stroke: var(--text-muted, #94a3b8);
   stroke-width: 1.2;
   stroke-dasharray: 3 4;
 }
 
-/* 4. FLOATING TOOLTIP CARD */
+
 .stock-floating-tooltip {
   position: absolute;
   width: min(220px, calc(100% - 70px));
@@ -725,7 +725,7 @@
   font-style: italic;
 }
 
-/* Empty State */
+
 .stock-chart-empty-state {
   position: absolute;
   inset: 0;
@@ -783,7 +783,7 @@
   color: #ffffff;
 }
 
-/* Responsive Breakpoints */
+
 @media (max-width: 900px) {
   .stock-activity-card {
     padding: 18px 18px;

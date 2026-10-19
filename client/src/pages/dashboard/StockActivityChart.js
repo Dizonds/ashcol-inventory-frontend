@@ -29,10 +29,10 @@ function toDateKey(value) {
   return "";
 }
 
-// Connect daily values with straight line segments.
+
 function buildLinePath(points) {
   if (!points?.length) return "";
-  // Empty trailing dates are not a new stock reading; end at recorded activity.
+
   let lastRecordedIndex = points.length - 1;
   while (lastRecordedIndex >= 0 && points[lastRecordedIndex].day.movements.length === 0) {
     lastRecordedIndex -= 1;
@@ -65,15 +65,15 @@ function calculateNiceTicks(maxValue, targetTickCount = 5) {
 }
 
 export default function StockActivityChart({ items = [], branchId, movementHistory: allMovements = [], historyReady = true, historyError = false, initialView = null, onViewSave, isExpanded = false, onExpandedChange }) {
-  // New charts start with the combined view. Keep this explicit preference
-  // separate so old saved snapshots that defaulted to UNIT migrate cleanly.
+
+
   const [selectedUnit, setSelectedUnit] = useState(initialView?.unitPreference || OVERALL_UNIT);
   const units = [...new Set([...allMovements.map((entry) => entry.unitOfMeasure || "UNIT"), ...items.map(item => item.unitOfMeasure).filter(Boolean)])].sort();
   const activeUnit = selectedUnit === OVERALL_UNIT || units.includes(selectedUnit) ? selectedUnit : units.includes("UNIT") ? "UNIT" : units[0] || "UNIT";
   const movementHistory = useMemo(() => activeUnit === OVERALL_UNIT ? allMovements : allMovements.filter((entry) => (entry.unitOfMeasure || "UNIT") === activeUnit), [allMovements, activeUnit]);
   const [selectedTimeframe, setSelectedTimeframe] = useState(initialView?.selectedTimeframe ?? 7);
   const [visibleDays, setVisibleDays] = useState(initialView?.visibleDays ?? 7);
-  // Reflect the current horizontal zoom without changing its stable vertical scale.
+
   const activeTimeframe = TIMEFRAME_OPTIONS.reduce((closest, days) =>
     Math.abs(days - visibleDays) < Math.abs(closest - visibleDays) ? days : closest
   );
@@ -112,8 +112,8 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     unitOfMeasure: activeUnit,
     unitPreference: activeUnit,
   };
-  // The app owns this snapshot, so leaving the dashboard does not reset the view.
-  // Saving only on departure avoids rerendering the dashboard during each drag.
+
+
   useEffect(() => () => {
     onViewSave?.(savedViewRef.current);
   }, [onViewSave]);
@@ -124,7 +124,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     ? allMovements.filter(entry => entry.branchId === branchId && (activeOverallUnit === OVERALL_UNIT || (entry.unitOfMeasure || "UNIT") === activeOverallUnit))
     : movementHistory, [chartMode, allMovements, branchId, activeOverallUnit, movementHistory]);
 
-  // Keep panning bounded by the oldest movement currently available.
+
   const historyDays = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -146,7 +146,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     setPanDays((current) => Math.min(current, maxPanDays));
   }, [maxPanDays, historyReady]);
 
-  // ResizeObserver for responsive 1:1 pixel rendering
+
   useEffect(() => {
     if (!viewportRef.current) return;
     const observer = new ResizeObserver((entries) => {
@@ -161,13 +161,13 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     return () => observer.disconnect();
   }, [isExpanded, chartMode]);
 
-  // Aggregate daily data over the chosen range
+
   const { seriesData, summaryStats } = useMemo(() => {
     const days = [];
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    // Extra edge samples keep lines continuous while moving between days.
+
     for (let i = rangeDays; i >= -1; i--) {
       const d = new Date(
         now.getFullYear(),
@@ -231,7 +231,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     };
   }, [movementHistory, rangeDays, integerPanDays]);
 
-  // Layout parameters for responsive SVG
+
   const chartHeight = isExpanded ? containerHeight : 320;
   const margin = { top: 22, right: 28, bottom: 36, left: 46 };
   const plotWidth = Math.max(100, containerWidth - margin.left - margin.right);
@@ -248,8 +248,8 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     })
   );
 
-  // Fit each selected preset to its own daily high, then keep that scale stable
-  // while navigating so wheel zoom cannot trigger sudden vertical rescaling.
+
+
   const timeframeScale = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -340,7 +340,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     setHoverY(Math.max(margin.top, Math.min(baselineY, mouseY)));
   };
 
-  // Drag the chart horizontally to browse older/newer movement windows.
+
   const stopZoomAnimation = () => {
     if (zoomFrameRef.current !== null) cancelAnimationFrame(zoomFrameRef.current);
     zoomFrameRef.current = null;
@@ -388,8 +388,8 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
       Math.min(maxPanDays, dragRef.current.startPan + draggedDays)
     );
     setPanDays(nextPan);
-    // Move the quantity camera without changing the spacing between values.
-    // Keep the camera bounded to its default lower edge, including net losses.
+
+
     const verticalDrag = (e.clientY - dragRef.current.startY) / plotHeight;
     setQuantityFloor(Math.max(0, dragRef.current.startFloor + verticalDrag * dragRef.current.quantitySpan));
   };
@@ -446,7 +446,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     zoomFrameRef.current = requestAnimationFrame(animateZoom);
   };
 
-  // A non-passive listener lets chart zoom consume the wheel without scrolling the page.
+
   wheelHandlerRef.current = handleChartWheel;
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -461,7 +461,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
     };
   }, [chartMode]);
 
-  // Bring the expanded card into view after the dashboard layout updates.
+
   useEffect(() => {
     if (!isExpanded) return;
     const frame = requestAnimationFrame(() => {
@@ -563,7 +563,7 @@ export default function StockActivityChart({ items = [], branchId, movementHisto
   const activeStockOutPoint = hoverIndex !== null ? pointsStockOut[hoverIndex] : null;
   const activeBalancePoint = hoverIndex !== null ? pointsBalance[hoverIndex] : null;
 
-  // Determine label step for X axis so dates do not crowd
+
   const labelStep = Math.max(1, Math.ceil(80 / dayWidth));
 
   return (
